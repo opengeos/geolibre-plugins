@@ -64,6 +64,13 @@ copy-ready template.
 Plugins are **trusted code** that runs with full app privileges, so the registry
 is curated: open a pull request and a maintainer reviews it before it ships.
 
+> **Start from the template:** the
+> [geolibre-plugin-template](https://github.com/opengeos/geolibre-plugin-template)
+> is the recommended starting point for plugin development. It includes a
+> MapLibre control wrapper, a `plugin.json` manifest, a GeoLibre plugin entry
+> point, and a build that produces the bundle layout below. The
+> [`sample/`](./sample) plugin here is a minimal in-repo example.
+
 ### 1. Build a plugin entry
 
 Your `entry` is a single self-contained ES module — bundle your dependencies in;
