@@ -1,3 +1,12 @@
+/* The colorful globe logo (esp. its green segments) fuses with the teal
+   header, so back it with a white circle for clear contrast. */
+.md-header__button.md-logo img {
+  background-color: #fff;
+  border-radius: 50%;
+  padding: 2px;
+  box-sizing: content-box;
+}
+
 /* Tighten the plugin catalog cards and give each a clear footer of links. */
 .md-typeset .grid.cards > ul > li {
   border-radius: 0.5rem;
