@@ -46,13 +46,13 @@ jobs:
       - name: Add registry, plugin bundles, and Pages metadata to the site
         run: |
           cp plugin-registry.json site/
-          # Copy every top-level plugin folder (a directory with a plugin.json)
-          # so it stays served from the domain root.
-          for dir in */; do
-            if [ -f "${dir}plugin.json" ]; then
-              cp -r "$dir" "site/"
-            fi
-          done
+          # Publish the plugin bundles under /plugins/<id>/. mkdocs already built
+          # the catalog page at site/plugins/index.html, so merge the bundles in
+          # alongside it rather than replacing the directory.
+          if [ -d plugins ]; then
+            mkdir -p site/plugins
+            cp -r plugins/. site/plugins/
+          fi
           cp CNAME .nojekyll site/
 
       - name: Configure Pages

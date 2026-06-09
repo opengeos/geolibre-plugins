@@ -19,6 +19,6 @@ There is **1** plugin in the registry. Install them from GeoLibre: open **Settin
 
     `Example`
 
-    [:octicons-mark-github-16: Homepage](https://github.com/opengeos/geolibre-plugins){ target=_blank } · [:octicons-package-16: Manifest](https://plugins.geolibre.app/sample/plugin.json){ target=_blank }
+    [:octicons-mark-github-16: Homepage](https://github.com/opengeos/geolibre-plugins){ target=_blank } · [:octicons-package-16: Manifest](https://plugins.geolibre.app/plugins/sample/plugin.json){ target=_blank }
 
 </div>

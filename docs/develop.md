@@ -7,7 +7,7 @@ is curated: open a pull request and a maintainer reviews it before it ships.
     The [**geolibre-plugin-template**](https://github.com/opengeos/geolibre-plugin-template)
     is the recommended starting point. It includes a MapLibre control wrapper, a
     `plugin.json` manifest, a GeoLibre plugin entry point, and a build that
-    produces the bundle layout below. The [`sample/`](https://github.com/opengeos/geolibre-plugins/tree/main/sample)
+    produces the bundle layout below. The [`plugins/sample/`](https://github.com/opengeos/geolibre-plugins/tree/main/plugins/sample)
     plugin in this repo is a minimal in-repo example.
 
 ## 1. Build a plugin entry
@@ -39,22 +39,23 @@ available so a control can match the in-app light/dark theme.
 
 ## 2. Add the plugin folder
 
-Create `<id>/` at the repository root with `plugin.json`, the built `entry` JS,
-and any `style` CSS. Keep `entry`/`style` paths relative and inside the folder:
+Create `plugins/<id>/` with `plugin.json`, the built `entry` JS, and any
+`style` CSS. Keep `entry`/`style` paths relative and inside the folder:
 
 ```text
-my-plugin/
-  plugin.json
-  index.js
-  style.css
+plugins/
+  my-plugin/
+    plugin.json
+    index.js
+    style.css
 ```
 
 ## 3. Register it
 
 Add an entry to [`plugin-registry.json`](registry.md) with `manifestUrl`
-pointing at `my-plugin/plugin.json` (relative) — or an absolute HTTPS URL if you
-host the plugin elsewhere. Set `minGeoLibreVersion` to the lowest GeoLibre
-version you support.
+pointing at `plugins/my-plugin/plugin.json` (relative) — or an absolute HTTPS
+URL if you host the plugin elsewhere. Set `minGeoLibreVersion` to the lowest
+GeoLibre version you support.
 
 ## 4. Test locally
 
