@@ -20,7 +20,7 @@ An object with a `plugins` array (a bare array is also accepted). Each entry:
       "description": "Optional short description",
       "author": "Author name",
       "homepage": "https://github.com/owner/my-plugin",
-      "manifestUrl": "my-plugin/plugin.json",
+      "manifestUrl": "plugins/my-plugin/plugin.json",
       "categories": ["Example"],
       "minGeoLibreVersion": "0.9.0"
     }
@@ -41,7 +41,7 @@ An object with a `plugins` array (a bare array is also accepted). Each entry:
 | `minGeoLibreVersion` | no | Gates installation against the running app version. |
 
 A relative `manifestUrl` resolves against the registry location, so a plugin
-hosted alongside the registry uses e.g. `my-plugin/plugin.json`. Entries whose
+hosted alongside the registry uses e.g. `plugins/my-plugin/plugin.json`. Entries whose
 resolved manifest URL is not HTTPS (or HTTP on localhost) are dropped, so they
 behave consistently when GeoLibre re-reads its settings on the next launch.
 

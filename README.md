@@ -7,8 +7,8 @@ and hosts:
 
 - `plugin-registry.json` — the curated index the GeoLibre Manage Plugins dialog
   reads (`https://plugins.geolibre.app/plugin-registry.json`).
-- One folder per plugin (e.g. `sample/`) containing its `plugin.json` manifest
-  and built assets.
+- A `plugins/` directory with one folder per plugin (e.g. `plugins/sample/`),
+  each containing its `plugin.json` manifest and built assets.
 
 GitHub Pages serves these files with permissive CORS, so the GeoLibre app
 (running on a different origin) can fetch the registry and each plugin bundle.
@@ -25,7 +25,7 @@ GitHub Pages serves these files with permissive CORS, so the GeoLibre app
   "description": "Optional short description",
   "author": "Author name",
   "homepage": "https://github.com/owner/my-plugin",
-  "manifestUrl": "my-plugin/plugin.json",
+  "manifestUrl": "plugins/my-plugin/plugin.json",
   "categories": ["Example"],
   "minGeoLibreVersion": "0.9.0"
 }
@@ -33,7 +33,7 @@ GitHub Pages serves these files with permissive CORS, so the GeoLibre app
 
 - `id`, `name`, `version`, and `manifestUrl` are required; the rest are optional.
 - `manifestUrl` may be relative (resolved against this registry's URL, so a
-  same-origin plugin hosted here uses e.g. `my-plugin/plugin.json`) or an
+  plugin hosted here uses e.g. `plugins/my-plugin/plugin.json`) or an
   absolute HTTPS URL pointing at a plugin hosted elsewhere.
 - `homepage` must be `http(s)`; other schemes are dropped by the app.
 - `minGeoLibreVersion` gates installation against the running app version.
@@ -102,14 +102,15 @@ starting point.
 
 ### 2. Add the plugin folder
 
-Create `<id>/` at the repo root containing `plugin.json`, the built `entry` JS,
-and any `style` CSS. Keep `entry`/`style` paths relative and inside the folder.
+Create `plugins/<id>/` containing `plugin.json`, the built `entry` JS, and any
+`style` CSS. Keep `entry`/`style` paths relative and inside the folder.
 
 ### 3. Register it
 
 Add an entry to `plugin-registry.json` with `manifestUrl` pointing at
-`<id>/plugin.json` (relative) — or an absolute HTTPS URL if you host the plugin
-elsewhere. Set `minGeoLibreVersion` to the lowest GeoLibre version you support.
+`plugins/<id>/plugin.json` (relative) — or an absolute HTTPS URL if you host the
+plugin elsewhere. Set `minGeoLibreVersion` to the lowest GeoLibre version you
+support.
 
 ### 4. Test locally
 
