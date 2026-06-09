@@ -1,7 +1,9 @@
 name: Deploy to GitHub Pages
 
-# Publishes the plugin registry and bundled plugin assets to GitHub Pages,
-# served at the custom domain in CNAME (plugins.geolibre.app).
+# Builds the MkDocs documentation site and publishes it to GitHub Pages at the
+# custom domain in CNAME (plugins.geolibre.app). The raw plugin-registry.json
+# and each plugin bundle are copied alongside the site so they stay served from
+# the domain root (where the GeoLibre app fetches them).
 
 on:
   push:
@@ -28,16 +30,38 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v6
 
+      - name: Set up Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: "3.x"
+
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+
+      - name: Generate plugin catalog and build site
+        run: |
+          python scripts/generate_plugins_page.py
+          mkdocs build --strict
+
+      - name: Add registry, plugin bundles, and Pages metadata to the site
+        run: |
+          cp plugin-registry.json site/
+          # Copy every top-level plugin folder (a directory with a plugin.json)
+          # so it stays served from the domain root.
+          for dir in */; do
+            if [ -f "${dir}plugin.json" ]; then
+              cp -r "$dir" "site/"
+            fi
+          done
+          cp CNAME .nojekyll site/
+
       - name: Configure Pages
         uses: actions/configure-pages@v6
 
       - name: Upload site artifact
         uses: actions/upload-pages-artifact@v5
         with:
-          # Repo root is the published site: plugin-registry.json and each
-          # plugin folder are served from the domain root. CNAME and .nojekyll
-          # are included so the custom domain and as-is file serving stick.
-          path: .
+          path: site
 
       - name: Deploy to GitHub Pages
         id: deployment

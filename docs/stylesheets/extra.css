@@ -1,0 +1,17 @@
+/* Tighten the plugin catalog cards and give each a clear footer of links. */
+.md-typeset .grid.cards > ul > li {
+  border-radius: 0.5rem;
+}
+
+.plugin-card-meta {
+  font-size: 0.72rem;
+  color: var(--md-default-fg-color--light);
+}
+
+.plugin-card-tags {
+  margin-top: 0.4rem;
+}
+
+.plugin-card-tags code {
+  font-size: 0.68rem;
+}
