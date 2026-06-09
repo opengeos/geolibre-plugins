@@ -8,10 +8,10 @@ copyright: Copyright &copy; opengeos
 
 theme:
   name: material
+  logo: assets/logo.png
+  favicon: assets/favicon.ico
   icon:
     repo: fontawesome/brands/github
-    logo: material/puzzle
-  favicon: https://geolibre.app/favicon.ico
   palette:
     - media: "(prefers-color-scheme)"
       toggle:
