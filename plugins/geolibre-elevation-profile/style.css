@@ -74,10 +74,14 @@
   display: block;
 }
 
-/* Floating panel */
+/* Floating panel. Resizable in every dock: it is always positioned by its
+   top-left corner (see _updatePanelPosition), so the bottom-right resize handle
+   grows it down and to the right consistently. */
 .elevation-profile-panel {
   position: absolute;
   display: none;
+  flex-direction: column;
+  box-sizing: border-box;
   background: var(--ep-bg);
   color: var(--ep-text);
   border-radius: 6px;
@@ -87,10 +91,16 @@
   font-size: 12px;
   line-height: 1.4;
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  overflow: auto;
+  resize: both;
+  min-width: 260px;
+  min-height: 170px;
+  max-width: 90vw;
+  max-height: 85vh;
 }
 
 .elevation-profile-panel.expanded {
-  display: block;
+  display: flex;
 }
 
 .elevation-profile-header {
@@ -211,9 +221,11 @@
   color: var(--ep-muted);
 }
 
-/* Chart */
+/* Chart. Flex-grows so a taller panel produces a taller chart. */
 .elevation-profile-chart {
   margin-top: 10px;
+  flex: 1 1 auto;
+  min-height: 130px;
 }
 
 .elevation-profile-chart:empty {
@@ -223,6 +235,7 @@
 .elevation-profile-svg {
   display: block;
   width: 100%;
+  height: 100%;
   cursor: crosshair;
   background: var(--ep-surface);
   border-radius: 4px;
@@ -270,5 +283,23 @@
 
 .elevation-profile-readout:empty {
   visibility: hidden;
+}
+
+/* Export row (shown only when a profile exists; toggled to flex from JS) */
+.elevation-profile-export {
+  display: none;
+  align-items: center;
+  gap: 6px;
+  margin-top: 8px;
+}
+
+.elevation-profile-export-label {
+  font-size: 11px;
+  color: var(--ep-muted);
+}
+
+.elevation-profile-button-sm {
+  padding: 4px 10px;
+  font-size: 11px;
 }
 /*$vite$:1*/

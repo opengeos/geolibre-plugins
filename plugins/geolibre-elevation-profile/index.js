@@ -240,6 +240,26 @@ function buildChartGeometry(points, width, height, padding = DEFAULT_PADDING) {
 	};
 }
 //#endregion
+//#region src/lib/export/csv.ts
+var round = (value) => Math.round(value * 100) / 100;
+/**
+* Serialize profile samples to CSV with a header row.
+*
+* Columns: `index, longitude, latitude, distance_m, elevation_m`. Distances and
+* elevations are emitted in meters (rounded to 2 decimals); coordinates use the
+* matching sampled `[lng, lat]` when available.
+*
+* @param points - Profile samples (distance + elevation) in along-line order
+* @param coords - Sampled coordinates matching `points` (may be shorter/empty)
+* @returns The CSV document as a single string
+*/
+function profileToCsv(points, coords) {
+	return ["index,longitude,latitude,distance_m,elevation_m", ...points.map((point, i) => {
+		const coord = coords[i];
+		return `${i},${coord ? round(coord[0]) : ""},${coord ? round(coord[1]) : ""},${round(point.distance)},${round(point.elevation)}`;
+	})].join("\n");
+}
+//#endregion
 //#region src/lib/elevation/format.ts
 var FEET_PER_METER = 3.28084;
 var MILES_PER_METER = 621371e-9;
@@ -346,6 +366,10 @@ var ElevationProfileControl = class {
 	_clearButton;
 	_unitButton;
 	_readoutEl;
+	_exportEl;
+	_svgEl;
+	_chartResizeObserver;
+	_chartRenderQueued = false;
 	_drawing = false;
 	_drawVertices = [];
 	_profilePoints = [];
@@ -392,6 +416,8 @@ var ElevationProfileControl = class {
 	onRemove() {
 		this._exitDrawing();
 		this._removeMapLayers();
+		this._chartResizeObserver?.disconnect();
+		this._chartResizeObserver = void 0;
 		if (this._resizeHandler) {
 			window.removeEventListener("resize", this._resizeHandler);
 			this._resizeHandler = null;
@@ -413,6 +439,8 @@ var ElevationProfileControl = class {
 		this._statusEl = void 0;
 		this._statsEl = void 0;
 		this._chartEl = void 0;
+		this._exportEl = void 0;
+		this._svgEl = void 0;
 	}
 	/** Returns a copy of the serializable control state. */
 	getState() {
@@ -719,7 +747,7 @@ var ElevationProfileControl = class {
 		svg.setAttribute("stroke-linejoin", "round");
 		svg.setAttribute("aria-hidden", "true");
 		const path = document.createElementNS(SVG_NS, "path");
-		path.setAttribute("d", "M3 20h18L14 7l-3.5 6L8 9l-5 11z");
+		path.setAttribute("d", "m8 3 4 8 5-5 5 15H2L8 3z");
 		svg.appendChild(path);
 		return svg;
 	}
@@ -774,7 +802,30 @@ var ElevationProfileControl = class {
 		const readout = document.createElement("div");
 		readout.className = "elevation-profile-readout";
 		this._readoutEl = readout;
-		panel.append(header, actions, status, stats, chart, readout);
+		const exportRow = document.createElement("div");
+		exportRow.className = "elevation-profile-export";
+		const exportLabel = document.createElement("span");
+		exportLabel.className = "elevation-profile-export-label";
+		exportLabel.textContent = "Export:";
+		const csvButton = document.createElement("button");
+		csvButton.type = "button";
+		csvButton.className = "elevation-profile-button elevation-profile-button-sm";
+		csvButton.textContent = "CSV";
+		csvButton.title = "Download the profile as CSV";
+		csvButton.addEventListener("click", () => this._exportCsv());
+		const pngButton = document.createElement("button");
+		pngButton.type = "button";
+		pngButton.className = "elevation-profile-button elevation-profile-button-sm";
+		pngButton.textContent = "PNG";
+		pngButton.title = "Download the chart as a PNG image";
+		pngButton.addEventListener("click", () => this._exportPng());
+		exportRow.append(exportLabel, csvButton, pngButton);
+		this._exportEl = exportRow;
+		panel.append(header, actions, status, stats, chart, readout, exportRow);
+		if (typeof ResizeObserver !== "undefined") {
+			this._chartResizeObserver = new ResizeObserver(() => this._scheduleChartRender());
+			this._chartResizeObserver.observe(chart);
+		}
 		this._syncUnitButton();
 		this._syncButtons();
 		this._renderProfile();
@@ -783,6 +834,15 @@ var ElevationProfileControl = class {
 	_renderProfile() {
 		this._renderStats();
 		this._renderChart();
+		this._syncExport();
+	}
+	_scheduleChartRender() {
+		if (this._chartRenderQueued) return;
+		this._chartRenderQueued = true;
+		requestAnimationFrame(() => {
+			this._chartRenderQueued = false;
+			this._renderChart();
+		});
 	}
 	_renderStats() {
 		if (!this._statsEl) return;
@@ -817,18 +877,22 @@ var ElevationProfileControl = class {
 		const host = this._chartEl;
 		if (!host) return;
 		host.textContent = "";
+		this._svgEl = void 0;
 		if (this._readoutEl) this._readoutEl.textContent = "";
 		if (this._profilePoints.length < 2) return;
-		const width = Math.max(160, this._options.panelWidth - 24);
-		const height = CHART_HEIGHT;
+		const hostWidth = Math.round(host.clientWidth);
+		if (hostWidth <= 0) return;
+		const width = hostWidth;
+		const height = Math.max(80, Math.round(host.clientHeight) || CHART_HEIGHT);
 		const geometry = buildChartGeometry(this._profilePoints, width, height);
 		const system = this._state.unitSystem;
 		const svg = document.createElementNS(SVG_NS, "svg");
 		svg.setAttribute("class", "elevation-profile-svg");
 		svg.setAttribute("viewBox", `0 0 ${width} ${height}`);
 		svg.setAttribute("width", "100%");
-		svg.setAttribute("height", `${height}`);
+		svg.setAttribute("height", "100%");
 		svg.setAttribute("preserveAspectRatio", "none");
+		this._svgEl = svg;
 		const area = document.createElementNS(SVG_NS, "path");
 		area.setAttribute("class", "elevation-profile-area");
 		area.setAttribute("d", geometry.areaPath);
@@ -886,6 +950,89 @@ var ElevationProfileControl = class {
 	_clearHover() {
 		this._setHoverPoint(null);
 	}
+	_exportCsv() {
+		if (this._profilePoints.length < 2) return;
+		const csv = profileToCsv(this._profilePoints, this._sampledCoords);
+		this._downloadBlob(new Blob([csv], { type: "text/csv;charset=utf-8" }), "elevation-profile.csv");
+	}
+	_exportPng() {
+		const svg = this._svgEl;
+		if (!svg || this._profilePoints.length < 2) return;
+		const viewBox = svg.getAttribute("viewBox")?.split(" ").map(Number);
+		if (!viewBox || viewBox.length < 4) return;
+		const width = viewBox[2];
+		const height = viewBox[3];
+		const clone = svg.cloneNode(true);
+		clone.setAttribute("xmlns", SVG_NS);
+		clone.setAttribute("width", `${width}`);
+		clone.setAttribute("height", `${height}`);
+		clone.querySelector(".elevation-profile-hover")?.remove();
+		const inline = (selector, props) => {
+			const live = svg.querySelectorAll(selector);
+			const cloned = clone.querySelectorAll(selector);
+			live.forEach((el, i) => {
+				const target = cloned[i];
+				if (!target) return;
+				const cs = getComputedStyle(el);
+				for (const prop of props) target.style.setProperty(prop, cs.getPropertyValue(prop));
+			});
+		};
+		inline(".elevation-profile-area", ["fill", "stroke"]);
+		inline(".elevation-profile-line", [
+			"fill",
+			"stroke",
+			"stroke-width"
+		]);
+		inline(".elevation-profile-axis", [
+			"fill",
+			"font-size",
+			"font-family"
+		]);
+		const background = getComputedStyle(svg).backgroundColor;
+		const rect = document.createElementNS(SVG_NS, "rect");
+		rect.setAttribute("width", `${width}`);
+		rect.setAttribute("height", `${height}`);
+		rect.setAttribute("fill", background && background !== "rgba(0, 0, 0, 0)" ? background : "#ffffff");
+		clone.insertBefore(rect, clone.firstChild);
+		const svgText = new XMLSerializer().serializeToString(clone);
+		const url = URL.createObjectURL(new Blob([svgText], { type: "image/svg+xml;charset=utf-8" }));
+		const image = new Image();
+		image.onload = () => {
+			const scale = 2;
+			const canvas = document.createElement("canvas");
+			canvas.width = Math.round(width * scale);
+			canvas.height = Math.round(height * scale);
+			const ctx = canvas.getContext("2d");
+			if (!ctx) {
+				URL.revokeObjectURL(url);
+				return;
+			}
+			ctx.scale(scale, scale);
+			ctx.drawImage(image, 0, 0, width, height);
+			URL.revokeObjectURL(url);
+			canvas.toBlob((blob) => {
+				if (blob) this._downloadBlob(blob, "elevation-profile.png");
+			}, "image/png");
+		};
+		image.onerror = () => {
+			URL.revokeObjectURL(url);
+			this._setStatus("Could not export the chart as PNG.");
+		};
+		image.src = url;
+	}
+	_downloadBlob(blob, filename) {
+		const url = URL.createObjectURL(blob);
+		const anchor = document.createElement("a");
+		anchor.href = url;
+		anchor.download = filename;
+		document.body.appendChild(anchor);
+		anchor.click();
+		anchor.remove();
+		setTimeout(() => URL.revokeObjectURL(url), 0);
+	}
+	_syncExport() {
+		if (this._exportEl) this._exportEl.style.display = this._stats && this._profilePoints.length >= 2 ? "flex" : "none";
+	}
 	_cycleUnits() {
 		const next = UNIT_SYSTEMS[(UNIT_SYSTEMS.indexOf(this._state.unitSystem) + 1) % UNIT_SYSTEMS.length];
 		this._state.unitSystem = next;
@@ -935,40 +1082,33 @@ var ElevationProfileControl = class {
 		if (parent.classList.contains("maplibregl-ctrl-bottom-right")) return "bottom-right";
 		return "top-right";
 	}
+	/**
+	* Position the panel by its top-left corner in every dock. Anchoring this way
+	* (rather than right/bottom) keeps the bottom-right CSS resize handle behaving
+	* the same in all four corners: the panel grows down and to the right from a
+	* fixed origin, so a user-set width/height is never fought by repositioning.
+	*/
 	_updatePanelPosition() {
 		if (!this._container || !this._panel || !this._mapContainer) return;
 		const button = this._container.querySelector(".elevation-profile-toggle");
 		if (!button) return;
 		const buttonRect = button.getBoundingClientRect();
 		const mapRect = this._mapContainer.getBoundingClientRect();
+		const panelRect = this._panel.getBoundingClientRect();
 		const position = this._getControlPosition();
 		const gap = 5;
-		const top = buttonRect.top - mapRect.top;
-		const bottom = mapRect.bottom - buttonRect.bottom;
-		const left = buttonRect.left - mapRect.left;
-		const right = mapRect.right - buttonRect.right;
-		this._panel.style.top = "";
-		this._panel.style.bottom = "";
-		this._panel.style.left = "";
+		const buttonTop = buttonRect.top - mapRect.top;
+		const buttonBottom = buttonRect.bottom - mapRect.top;
+		const buttonLeft = buttonRect.left - mapRect.left;
+		const buttonRight = buttonRect.right - mapRect.left;
+		let left = position === "top-left" || position === "bottom-left" ? buttonLeft : buttonRight - panelRect.width;
+		let top = position === "top-left" || position === "top-right" ? buttonBottom + gap : buttonTop - panelRect.height - gap;
+		left = Math.max(0, left);
+		top = Math.max(0, top);
 		this._panel.style.right = "";
-		switch (position) {
-			case "top-left":
-				this._panel.style.top = `${top + buttonRect.height + gap}px`;
-				this._panel.style.left = `${left}px`;
-				break;
-			case "top-right":
-				this._panel.style.top = `${top + buttonRect.height + gap}px`;
-				this._panel.style.right = `${right}px`;
-				break;
-			case "bottom-left":
-				this._panel.style.bottom = `${bottom + buttonRect.height + gap}px`;
-				this._panel.style.left = `${left}px`;
-				break;
-			case "bottom-right":
-				this._panel.style.bottom = `${bottom + buttonRect.height + gap}px`;
-				this._panel.style.right = `${right}px`;
-				break;
-		}
+		this._panel.style.bottom = "";
+		this._panel.style.left = `${left}px`;
+		this._panel.style.top = `${top}px`;
 	}
 };
 //#endregion
