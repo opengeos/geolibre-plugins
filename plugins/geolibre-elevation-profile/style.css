@@ -53,7 +53,10 @@
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
 }
 
-.elevation-profile-toggle {
+/* Scoped under the container class so these win over GeoLibre's own
+   `.maplibregl-ctrl-group button` rules (which otherwise offset the icon). */
+.elevation-profile .elevation-profile-toggle {
+  box-sizing: border-box;
   width: 29px;
   height: 29px;
   display: flex;
@@ -62,16 +65,19 @@
   border: none;
   background: none;
   padding: 0;
+  margin: 0;
   cursor: pointer;
   color: var(--ep-text);
 }
 
-.elevation-profile-toggle:hover {
+.elevation-profile .elevation-profile-toggle:hover {
   background: var(--ep-hover-bg);
 }
 
-.elevation-profile-toggle svg {
+.elevation-profile .elevation-profile-toggle svg {
   display: block;
+  width: 20px;
+  height: 20px;
 }
 
 /* Floating panel. Resizable in every dock: it is always positioned by its
@@ -221,15 +227,13 @@
   color: var(--ep-muted);
 }
 
-/* Chart. Flex-grows so a taller panel produces a taller chart. */
+/* Chart. Flex-grows so a taller panel produces a taller chart. Its display is
+   toggled from JS (hidden when there is no profile) rather than via :empty, so
+   the host keeps a measurable width while the chart is being (re)drawn. */
 .elevation-profile-chart {
   margin-top: 10px;
   flex: 1 1 auto;
   min-height: 130px;
-}
-
-.elevation-profile-chart:empty {
-  display: none;
 }
 
 .elevation-profile-svg {

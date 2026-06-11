@@ -876,14 +876,18 @@ var ElevationProfileControl = class {
 	_renderChart() {
 		const host = this._chartEl;
 		if (!host) return;
-		host.textContent = "";
 		this._svgEl = void 0;
 		if (this._readoutEl) this._readoutEl.textContent = "";
-		if (this._profilePoints.length < 2) return;
-		const hostWidth = Math.round(host.clientWidth);
-		if (hostWidth <= 0) return;
-		const width = hostWidth;
-		const height = Math.max(80, Math.round(host.clientHeight) || CHART_HEIGHT);
+		if (this._profilePoints.length < 2) {
+			host.textContent = "";
+			host.style.display = "none";
+			return;
+		}
+		host.style.display = "";
+		host.textContent = "";
+		const fallbackWidth = this._panel ? this._panel.clientWidth - 20 : this._options.panelWidth - 24;
+		const width = Math.max(160, Math.round(host.clientWidth) || fallbackWidth);
+		const height = Math.max(120, Math.round(host.clientHeight) || CHART_HEIGHT);
 		const geometry = buildChartGeometry(this._profilePoints, width, height);
 		const system = this._state.unitSystem;
 		const svg = document.createElementNS(SVG_NS, "svg");
@@ -998,27 +1002,41 @@ var ElevationProfileControl = class {
 		const url = URL.createObjectURL(new Blob([svgText], { type: "image/svg+xml;charset=utf-8" }));
 		const image = new Image();
 		image.onload = () => {
-			const scale = 2;
-			const canvas = document.createElement("canvas");
-			canvas.width = Math.round(width * scale);
-			canvas.height = Math.round(height * scale);
-			const ctx = canvas.getContext("2d");
-			if (!ctx) {
+			try {
+				const scale = 2;
+				const canvas = document.createElement("canvas");
+				canvas.width = Math.round(width * scale);
+				canvas.height = Math.round(height * scale);
+				const ctx = canvas.getContext("2d");
+				if (!ctx) {
+					this._setStatus("Could not export the chart as PNG.");
+					return;
+				}
+				ctx.scale(scale, scale);
+				ctx.drawImage(image, 0, 0, width, height);
+				canvas.toBlob((blob) => {
+					if (blob) this._downloadBlob(blob, "elevation-profile.png");
+					else this._downloadDataUrl(canvas.toDataURL("image/png"), "elevation-profile.png");
+				}, "image/png");
+			} catch {
+				this._setStatus("Could not export the chart as PNG.");
+			} finally {
 				URL.revokeObjectURL(url);
-				return;
 			}
-			ctx.scale(scale, scale);
-			ctx.drawImage(image, 0, 0, width, height);
-			URL.revokeObjectURL(url);
-			canvas.toBlob((blob) => {
-				if (blob) this._downloadBlob(blob, "elevation-profile.png");
-			}, "image/png");
 		};
 		image.onerror = () => {
 			URL.revokeObjectURL(url);
 			this._setStatus("Could not export the chart as PNG.");
 		};
 		image.src = url;
+	}
+	_downloadDataUrl(dataUrl, filename) {
+		const anchor = document.createElement("a");
+		anchor.href = dataUrl;
+		anchor.download = filename;
+		document.body.appendChild(anchor);
+		anchor.click();
+		anchor.remove();
 	}
 	_downloadBlob(blob, filename) {
 		const url = URL.createObjectURL(blob);
