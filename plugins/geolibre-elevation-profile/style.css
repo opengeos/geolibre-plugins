@@ -109,6 +109,17 @@
   display: flex;
 }
 
+/* Right-docked panels: render the resize grip in the bottom-left corner (so it
+   grows toward the map interior) by flipping the panel to RTL, then restore the
+   content's natural left-to-right flow on its children. */
+.elevation-profile-panel--anchor-right {
+  direction: rtl;
+}
+
+.elevation-profile-panel--anchor-right > * {
+  direction: ltr;
+}
+
 .elevation-profile-header {
   display: flex;
   align-items: center;

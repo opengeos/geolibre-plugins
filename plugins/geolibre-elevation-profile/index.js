@@ -1101,10 +1101,11 @@ var ElevationProfileControl = class {
 		return "top-right";
 	}
 	/**
-	* Position the panel by its top-left corner in every dock. Anchoring this way
-	* (rather than right/bottom) keeps the bottom-right CSS resize handle behaving
-	* the same in all four corners: the panel grows down and to the right from a
-	* fixed origin, so a user-set width/height is never fought by repositioning.
+	* Anchor the panel to the same corner as the control button so the CSS resize
+	* grip lands on the inward corner. Right docks are anchored by their right edge
+	* and flagged `--anchor-right`, which flips the grip to the bottom-left (via
+	* `direction: rtl`) so dragging grows the panel toward the map interior rather
+	* than off the edge. Left docks keep the default bottom-right grip.
 	*/
 	_updatePanelPosition() {
 		if (!this._container || !this._panel || !this._mapContainer) return;
@@ -1112,21 +1113,19 @@ var ElevationProfileControl = class {
 		if (!button) return;
 		const buttonRect = button.getBoundingClientRect();
 		const mapRect = this._mapContainer.getBoundingClientRect();
-		const panelRect = this._panel.getBoundingClientRect();
 		const position = this._getControlPosition();
 		const gap = 5;
-		const buttonTop = buttonRect.top - mapRect.top;
-		const buttonBottom = buttonRect.bottom - mapRect.top;
-		const buttonLeft = buttonRect.left - mapRect.left;
-		const buttonRight = buttonRect.right - mapRect.left;
-		let left = position === "top-left" || position === "bottom-left" ? buttonLeft : buttonRight - panelRect.width;
-		let top = position === "top-left" || position === "top-right" ? buttonBottom + gap : buttonTop - panelRect.height - gap;
-		left = Math.max(0, left);
-		top = Math.max(0, top);
-		this._panel.style.right = "";
+		const isRight = position === "top-right" || position === "bottom-right";
+		const isBottom = position === "bottom-left" || position === "bottom-right";
+		this._panel.style.top = "";
 		this._panel.style.bottom = "";
-		this._panel.style.left = `${left}px`;
-		this._panel.style.top = `${top}px`;
+		this._panel.style.left = "";
+		this._panel.style.right = "";
+		if (isRight) this._panel.style.right = `${mapRect.right - buttonRect.right}px`;
+		else this._panel.style.left = `${buttonRect.left - mapRect.left}px`;
+		if (isBottom) this._panel.style.bottom = `${mapRect.bottom - buttonRect.top + gap}px`;
+		else this._panel.style.top = `${buttonRect.bottom - mapRect.top + gap}px`;
+		this._panel.classList.toggle("elevation-profile-panel--anchor-right", isRight);
 	}
 };
 //#endregion
