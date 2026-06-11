@@ -13,7 +13,7 @@ There are **2** plugins in the registry. Install them from GeoLibre: open **Sett
 
     ---
 
-    Draw a line on the map to chart an elevation profile with distance, ascent/descent, and min/max stats, a metric/imperial toggle, and CSV/PNG export. Samples elevation from the Open-Meteo API.
+    Draw a line on the map to chart an elevation profile with distance, ascent/descent, and min/max stats, a metric/imperial toggle, and CSV/SVG export. Samples elevation from the Open-Meteo API.
 
     **Author:** Qiusheng Wu · **Version:** 0.1.0 · **Requires:** GeoLibre 0.9.0+
 
