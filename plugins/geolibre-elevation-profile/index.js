@@ -354,6 +354,7 @@ var pointCollection = (coords) => ({
 */
 var ElevationProfileControl = class {
 	_options;
+	_exportTextFile;
 	_state;
 	_map;
 	_mapContainer;
@@ -386,9 +387,11 @@ var ElevationProfileControl = class {
 	* @param options - Optional configuration overrides
 	*/
 	constructor(options) {
+		const { exportTextFile, ...visual } = options ?? {};
+		this._exportTextFile = exportTextFile;
 		this._options = {
 			...DEFAULT_OPTIONS,
-			...options
+			...visual
 		};
 		this._options.maxSamples = Math.min(100, Math.max(2, Math.floor(this._options.maxSamples)));
 		this._state = {
@@ -813,13 +816,13 @@ var ElevationProfileControl = class {
 		csvButton.textContent = "CSV";
 		csvButton.title = "Download the profile as CSV";
 		csvButton.addEventListener("click", () => this._exportCsv());
-		const pngButton = document.createElement("button");
-		pngButton.type = "button";
-		pngButton.className = "elevation-profile-button elevation-profile-button-sm";
-		pngButton.textContent = "PNG";
-		pngButton.title = "Download the chart as a PNG image";
-		pngButton.addEventListener("click", () => this._exportPng());
-		exportRow.append(exportLabel, csvButton, pngButton);
+		const svgButton = document.createElement("button");
+		svgButton.type = "button";
+		svgButton.className = "elevation-profile-button elevation-profile-button-sm";
+		svgButton.textContent = "SVG";
+		svgButton.title = "Save the chart as an SVG image";
+		svgButton.addEventListener("click", () => this._exportSvg());
+		exportRow.append(exportLabel, csvButton, svgButton);
 		this._exportEl = exportRow;
 		panel.append(header, actions, status, stats, chart, readout, exportRow);
 		if (typeof ResizeObserver !== "undefined") {
@@ -957,13 +960,31 @@ var ElevationProfileControl = class {
 	_exportCsv() {
 		if (this._profilePoints.length < 2) return;
 		const csv = profileToCsv(this._profilePoints, this._sampledCoords);
-		this._downloadBlob(new Blob([csv], { type: "text/csv;charset=utf-8" }), "elevation-profile.csv");
+		this._saveFile("elevation-profile.csv", csv, {
+			description: "CSV",
+			extensions: ["csv"],
+			mimeType: "text/csv"
+		});
 	}
-	_exportPng() {
+	_exportSvg() {
+		const svg = this._buildExportSvg();
+		if (!svg) return;
+		this._saveFile("elevation-profile.svg", svg, {
+			description: "SVG image",
+			extensions: ["svg"],
+			mimeType: "image/svg+xml"
+		});
+	}
+	/**
+	* Serialize the rendered chart into a standalone SVG string with the
+	* presentation styles inlined (external CSS does not travel with the file) and
+	* a solid background. Returns null when there is no chart to export.
+	*/
+	_buildExportSvg() {
 		const svg = this._svgEl;
-		if (!svg || this._profilePoints.length < 2) return;
+		if (!svg || this._profilePoints.length < 2) return null;
 		const viewBox = svg.getAttribute("viewBox")?.split(" ").map(Number);
-		if (!viewBox || viewBox.length < 4) return;
+		if (!viewBox || viewBox.length < 4) return null;
 		const width = viewBox[2];
 		const height = viewBox[3];
 		const clone = svg.cloneNode(true);
@@ -998,45 +1019,20 @@ var ElevationProfileControl = class {
 		rect.setAttribute("height", `${height}`);
 		rect.setAttribute("fill", background && background !== "rgba(0, 0, 0, 0)" ? background : "#ffffff");
 		clone.insertBefore(rect, clone.firstChild);
-		const svgText = new XMLSerializer().serializeToString(clone);
-		const url = URL.createObjectURL(new Blob([svgText], { type: "image/svg+xml;charset=utf-8" }));
-		const image = new Image();
-		image.onload = () => {
-			try {
-				const scale = 2;
-				const canvas = document.createElement("canvas");
-				canvas.width = Math.round(width * scale);
-				canvas.height = Math.round(height * scale);
-				const ctx = canvas.getContext("2d");
-				if (!ctx) {
-					this._setStatus("Could not export the chart as PNG.");
-					return;
-				}
-				ctx.scale(scale, scale);
-				ctx.drawImage(image, 0, 0, width, height);
-				canvas.toBlob((blob) => {
-					if (blob) this._downloadBlob(blob, "elevation-profile.png");
-					else this._downloadDataUrl(canvas.toDataURL("image/png"), "elevation-profile.png");
-				}, "image/png");
-			} catch {
-				this._setStatus("Could not export the chart as PNG.");
-			} finally {
-				URL.revokeObjectURL(url);
-			}
-		};
-		image.onerror = () => {
-			URL.revokeObjectURL(url);
-			this._setStatus("Could not export the chart as PNG.");
-		};
-		image.src = url;
+		return `<?xml version="1.0" encoding="UTF-8"?>\n${new XMLSerializer().serializeToString(clone)}`;
 	}
-	_downloadDataUrl(dataUrl, filename) {
-		const anchor = document.createElement("a");
-		anchor.href = dataUrl;
-		anchor.download = filename;
-		document.body.appendChild(anchor);
-		anchor.click();
-		anchor.remove();
+	/**
+	* Save text content. Prefers the host's file save (a native dialog under Tauri,
+	* a browser download on the web); falls back to a browser download when the
+	* plugin runs standalone without a host.
+	*/
+	_saveFile(filename, content, options) {
+		if (this._exportTextFile) {
+			this._exportTextFile(filename, content, options);
+			return;
+		}
+		const blob = new Blob([content], { type: options.mimeType ?? "text/plain;charset=utf-8" });
+		this._downloadBlob(blob, filename);
 	}
 	_downloadBlob(blob, filename) {
 		const url = URL.createObjectURL(blob);
@@ -1176,10 +1172,11 @@ async function maybeHandleDeepLink(consumer, params) {
 var control = null;
 var position = "top-left";
 var pendingState = null;
-function createControl() {
+function createControl(app) {
 	const next = new ElevationProfileControl({
 		collapsed: pendingState?.collapsed ?? true,
-		unitSystem: pendingState?.unitSystem ?? "metric"
+		unitSystem: pendingState?.unitSystem ?? "metric",
+		exportTextFile: app.exportTextFile ? (filename, content, options) => app.exportTextFile?.(filename, content, options) : void 0
 	});
 	if (pendingState) next.setState(pendingState);
 	return next;
@@ -1205,7 +1202,7 @@ var plugin = {
 	version: "0.1.0",
 	urlParameterNames: [ELEVATION_LINE_PARAM],
 	activate(app) {
-		control = control ?? createControl();
+		control = control ?? createControl(app);
 		if (!app.addMapControl(control, position)) {
 			control = null;
 			return false;
