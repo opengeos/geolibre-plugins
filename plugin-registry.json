@@ -16,7 +16,7 @@
       "id": "geolibre-elevation-profile",
       "name": "Elevation Profile",
       "version": "0.1.0",
-      "description": "Draw a line on the map to chart an elevation profile with distance, ascent/descent, and min/max stats. Samples elevation from the Open-Meteo API.",
+      "description": "Draw a line on the map to chart an elevation profile with distance, ascent/descent, and min/max stats, a metric/imperial toggle, and CSV/PNG export. Samples elevation from the Open-Meteo API.",
       "author": "Qiusheng Wu",
       "homepage": "https://github.com/opengeos/geolibre-elevation-profile",
       "manifestUrl": "plugins/geolibre-elevation-profile/plugin.json",

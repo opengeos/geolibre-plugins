@@ -2,7 +2,7 @@
   "id": "geolibre-elevation-profile",
   "name": "Elevation Profile",
   "version": "0.1.0",
-  "description": "Draw a line on the map and view an elevation profile sampled along it.",
+  "description": "Draw a line on the map to chart its elevation profile, with distance, ascent/descent, and min/max stats, plus CSV/PNG export.",
   "entry": "index.js",
   "style": "style.css"
 }
