@@ -1174,7 +1174,7 @@ async function maybeHandleDeepLink(consumer, params) {
 //#endregion
 //#region src/geolibre.ts
 var control = null;
-var position = "top-right";
+var position = "top-left";
 var pendingState = null;
 function createControl() {
 	const next = new ElevationProfileControl({
