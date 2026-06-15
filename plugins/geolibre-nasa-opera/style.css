@@ -476,4 +476,185 @@
 .opera-endpoint .plugin-control-input {
   font-size: 11px;
 }
+
+/* Active toggle state for the Inspect button. */
+.plugin-control-button.opera-secondary-button.active {
+  background: var(--pc-accent);
+  color: #fff;
+  border-color: var(--pc-accent);
+}
+
+/*
+ * Click-to-inspect popup. Appended to the map container (outside the
+ * .plugin-control scope), so reference concrete colors with the theme tokens as
+ * an optional fallback. Positioned with its tip at the queried point.
+ */
+.opera-inspect-popup {
+  position: absolute;
+  transform: translate(-50%, calc(-100% - 12px));
+  min-width: 120px;
+  max-width: 240px;
+  padding: 8px 22px 8px 10px;
+  background: var(--pc-bg, #fff);
+  color: var(--pc-text, #0b1220);
+  border: 1px solid var(--pc-border, rgba(0, 0, 0, 0.15));
+  border-radius: 6px;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.25);
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  font-size: 11px;
+  line-height: 1.4;
+  z-index: 600;
+  pointer-events: auto;
+}
+
+/* Triangle tip pointing down to the queried point. */
+.opera-inspect-popup::after {
+  content: '';
+  position: absolute;
+  left: 50%;
+  bottom: -6px;
+  width: 10px;
+  height: 10px;
+  background: var(--pc-bg, #fff);
+  border-right: 1px solid var(--pc-border, rgba(0, 0, 0, 0.15));
+  border-bottom: 1px solid var(--pc-border, rgba(0, 0, 0, 0.15));
+  transform: translateX(-50%) rotate(45deg);
+}
+
+.opera-inspect-close {
+  position: absolute;
+  top: 2px;
+  right: 4px;
+  border: none;
+  background: none;
+  padding: 0;
+  font-size: 15px;
+  line-height: 1;
+  cursor: pointer;
+  color: var(--pc-close, #888);
+}
+
+.opera-inspect-close:hover {
+  color: var(--pc-close-hover, #000);
+}
+
+.opera-inspect-band {
+  font-weight: 600;
+  color: var(--pc-label, #0b1220);
+}
+
+.opera-inspect-coord {
+  font-size: 10px;
+  color: var(--pc-muted, #667085);
+  margin-bottom: 4px;
+}
+
+.opera-inspect-row {
+  display: flex;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.opera-inspect-g {
+  color: var(--pc-muted, #667085);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.opera-inspect-v {
+  font-variant-numeric: tabular-nums;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+/* Zonal statistics results panel */
+.opera-stats {
+  margin-top: 8px;
+  font-size: 11px;
+}
+
+.opera-stats:empty {
+  display: none;
+}
+
+.opera-stats-loading {
+  color: var(--pc-muted);
+  padding: 4px 0;
+}
+
+.opera-stats-title {
+  font-weight: 600;
+  color: var(--pc-label);
+}
+
+.opera-stats-aoi {
+  font-size: 10px;
+  color: var(--pc-muted);
+  font-variant-numeric: tabular-nums;
+  margin-bottom: 4px;
+}
+
+.opera-stats-block {
+  border: 1px solid var(--pc-border);
+  border-radius: 4px;
+  padding: 6px 8px;
+  margin-bottom: 6px;
+}
+
+.opera-stats-granule {
+  color: var(--pc-muted);
+  font-size: 10px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  margin-bottom: 4px;
+}
+
+.opera-stats-empty {
+  color: var(--pc-muted);
+}
+
+.opera-stats-grid {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 1px 10px;
+}
+
+.opera-stats-k {
+  color: var(--pc-muted);
+}
+
+.opera-stats-v {
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+
+.opera-stats-headline {
+  font-size: 12px;
+}
+
+.opera-stats-headline b {
+  color: var(--pc-accent);
+}
+
+.opera-stats-sub {
+  color: var(--pc-muted);
+  margin-bottom: 4px;
+}
+
+.opera-stats-classes {
+  border-top: 1px solid var(--pc-border);
+  padding-top: 4px;
+}
+
+.opera-stats-row {
+  display: flex;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.opera-stats-row span:last-child {
+  font-variant-numeric: tabular-nums;
+}
 /*$vite$:1*/
