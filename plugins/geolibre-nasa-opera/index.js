@@ -303,6 +303,16 @@ var DSWX_WTR_COLORMAP = {
 		0
 	]
 };
+/** Human-readable labels for DSWx WTR class values, used in stats breakdowns. */
+var DSWX_WTR_CLASS_LABELS = {
+	"0": "Not water",
+	"1": "Open water",
+	"2": "Partial surface water",
+	"252": "Snow/ice",
+	"253": "Cloud/cloud shadow",
+	"254": "Ocean masked",
+	"255": "Fill"
+};
 /**
 * Return an explicit titiler `colormap` (JSON string) for a categorical band,
 * or `undefined` to let the caller fall back to rescale/grayscale rendering.
@@ -310,6 +320,20 @@ var DSWX_WTR_COLORMAP = {
 function colormapForBand(shortName, band) {
 	if (!band) return void 0;
 	if (/DSWX/i.test(shortName) && /WTR/i.test(band)) return JSON.stringify(DSWX_WTR_COLORMAP);
+}
+/**
+* Whether a band holds discrete class values, so zonal statistics should
+* request a per-class (categorical) histogram rather than continuous bins.
+*/
+function isCategoricalBand(shortName, band) {
+	if (!band) return false;
+	if (/DSWX/i.test(shortName) && /WTR/i.test(band)) return true;
+	if (/DIST/i.test(shortName) && /STATUS/i.test(band)) return true;
+	return false;
+}
+/** Whether a band is a DSWx water-classification layer (open-water areas). */
+function isDswxWaterBand(shortName, band) {
+	return !!band && /DSWX/i.test(shortName) && /WTR/i.test(band);
 }
 //#endregion
 //#region src/lib/opera/products.ts
@@ -482,6 +506,97 @@ function tileSizeFromTemplate(template) {
 	const match = template.match(/[?&]tilesize=(\d+)/);
 	return match ? parseInt(match[1], 10) : 256;
 }
+/**
+* Build a titiler-cmr `/point/{lon},{lat}` request URL.
+*
+* Path: `{endpoint}/{backend}/point/{lon},{lat}` (lon first). Reuses the same
+* CMR query params as the tile request (`collection_concept_id`, `granule_ur`,
+* `temporal`, `assets`, `assets_regex`) so a click reads exactly the
+* granule/band being displayed. Verified live against the staging endpoint.
+*/
+function buildPointUrl(params) {
+	const base = params.endpoint.replace(/\/+$/, "");
+	const query = new URLSearchParams();
+	query.set("collection_concept_id", params.conceptId);
+	if (params.granuleUr) query.set("granule_ur", params.granuleUr);
+	if (params.datetime) query.set("temporal", params.datetime);
+	for (const band of params.bands ?? []) query.append("assets", band);
+	if (params.bandsRegex) query.set("assets_regex", params.bandsRegex);
+	return `${base}/${params.backend}/point/${params.lon},${params.lat}?${query.toString()}`;
+}
+/** Fetch a point pixel-value document from titiler-cmr. */
+async function fetchPoint(url) {
+	const res = await fetch(url, { headers: { Accept: "application/json" } });
+	if (!res.ok) throw new Error(`titiler-cmr point request failed (${res.status})`);
+	const json = await res.json();
+	return {
+		coordinates: json.coordinates,
+		assets: (json.assets ?? []).map((asset) => ({
+			name: asset.name,
+			values: asset.values,
+			bandNames: asset.band_names,
+			bandDescriptions: asset.band_descriptions ?? void 0
+		}))
+	};
+}
+/**
+* Build a titiler-cmr `/statistics` request URL.
+*
+* Path: `{endpoint}/{backend}/statistics` (POST a GeoJSON Feature as the AOI).
+* Reuses the same CMR query params as the tile request, plus optional
+* `categorical`. Verified live against the staging endpoint.
+*/
+function buildStatisticsUrl(params) {
+	const base = params.endpoint.replace(/\/+$/, "");
+	const query = new URLSearchParams();
+	query.set("collection_concept_id", params.conceptId);
+	if (params.granuleUr) query.set("granule_ur", params.granuleUr);
+	if (params.datetime) query.set("temporal", params.datetime);
+	for (const band of params.bands ?? []) query.append("assets", band);
+	if (params.bandsRegex) query.set("assets_regex", params.bandsRegex);
+	if (params.categorical) query.set("categorical", "true");
+	return `${base}/${params.backend}/statistics?${query.toString()}`;
+}
+/** Coerce an unknown JSON value to a finite number, or NaN. */
+function toNum(value) {
+	return typeof value === "number" && Number.isFinite(value) ? value : NaN;
+}
+/** Coerce to a finite number, or undefined when absent/non-finite. */
+function toOptNum(value) {
+	return typeof value === "number" && Number.isFinite(value) ? value : void 0;
+}
+/**
+* POST a GeoJSON AOI to titiler-cmr `/statistics` and parse the per-band stats.
+*
+* `feature` is a GeoJSON Feature (or FeatureCollection); titiler-cmr echoes it
+* back with `properties.statistics` keyed by band name (e.g. `b1`).
+*/
+async function fetchStatistics(url, feature) {
+	const res = await fetch(url, {
+		method: "POST",
+		headers: {
+			"Content-Type": "application/json",
+			Accept: "application/json"
+		},
+		body: JSON.stringify(feature)
+	});
+	if (!res.ok) throw new Error(`titiler-cmr statistics request failed (${res.status})`);
+	const raw = (await res.json()).properties?.statistics ?? {};
+	const bands = {};
+	for (const [name, s] of Object.entries(raw)) bands[name] = {
+		min: toNum(s.min),
+		max: toNum(s.max),
+		mean: toNum(s.mean),
+		std: toNum(s.std),
+		median: toOptNum(s.median),
+		count: toNum(s.count),
+		validPixels: toOptNum(s.valid_pixels),
+		validPercent: toOptNum(s.valid_percent),
+		histogram: Array.isArray(s.histogram) ? s.histogram : void 0,
+		description: typeof s.description === "string" ? s.description : void 0
+	};
+	return { bands };
+}
 /** Fetch a TileJSON document from titiler-cmr. */
 async function fetchTileJson(url) {
 	const res = await fetch(url, { headers: { Accept: "application/json" } });
@@ -566,6 +681,13 @@ var OperaControl = class {
 	_drawRect;
 	_drawStart;
 	_drawStartLngLat;
+	_inspecting = false;
+	_inspectBtn;
+	_inspectPopup;
+	_inspectLngLat;
+	_inspectMoveHandler = null;
+	_statsBtn;
+	_statsPanel;
 	constructor(options = {}) {
 		this._options = options;
 		const { start, end } = defaultDateRange();
@@ -605,6 +727,8 @@ var OperaControl = class {
 			this._mapResizeHandler = null;
 		}
 		if (this._drawing) this._endDraw();
+		this._stopInspect();
+		this._removeInspectPopup();
 		if (this._map) {
 			this._map.off("click", this._onMapClick);
 			this._map.off("mousemove", this._onMapMouseMove);
@@ -625,6 +749,9 @@ var OperaControl = class {
 		this._displayBtn = void 0;
 		this._downloadBandBtn = void 0;
 		this._downloadAllBtn = void 0;
+		this._inspectBtn = void 0;
+		this._statsBtn = void 0;
+		this._statsPanel = void 0;
 	}
 	getState() {
 		this._readForm();
@@ -795,6 +922,9 @@ var OperaControl = class {
 		if (this._displayBtn) this._displayBtn.disabled = !hasSelection || !hasBand;
 		if (this._downloadBandBtn) this._downloadBandBtn.disabled = !hasSelection || !hasBand;
 		if (this._downloadAllBtn) this._downloadAllBtn.disabled = !hasSelection;
+		if (this._inspectBtn) this._inspectBtn.disabled = !hasSelection || !hasBand;
+		if (this._statsBtn) this._statsBtn.disabled = !hasSelection || !hasBand;
+		if (this._inspecting && (!hasSelection || !hasBand)) this._stopInspect();
 		this._highlightSelectedFootprints();
 	}
 	/** Union of the given granules' bounding boxes. */
@@ -870,6 +1000,13 @@ var OperaControl = class {
 	_onMapClick = (e) => {
 		const map = this._map;
 		if (!map || this._drawing) return;
+		if (this._inspecting) {
+			this._inspectAt({
+				lng: e.lngLat.lng,
+				lat: e.lngLat.lat
+			});
+			return;
+		}
 		const hit = map.queryRenderedFeatures(e.point).find((f) => f.properties && f.properties._operaGranuleId);
 		if (!hit) return;
 		const id = String(hit.properties._operaGranuleId);
@@ -886,6 +1023,10 @@ var OperaControl = class {
 	_onMapMouseMove = (e) => {
 		const map = this._map;
 		if (!map || this._drawing) return;
+		if (this._inspecting) {
+			map.getCanvas().style.cursor = "crosshair";
+			return;
+		}
 		const over = map.queryRenderedFeatures(e.point).some((f) => f.properties && f.properties._operaGranuleId);
 		map.getCanvas().style.cursor = over ? "pointer" : "";
 	};
@@ -896,6 +1037,7 @@ var OperaControl = class {
 	_startDraw() {
 		const map = this._map;
 		if (!map) return;
+		this._stopInspect();
 		this._drawing = true;
 		if (this._drawBtn) this._drawBtn.textContent = "Cancel";
 		map.getCanvas().style.cursor = "crosshair";
@@ -1045,6 +1187,9 @@ var OperaControl = class {
 		content.appendChild(this._buildBandGroup());
 		content.appendChild(this._buildRenderGroup());
 		content.appendChild(this._buildDisplayButton());
+		content.appendChild(this._buildInspectButton());
+		content.appendChild(this._buildStatisticsButton());
+		content.appendChild(this._buildStatsPanel());
 		content.appendChild(this._buildDownloadGroup());
 		const endpointDivider = document.createElement("div");
 		endpointDivider.className = "plugin-control-divider";
@@ -1192,6 +1337,10 @@ var OperaControl = class {
 		if (this._displayBtn) this._displayBtn.disabled = true;
 		if (this._downloadBandBtn) this._downloadBandBtn.disabled = true;
 		if (this._downloadAllBtn) this._downloadAllBtn.disabled = true;
+		if (this._inspectBtn) this._inspectBtn.disabled = true;
+		if (this._statsBtn) this._statsBtn.disabled = true;
+		this._stopInspect();
+		this._clearStats();
 		this._clearHighlight();
 		this._renderRows();
 	}
@@ -1333,6 +1482,256 @@ var OperaControl = class {
 		this._displayBtn = btn;
 		btn.addEventListener("click", () => void this._onDisplay());
 		return btn;
+	}
+	_buildInspectButton() {
+		const btn = document.createElement("button");
+		btn.type = "button";
+		btn.className = "plugin-control-button opera-secondary-button opera-block-button";
+		btn.textContent = "Inspect pixel values";
+		btn.title = "Toggle, then click the map to read the selected band's value at that location";
+		btn.disabled = true;
+		btn.addEventListener("click", () => this._toggleInspect());
+		this._inspectBtn = btn;
+		return btn;
+	}
+	_toggleInspect() {
+		if (this._inspecting) this._stopInspect();
+		else this._startInspect();
+	}
+	_startInspect() {
+		if (!this._map) return;
+		if (this._drawing) this._endDraw();
+		this._inspecting = true;
+		if (this._inspectBtn) {
+			this._inspectBtn.classList.add("active");
+			this._inspectBtn.textContent = "Inspecting — click the map";
+		}
+		this._map.getCanvas().style.cursor = "crosshair";
+		this._setStatus("Click the map to read pixel values. Click Inspect again to stop.");
+	}
+	_stopInspect() {
+		if (!this._inspecting) return;
+		this._inspecting = false;
+		if (this._inspectBtn) {
+			this._inspectBtn.classList.remove("active");
+			this._inspectBtn.textContent = "Inspect pixel values";
+		}
+		if (this._map) this._map.getCanvas().style.cursor = "";
+	}
+	/**
+	* Query titiler-cmr `/point` for each selected granule at the clicked
+	* location and show the values in a map popup. Each granule is pinned by
+	* `granule_ur` so the values match exactly what Display renders.
+	*/
+	async _inspectAt(lngLat) {
+		const product = getProduct(this._state.product);
+		const selected = this._granules.filter((g) => this._selectedIds.has(g.id));
+		if (!product || selected.length === 0) {
+			this._setStatus("Select a granule first, then click the map to inspect.");
+			return;
+		}
+		const band = this._bandSelect?.value || product.render.bands?.[0];
+		this._showInspectPopup(lngLat, "<em>Reading value…</em>");
+		try {
+			const conceptId = selected[0].conceptId ?? await resolveConceptId(product.shortName);
+			const results = await Promise.all(selected.map(async (granule) => {
+				try {
+					return {
+						granule,
+						point: await fetchPoint(buildPointUrl({
+							endpoint: this._state.endpoint || "https://staging.openveda.cloud/api/titiler-cmr",
+							conceptId,
+							backend: product.render.backend,
+							lon: lngLat.lng,
+							lat: lngLat.lat,
+							granuleUr: granule.id,
+							bands: band ? [band] : product.render.bands,
+							bandsRegex: product.render.bandsRegex
+						}))
+					};
+				} catch {
+					return {
+						granule,
+						point: null
+					};
+				}
+			}));
+			if (this._inspectLngLat !== lngLat) return;
+			this._showInspectPopup(lngLat, this._formatInspect(lngLat, results, band));
+		} catch (err) {
+			if (this._inspectLngLat !== lngLat) return;
+			this._showInspectPopup(lngLat, `Inspect failed: ${escapeHtml(err instanceof Error ? err.message : String(err))}`);
+		}
+	}
+	/** Render the per-granule point values as popup HTML. */
+	_formatInspect(lngLat, results, band) {
+		return `
+      <div class="opera-inspect-band">${escapeHtml(band ?? "value")}</div>
+      <div class="opera-inspect-coord">${lngLat.lng.toFixed(4)}, ${lngLat.lat.toFixed(4)}</div>` + results.map(({ granule, point }) => {
+			const name = escapeHtml(shorten(granule.id, 24));
+			const value = point && point.assets.length > 0 ? formatPointValues(point) : "no data";
+			return `<div class="opera-inspect-row"><span class="opera-inspect-g" title="${escapeHtml(granule.id)}">${name}</span><span class="opera-inspect-v">${escapeHtml(value)}</span></div>`;
+		}).join("");
+	}
+	_showInspectPopup(lngLat, html) {
+		const map = this._map;
+		const container = this._mapContainer;
+		if (!map || !container) return;
+		this._inspectLngLat = lngLat;
+		if (!this._inspectPopup) {
+			const popup = document.createElement("div");
+			popup.className = "opera-inspect-popup";
+			const close = document.createElement("button");
+			close.className = "opera-inspect-close";
+			close.type = "button";
+			close.setAttribute("aria-label", "Close");
+			close.innerHTML = "&times;";
+			close.addEventListener("click", () => this._removeInspectPopup());
+			const body = document.createElement("div");
+			body.className = "opera-inspect-body";
+			popup.append(close, body);
+			container.appendChild(popup);
+			this._inspectPopup = popup;
+			this._inspectMoveHandler = () => this._positionInspectPopup();
+			map.on("move", this._inspectMoveHandler);
+		}
+		const body = this._inspectPopup.querySelector(".opera-inspect-body");
+		if (body) body.innerHTML = html;
+		this._positionInspectPopup();
+	}
+	_positionInspectPopup() {
+		const map = this._map;
+		const popup = this._inspectPopup;
+		const ll = this._inspectLngLat;
+		if (!map || !popup || !ll) return;
+		const p = map.project([ll.lng, ll.lat]);
+		popup.style.left = `${p.x}px`;
+		popup.style.top = `${p.y}px`;
+	}
+	_removeInspectPopup() {
+		if (this._inspectMoveHandler && this._map) {
+			this._map.off("move", this._inspectMoveHandler);
+			this._inspectMoveHandler = null;
+		}
+		this._inspectPopup?.remove();
+		this._inspectPopup = void 0;
+		this._inspectLngLat = void 0;
+	}
+	_buildStatisticsButton() {
+		const btn = document.createElement("button");
+		btn.type = "button";
+		btn.className = "plugin-control-button opera-secondary-button opera-block-button";
+		btn.textContent = "Statistics (current AOI)";
+		btn.title = "Compute zonal statistics for the selected band over the current bounding box";
+		btn.disabled = true;
+		btn.addEventListener("click", () => void this._onStatistics());
+		this._statsBtn = btn;
+		return btn;
+	}
+	_buildStatsPanel() {
+		const panel = el("div", "opera-stats");
+		this._statsPanel = panel;
+		return panel;
+	}
+	_clearStats() {
+		if (this._statsPanel) this._statsPanel.innerHTML = "";
+	}
+	_setStatsContent(html) {
+		if (this._statsPanel) this._statsPanel.innerHTML = html;
+	}
+	/**
+	* Build a GeoJSON Polygon Feature for the current AOI (the bbox field, or the
+	* map extent when the field is blank) plus the bbox itself and whether it came
+	* from the map extent, so the panel can show what area was actually summarized.
+	*/
+	_aoiFeature() {
+		const typed = this._parseBBox(this._state.bbox);
+		const bbox = typed ?? this._options.getMapBounds?.() ?? void 0;
+		if (!bbox) return void 0;
+		const [w, s, e, n] = bbox;
+		return {
+			feature: {
+				type: "Feature",
+				properties: {},
+				geometry: {
+					type: "Polygon",
+					coordinates: [[
+						[w, s],
+						[e, s],
+						[e, n],
+						[w, n],
+						[w, s]
+					]]
+				}
+			},
+			bbox,
+			fromMapExtent: !typed
+		};
+	}
+	/**
+	* Compute zonal statistics for the selected band over the current AOI, one
+	* `/statistics` POST per selected granule (pinned by `granule_ur` so the
+	* numbers reflect exactly the chosen granules). DSWx water bands are queried
+	* categorically to derive open-water area.
+	*/
+	async _onStatistics() {
+		const product = getProduct(this._state.product);
+		const selected = this._granules.filter((g) => this._selectedIds.has(g.id));
+		if (!product || selected.length === 0) {
+			this._setStatus("Select a granule first.");
+			return;
+		}
+		const aoi = this._aoiFeature();
+		if (!aoi) {
+			this._setStatus("Set a bounding box (type it, Use map extent, or Draw) for the AOI.");
+			return;
+		}
+		const band = this._bandSelect?.value || product.render.bands?.[0];
+		const categorical = isCategoricalBand(product.shortName, band);
+		this._setStatsContent(`<div class="opera-stats-loading">Computing statistics for ${selected.length} granule(s)…</div>`);
+		this._setStatus(`Computing statistics for ${selected.length} granule(s)…`);
+		try {
+			const conceptId = selected[0].conceptId ?? await resolveConceptId(product.shortName);
+			const results = await Promise.all(selected.map(async (granule) => {
+				try {
+					return {
+						granule,
+						stats: await fetchStatistics(buildStatisticsUrl({
+							endpoint: this._state.endpoint || "https://staging.openveda.cloud/api/titiler-cmr",
+							conceptId,
+							backend: product.render.backend,
+							granuleUr: granule.id,
+							bands: band ? [band] : product.render.bands,
+							bandsRegex: product.render.bandsRegex,
+							categorical
+						}), aoi.feature)
+					};
+				} catch {
+					return {
+						granule,
+						stats: null
+					};
+				}
+			}));
+			this._renderStats(results, product.shortName, band, aoi);
+			const ok = results.filter((r) => r.stats).length;
+			this._setStatus(ok === selected.length ? `Statistics for ${ok} granule(s).` : `Statistics for ${ok}/${selected.length} granule(s).`);
+		} catch (err) {
+			this._clearStats();
+			this._setStatus(`Statistics failed: ${err instanceof Error ? err.message : String(err)}`);
+		}
+	}
+	_renderStats(results, shortName, band, aoi) {
+		const blocks = results.map(({ granule, stats }) => {
+			const head = `<div class="opera-stats-granule" title="${escapeHtml(granule.id)}">${escapeHtml(shorten(granule.id, 26))}</div>`;
+			const bandStats = stats ? firstBandStats(stats) : void 0;
+			if (!bandStats) return `<div class="opera-stats-block">${head}<div class="opera-stats-empty">no data in AOI</div></div>`;
+			return `<div class="opera-stats-block">${head}${isDswxWaterBand(shortName, band) ? renderWaterStats(bandStats) : renderContinuousStats(bandStats)}</div>`;
+		});
+		const [w, s, e, n] = aoi.bbox;
+		const extentNote = aoi.fromMapExtent ? " · map extent" : "";
+		const header = `<div class="opera-stats-title">${escapeHtml(band ?? "band")} — AOI statistics</div><div class="opera-stats-aoi">AOI ${w.toFixed(2)}, ${s.toFixed(2)}, ${e.toFixed(2)}, ${n.toFixed(2)}${extentNote}</div>`;
+		this._setStatsContent(header + blocks.join(""));
 	}
 	_buildDownloadGroup() {
 		const row = el("div", "opera-download-row");
@@ -1522,6 +1921,87 @@ function slug(value) {
 function shorten(value, max = 28) {
 	return value.length > max ? `…${value.slice(value.length - max)}` : value;
 }
+/** Format a number for the inspect popup: integers as-is, floats trimmed. */
+function formatNumber(v) {
+	if (Number.isInteger(v)) return String(v);
+	return parseFloat(v.toPrecision(5)).toString();
+}
+/** A finite number formatted for display, or "n/a". */
+function formatStat(n) {
+	return Number.isFinite(n) ? formatNumber(n) : "n/a";
+}
+/** Format an area in km², widening precision for small areas. */
+function formatArea(km2) {
+	if (km2 >= 100) return km2.toFixed(0);
+	if (km2 >= 1) return km2.toFixed(2);
+	return km2.toFixed(3);
+}
+/** The first (typically only) band's statistics from a result. */
+function firstBandStats(stats) {
+	return Object.values(stats.bands)[0];
+}
+/** A key/value grid of scalar statistics. */
+function statGrid(rows) {
+	return `<div class="opera-stats-grid">${rows.map(([k, v]) => `<span class="opera-stats-k">${escapeHtml(k)}</span><span class="opera-stats-v">${escapeHtml(v)}</span>`).join("")}</div>`;
+}
+/** Pixels -> area in km² at the OPERA native grid spacing. */
+function pixelsToKm2(pixels) {
+	return pixels * 30 * 30 / 1e6;
+}
+/** Continuous-band statistics block (min/max/mean/std/median/coverage). */
+function renderContinuousStats(s) {
+	const rows = [
+		["min", formatStat(s.min)],
+		["max", formatStat(s.max)],
+		["mean", formatStat(s.mean)],
+		["std", formatStat(s.std)]
+	];
+	if (s.median != null) rows.push(["median", formatStat(s.median)]);
+	if (s.validPixels != null) {
+		rows.push(["valid px", Math.round(s.validPixels).toLocaleString()]);
+		rows.push(["valid area", `${formatArea(pixelsToKm2(s.validPixels))} km²`]);
+	} else rows.push(["count", formatStat(s.count)]);
+	if (s.validPercent != null) rows.push(["valid %", `${s.validPercent.toFixed(1)}%`]);
+	return statGrid(rows);
+}
+/**
+* DSWx water-band block: derive open-water area from the categorical histogram
+* (class pixel counts x pixel area) and list every class count. Areas are a
+* fraction of the total valid area, which is shown so the magnitude is
+* interpretable (e.g. a whole-granule AOI yields thousands of km²).
+*/
+function renderWaterStats(s) {
+	let openCount = 0;
+	let partialCount = 0;
+	let validCount = 0;
+	const classRows = [];
+	if (s.histogram) {
+		const [counts, values] = s.histogram;
+		values.forEach((v, i) => {
+			const count = counts[i] ?? 0;
+			validCount += count;
+			if (v === 1) openCount = count;
+			if (v === 2) partialCount = count;
+			const label = DSWX_WTR_CLASS_LABELS[String(v)] ?? `Class ${v}`;
+			classRows.push(`<div class="opera-stats-row"><span>${escapeHtml(label)}</span><span>${count.toLocaleString()}</span></div>`);
+		});
+	}
+	const pct = (px) => validCount > 0 ? ` (${(px / validCount * 100).toFixed(1)}% of valid)` : "";
+	return `<div class="opera-stats-headline">${`Open water: <b>${formatArea(pixelsToKm2(openCount))} km²</b>${pct(openCount)}`}</div><div class="opera-stats-sub">${`Open + partial: ${formatArea(pixelsToKm2(openCount + partialCount))} km²${pct(openCount + partialCount)}`}</div><div class="opera-stats-sub">${`Valid: ${formatArea(pixelsToKm2(validCount))} km² · ${validCount.toLocaleString()} px`}</div><div class="opera-stats-classes">${classRows.join("")}</div>`;
+}
+/**
+* Flatten a point result's asset values into a compact label, e.g. `1` for a
+* single-band class value or `VV=0.0123, VH=0.0047` across bands.
+*/
+function formatPointValues(point) {
+	const parts = [];
+	for (const asset of point.assets) asset.values.forEach((v, i) => {
+		const text = v == null ? "nodata" : formatNumber(v);
+		const single = point.assets.length === 1 && asset.values.length === 1;
+		parts.push(single ? text : `${asset.bandNames[i] ?? `b${i + 1}`}=${text}`);
+	});
+	return parts.length > 0 ? parts.join(", ") : "no data";
+}
 function escapeHtml(value) {
 	return value.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
 }
@@ -1562,7 +2042,7 @@ function isOperaState(value) {
 var plugin = {
 	id: "geolibre-nasa-opera",
 	name: "NASA OPERA",
-	version: "0.1.0",
+	version: "0.2.0",
 	activate(app) {
 		control = control ?? createControl(app);
 		if (!app.addMapControl(control, position)) {
