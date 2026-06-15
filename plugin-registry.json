@@ -22,6 +22,17 @@
       "manifestUrl": "plugins/geolibre-elevation-profile/plugin.json",
       "categories": ["Analysis", "Terrain"],
       "minGeoLibreVersion": "0.9.0"
+    },
+    {
+      "id": "geolibre-nasa-opera",
+      "name": "NASA OPERA",
+      "version": "0.1.0",
+      "description": "Search NASA OPERA products (DSWx, RTC, CSLC, DIST) by area and date via NASA CMR, draw footprints, display Cloud-Optimized GeoTIFFs through titiler-cmr, and download granule data. No Earthdata login needed for search or display.",
+      "author": "Qiusheng Wu",
+      "homepage": "https://github.com/opengeos/geolibre-nasa-opera",
+      "manifestUrl": "plugins/geolibre-nasa-opera/plugin.json",
+      "categories": ["Data", "Imagery"],
+      "minGeoLibreVersion": "0.9.0"
     }
   ]
 }

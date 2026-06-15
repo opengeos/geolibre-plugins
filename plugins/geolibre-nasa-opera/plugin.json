@@ -1,0 +1,8 @@
+{
+  "id": "geolibre-nasa-opera",
+  "name": "NASA OPERA",
+  "version": "0.1.0",
+  "entry": "index.js",
+  "description": "Search and visualize NASA OPERA products (DSWx, RTC, CSLC, DIST) via NASA CMR and titiler-cmr.",
+  "style": "style.css"
+}
