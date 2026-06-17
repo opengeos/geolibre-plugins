@@ -33,6 +33,17 @@
       "manifestUrl": "plugins/geolibre-nasa-opera/plugin.json",
       "categories": ["Data", "Imagery"],
       "minGeoLibreVersion": "0.9.0"
+    },
+    {
+      "id": "geolibre-d2s",
+      "name": "GeoLibre D2S",
+      "version": "0.1.0",
+      "description": "Browse and view Data to Science (D2S) projects, flights, and data products. Add raster data products as titiler tiles and project vector layers (FlatGeobuf) to the map, with automatic zoom to added layers.",
+      "author": "Qiusheng Wu",
+      "homepage": "https://github.com/opengeos/geolibre-d2s",
+      "manifestUrl": "plugins/geolibre-d2s/plugin.json",
+      "categories": ["Data", "Imagery"],
+      "minGeoLibreVersion": "0.9.0"
     }
   ]
 }
