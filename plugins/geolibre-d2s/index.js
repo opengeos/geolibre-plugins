@@ -3218,9 +3218,10 @@ var PluginControl = class {
 	* @param options - Configuration options for the control
 	*/
 	constructor(options) {
+		const provided = Object.fromEntries(Object.entries(options ?? {}).filter(([, value]) => value !== void 0));
 		this._options = {
 			...DEFAULT_OPTIONS,
-			...options
+			...provided
 		};
 		this._state = {
 			collapsed: this._options.collapsed,
