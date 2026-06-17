@@ -4080,7 +4080,7 @@ function isPluginState(value) {
 }
 var plugin = {
 	id: "geolibre-d2s",
-	name: "GeoLibre D2S",
+	name: "Data to Science (D2S)",
 	version: "0.1.0",
 	urlParameterNames: [D2S_SERVER_PARAM],
 	activate(app) {

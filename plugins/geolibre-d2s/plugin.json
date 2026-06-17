@@ -1,6 +1,6 @@
 {
   "id": "geolibre-d2s",
-  "name": "GeoLibre D2S",
+  "name": "Data to Science (D2S)",
   "version": "0.1.0",
   "description": "Browse and view Data to Science (D2S) projects, flights, and data products. Add raster data products as titiler tiles and project vector layers (FlatGeobuf) to the map.",
   "entry": "index.js",
