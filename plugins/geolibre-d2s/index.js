@@ -2978,16 +2978,81 @@ function loginFormBody(email, password) {
 function cogUrlWithKey(dataProductUrl, apiKey) {
 	return `${dataProductUrl}${dataProductUrl.includes("?") ? "&" : "?"}API_KEY=${encodeURIComponent(apiKey)}`;
 }
-/** Build a titiler TileJSON URL for a COG, with optional extra query params. */
+/**
+* Build a titiler TileJSON URL for a COG, with optional extra query params.
+*
+* A param value may be a string or a string array; array values are emitted as
+* repeated query keys (for example `bidx` -> `bidx=1&bidx=2&bidx=3`), which is
+* how titiler expects multi-valued parameters such as band selection.
+*/
 function titilerTileJsonUrl(titilerBase, cogUrl, extraParams = {}) {
-	return `${normalizeServerUrl(titilerBase)}/cog/WebMercatorQuad/tilejson.json?${new URLSearchParams({
-		url: cogUrl,
-		...extraParams
-	}).toString()}`;
+	const base = normalizeServerUrl(titilerBase);
+	const params = new URLSearchParams({ url: cogUrl });
+	for (const [key, value] of Object.entries(extraParams)) if (Array.isArray(value)) for (const item of value) params.append(key, item);
+	else params.append(key, value);
+	return `${base}/cog/WebMercatorQuad/tilejson.json?${params.toString()}`;
 }
 /** Build a titiler statistics URL for a COG. */
 function titilerStatisticsUrl(titilerBase, cogUrl) {
 	return `${normalizeServerUrl(titilerBase)}/cog/statistics?${new URLSearchParams({ url: cogUrl }).toString()}`;
+}
+/** Build a titiler `/cog/info` URL for a COG. */
+function titilerInfoUrl(titilerBase, cogUrl) {
+	return `${normalizeServerUrl(titilerBase)}/cog/info?${new URLSearchParams({ url: cogUrl }).toString()}`;
+}
+/**
+* Choose RGB band indices (`bidx`) for a COG from its titiler `/cog/info`, or
+* `null` to let titiler render the COG as-is.
+*
+* titiler can only encode 1- or 3-band arrays as image tiles, so a multispectral
+* COG (for example a 5-band drone ortho) fails to render with titiler's defaults
+* ("Could not encode array of shape (5, 256, 256) ... using JPEG driver"). When
+* the COG does not tag explicit red/green/blue bands and carries three or more
+* bands, fall back to its first three bands so it renders as RGB.
+*
+* COGs that already tag red/green/blue (plain RGB or RGBA orthos) and
+* single-band products are left untouched: titiler renders the former natively
+* and the latter as grayscale (elevation gets its own rescale + colormap), so
+* forcing a band selection there would only risk dropping an alpha mask.
+*
+* @param info Minimal `/cog/info` shape with band `count` and `colorinterp`.
+* @returns Band indices as strings (titiler is 1-based), or `null` for no override.
+*/
+function rgbBandSelection(info) {
+	const colorinterp = (info.colorinterp ?? []).map((c) => c.toLowerCase());
+	const count = info.count ?? colorinterp.length;
+	if (colorinterp.includes("red") && colorinterp.includes("green") && colorinterp.includes("blue")) return null;
+	if (count < 3) return null;
+	return [
+		"1",
+		"2",
+		"3"
+	];
+}
+/**
+* Build per-band `rescale` strings (`min,max`) from titiler `/cog/statistics`
+* for the given 1-based band indices, or `null` when stats are missing.
+*
+* Multispectral reflectance COGs store float values in a narrow range (for
+* example 0.04–0.15), so rendering them raw yields a flat, near-black image.
+* Stretching each selected band to its 2nd–98th percentile (falling back to
+* min/max) restores contrast so the layer looks like real imagery.
+*
+* @param stats titiler `/cog/statistics` response keyed by `b1`, `b2`, ...
+* @param bands 1-based band indices to build rescales for, in `bidx` order.
+* @returns One `min,max` string per band, or `null` if any band lacks usable stats.
+*/
+function percentileRescales(stats, bands) {
+	const rescales = [];
+	for (const band of bands) {
+		const entry = stats[`b${band}`];
+		if (!entry) return null;
+		const min = entry.percentile_2 ?? entry.min;
+		const max = entry.percentile_98 ?? entry.max;
+		if (typeof min !== "number" || typeof max !== "number" || min === max) return null;
+		rescales.push(`${min},${max}`);
+	}
+	return rescales.length > 0 ? rescales : null;
 }
 /** Build the FlatGeobuf URL for a project vector layer. */
 function fgbUrl(server, projectId, layerId, apiKey) {
@@ -3111,6 +3176,13 @@ var D2SClient = class {
 				extraParams.rescale = rescale;
 				extraParams.colormap_name = "terrain";
 			}
+		} else {
+			const bidx = await this.tryRgbBandSelection(cogUrl);
+			if (bidx) {
+				extraParams.bidx = bidx;
+				const rescale = await this.tryBandRescales(cogUrl, bidx);
+				if (rescale) extraParams.rescale = rescale;
+			}
 		}
 		const tileJsonUrl = titilerTileJsonUrl(this.titilerUrl, cogUrl, extraParams);
 		const response = await fetch(tileJsonUrl, { headers: { Accept: "application/json" } });
@@ -3140,6 +3212,41 @@ var D2SClient = class {
 			const max = band.percentile_98 ?? band.max;
 			if (typeof min !== "number" || typeof max !== "number" || min === max) return null;
 			return `${min},${max}`;
+		} catch {
+			return null;
+		}
+	}
+	/**
+	* Best-effort RGB band selection (`bidx`) for a COG, derived from its titiler
+	* `/cog/info`. Returns null if info is unavailable or no override is needed,
+	* so the caller renders with titiler's defaults rather than failing.
+	*
+	* @param cogUrl The API-key-bearing COG URL to inspect.
+	* @returns Band indices for `bidx`, or null to render the COG unchanged.
+	*/
+	async tryRgbBandSelection(cogUrl) {
+		try {
+			const response = await fetch(titilerInfoUrl(this.titilerUrl, cogUrl), { headers: { Accept: "application/json" } });
+			if (!response.ok) return null;
+			return rgbBandSelection(await response.json());
+		} catch {
+			return null;
+		}
+	}
+	/**
+	* Best-effort per-band `rescale` for the given band indices, derived from
+	* titiler `/cog/statistics`. Returns null if statistics are unavailable, so
+	* the caller renders without a rescale rather than failing.
+	*
+	* @param cogUrl The API-key-bearing COG URL to inspect.
+	* @param bands 1-based band indices (in `bidx` order) to build rescales for.
+	* @returns One `min,max` string per band, or null to render without a rescale.
+	*/
+	async tryBandRescales(cogUrl, bands) {
+		try {
+			const response = await fetch(titilerStatisticsUrl(this.titilerUrl, cogUrl), { headers: { Accept: "application/json" } });
+			if (!response.ok) return null;
+			return percentileRescales(await response.json(), bands);
 		} catch {
 			return null;
 		}
@@ -4082,7 +4189,7 @@ function isPluginState(value) {
 var plugin = {
 	id: "geolibre-d2s",
 	name: "Data to Science (D2S)",
-	version: "0.1.0",
+	version: "0.1.1",
 	urlParameterNames: [D2S_SERVER_PARAM],
 	activate(app) {
 		control = control ?? createControl(app);
