@@ -433,6 +433,32 @@ function getProduct(shortName) {
 	return OPERA_PRODUCTS.find((p) => p.shortName === shortName);
 }
 /**
+* Ready-made band-math expressions for a product/band, shown as presets next to
+* the Expression field. The selected band is referenced as `b1`. Each preset
+* also carries a rescale + colormap so the computed layer displays meaningfully.
+*/
+function expressionPresets(shortName, band) {
+	const b = band ?? "";
+	if (/RTC-S1/i.test(shortName) && /^(VV|VH|HH|HV)$/i.test(b)) return [{
+		label: "Backscatter dB (10·log10)",
+		expression: "10*log10(b1)",
+		rescale: "-30,0",
+		colormapName: "gray"
+	}];
+	if (/DSWX/i.test(shortName) && /WTR/i.test(b)) return [{
+		label: "Open-water mask (class 1)",
+		expression: "where(b1==1,1,0)",
+		rescale: "0,1",
+		colormapName: "blues"
+	}, {
+		label: "Surface-water mask (1+2)",
+		expression: "where((b1==1)|(b1==2),1,0)",
+		rescale: "0,1",
+		colormapName: "blues"
+	}];
+	return [];
+}
+/**
 * Default render hints for a band, used to auto-populate the Rendering fields so
 * the user sees what will be applied and can tweak it. Categorical DSWx water
 * bands return blanks (their built-in class colormap applies); continuous bands
@@ -471,6 +497,17 @@ var DEFAULT_TITILER_CMR_ENDPOINT = "https://staging.openveda.cloud/api/titiler-c
 /** TileMatrixSet id used for the XYZ tile grid. */
 var TILE_MATRIX_SET = "WebMercatorQuad";
 /**
+* Apply a band-math `expression` to a query. titiler evaluates expressions over
+* bands named `b1`, `b2`, ... so `asset_as_band=true` is sent alongside it to
+* map each requested asset onto a band. No-op when `expression` is blank.
+*/
+function applyExpression(query, expression) {
+	const expr = expression?.trim();
+	if (!expr) return;
+	query.set("expression", expr);
+	query.set("asset_as_band", "true");
+}
+/**
 * Build the titiler-cmr `tilejson.json` request URL (current API).
 *
 * Path: `{endpoint}/{backend}/WebMercatorQuad/tilejson.json` (backend is a path
@@ -491,6 +528,7 @@ function buildTileJsonUrl(params) {
 	if (params.datetime) query.set("temporal", params.datetime);
 	for (const band of params.bands ?? []) query.append("assets", band);
 	if (params.bandsRegex) query.set("assets_regex", params.bandsRegex);
+	applyExpression(query, params.expression);
 	if (params.colormap) query.set("colormap", params.colormap);
 	else {
 		if (params.rescale) query.set("rescale", params.rescale);
@@ -522,6 +560,7 @@ function buildPointUrl(params) {
 	if (params.datetime) query.set("temporal", params.datetime);
 	for (const band of params.bands ?? []) query.append("assets", band);
 	if (params.bandsRegex) query.set("assets_regex", params.bandsRegex);
+	applyExpression(query, params.expression);
 	return `${base}/${params.backend}/point/${params.lon},${params.lat}?${query.toString()}`;
 }
 /** Fetch a point pixel-value document from titiler-cmr. */
@@ -554,7 +593,9 @@ function buildStatisticsUrl(params) {
 	if (params.datetime) query.set("temporal", params.datetime);
 	for (const band of params.bands ?? []) query.append("assets", band);
 	if (params.bandsRegex) query.set("assets_regex", params.bandsRegex);
+	applyExpression(query, params.expression);
 	if (params.categorical) query.set("categorical", "true");
+	else if (params.histogramBins) query.set("histogram_bins", String(params.histogramBins));
 	return `${base}/${params.backend}/statistics?${query.toString()}`;
 }
 /** Coerce an unknown JSON value to a finite number, or NaN. */
@@ -593,6 +634,8 @@ async function fetchStatistics(url, feature) {
 		validPixels: toOptNum(s.valid_pixels),
 		validPercent: toOptNum(s.valid_percent),
 		histogram: Array.isArray(s.histogram) ? s.histogram : void 0,
+		percentile2: toOptNum(s.percentile_2),
+		percentile98: toOptNum(s.percentile_98),
 		description: typeof s.description === "string" ? s.description : void 0
 	};
 	return { bands };
@@ -660,6 +703,10 @@ var OperaControl = class {
 	_bandSelect;
 	_rescaleInput;
 	_colormapSelect;
+	_expressionInput;
+	_expressionPresetSelect;
+	_expressionHint;
+	_currentExpressionPresets = [];
 	_displayBtn;
 	_downloadBandBtn;
 	_downloadAllBtn;
@@ -701,6 +748,7 @@ var OperaControl = class {
 			count: 50,
 			rescale: "",
 			colormapName: "",
+			expression: "",
 			endpoint: DEFAULT_TITILER_CMR_ENDPOINT
 		};
 	}
@@ -746,6 +794,9 @@ var OperaControl = class {
 		this._bandSelect = void 0;
 		this._rescaleInput = void 0;
 		this._colormapSelect = void 0;
+		this._expressionInput = void 0;
+		this._expressionPresetSelect = void 0;
+		this._expressionHint = void 0;
 		this._displayBtn = void 0;
 		this._downloadBandBtn = void 0;
 		this._downloadAllBtn = void 0;
@@ -829,7 +880,9 @@ var OperaControl = class {
 		const band = this._bandSelect?.value || product.render.bands?.[0];
 		const userRescale = this._state.rescale.trim();
 		const userColormap = this._state.colormapName.trim();
-		const categorical = userColormap ? void 0 : colormapForBand(product.shortName, band);
+		const expression = this._state.expression.trim();
+		const categorical = userColormap || expression ? void 0 : colormapForBand(product.shortName, band);
+		this._setDisplayBusy(true);
 		this._setStatus(`Requesting ${selected.length} granule(s) from titiler-cmr…`);
 		try {
 			const conceptId = selected[0].conceptId ?? await resolveConceptId(product.shortName);
@@ -844,7 +897,8 @@ var OperaControl = class {
 					bandsRegex: product.render.bandsRegex,
 					rescale: userRescale || product.render.rescale,
 					colormapName: userColormap || product.render.colormapName,
-					colormap: categorical
+					colormap: categorical,
+					expression
 				});
 				try {
 					const tilejson = await fetchTileJson(url);
@@ -876,7 +930,17 @@ var OperaControl = class {
 			this._setStatus(ok === selected.length ? `Displayed ${ok} granule(s).` : `Displayed ${ok}/${selected.length} granule(s).`);
 		} catch (err) {
 			this._setStatus(`Display failed: ${err instanceof Error ? err.message : String(err)}`);
+		} finally {
+			this._setDisplayBusy(false);
 		}
+	}
+	/** Toggle the Display button's loading state. */
+	_setDisplayBusy(busy) {
+		const btn = this._displayBtn;
+		if (!btn) return;
+		btn.classList.toggle("opera-busy", busy);
+		btn.disabled = busy;
+		btn.textContent = busy ? "Displaying…" : "Display";
 	}
 	/**
 	* Update the selection from a row/footprint click, honoring modifier keys:
@@ -1144,9 +1208,11 @@ var OperaControl = class {
 		toggleBtn.innerHTML = `
       <span class="plugin-control-icon">
         <svg viewBox="0 0 24 24" width="22" height="22" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-          <circle cx="12" cy="12" r="9"/>
-          <path d="M3 12h18"/>
-          <path d="M12 3a14 14 0 0 1 0 18a14 14 0 0 1 0-18"/>
+          <path d="M13 7 9 3 5 7l4 4"/>
+          <path d="m17 11 4 4-4 4-4-4"/>
+          <path d="m8 12 4 4 6-6-4-4Z"/>
+          <path d="m16 8 3-3"/>
+          <path d="M9 21a6 6 0 0 0-6-6"/>
         </svg>
       </span>`;
 		toggleBtn.addEventListener("click", () => this.toggle());
@@ -1417,6 +1483,7 @@ var OperaControl = class {
 		this._state.colormapName = defaults.colormapName;
 		if (this._rescaleInput) this._rescaleInput.value = defaults.rescale;
 		if (this._colormapSelect) this._colormapSelect.value = defaults.colormapName;
+		this._refreshExpressionPresets();
 	}
 	_populateBands() {
 		const select = this._bandSelect;
@@ -1450,6 +1517,7 @@ var OperaControl = class {
 		rescale.dataset.field = "rescale";
 		rescale.addEventListener("input", () => {
 			this._state.rescale = rescale.value;
+			this._updateExpressionHint();
 		});
 		this._rescaleInput = rescale;
 		rescaleGroup.appendChild(rescale);
@@ -1470,8 +1538,96 @@ var OperaControl = class {
 		});
 		this._colormapSelect = cmap;
 		cmapGroup.appendChild(cmap);
-		wrap.append(rescaleGroup, cmapGroup);
+		wrap.append(rescaleGroup, cmapGroup, this._buildExpressionGroup());
 		return wrap;
+	}
+	/**
+	* Optional band-math expression (rio-tiler `expression`). When set it
+	* overrides plain band rendering everywhere (Display / Inspect / Statistics);
+	* the selected band is `b1`. A per-band presets dropdown fills the field.
+	*/
+	_buildExpressionGroup() {
+		const group = el("div", "plugin-control-group");
+		const row = el("div", "opera-label-row");
+		row.appendChild(label("Expression (band math)"));
+		const presets = document.createElement("select");
+		presets.className = "opera-expr-presets";
+		presets.title = "Insert a ready-made expression";
+		this._expressionPresetSelect = presets;
+		presets.addEventListener("change", () => {
+			const preset = this._currentExpressionPresets.find((p) => p.expression === presets.value);
+			if (preset) this._applyExpressionPreset(preset);
+			presets.selectedIndex = 0;
+		});
+		row.appendChild(presets);
+		group.appendChild(row);
+		const input = document.createElement("input");
+		input.className = "plugin-control-input";
+		input.type = "text";
+		input.placeholder = "blank = raw band — e.g. 10*log10(b1)";
+		input.value = this._state.expression;
+		input.dataset.field = "expression";
+		input.addEventListener("input", () => {
+			this._state.expression = input.value;
+			this._updateExpressionHint();
+		});
+		this._expressionInput = input;
+		group.appendChild(input);
+		const hint = el("div", "opera-expr-hint");
+		hint.textContent = "Set a Rescale (min,max) above so the computed result displays.";
+		this._expressionHint = hint;
+		group.appendChild(hint);
+		this._refreshExpressionPresets();
+		this._updateExpressionHint();
+		return group;
+	}
+	/** Apply a preset's expression plus its rescale/colormap, if any. */
+	_applyExpressionPreset(preset) {
+		this._setExpression(preset.expression);
+		if (preset.rescale != null) {
+			this._state.rescale = preset.rescale;
+			if (this._rescaleInput) this._rescaleInput.value = preset.rescale;
+		}
+		if (preset.colormapName != null) {
+			this._state.colormapName = preset.colormapName;
+			if (this._colormapSelect) this._colormapSelect.value = preset.colormapName;
+		}
+		this._updateExpressionHint();
+	}
+	/**
+	* Show a hint when an expression is set but no rescale is given: a computed
+	* value rarely matches the band's default stretch, so it would render flat.
+	*/
+	_updateExpressionHint() {
+		if (!this._expressionHint) return;
+		const needsRescale = !!this._state.expression.trim() && !this._state.rescale.trim();
+		this._expressionHint.style.display = needsRescale ? "block" : "none";
+	}
+	/** Set the expression field + state. */
+	_setExpression(value) {
+		this._state.expression = value;
+		if (this._expressionInput) this._expressionInput.value = value;
+		this._updateExpressionHint();
+	}
+	/** Rebuild the presets dropdown for the active product/band. */
+	_refreshExpressionPresets() {
+		const select = this._expressionPresetSelect;
+		if (!select) return;
+		const band = this._bandSelect?.value;
+		const presets = expressionPresets(this._state.product, band);
+		this._currentExpressionPresets = presets;
+		select.innerHTML = "";
+		const placeholder = document.createElement("option");
+		placeholder.value = "";
+		placeholder.textContent = "Presets…";
+		select.appendChild(placeholder);
+		for (const preset of presets) {
+			const opt = document.createElement("option");
+			opt.value = preset.expression;
+			opt.textContent = preset.label;
+			select.appendChild(opt);
+		}
+		select.disabled = presets.length === 0;
 	}
 	_buildDisplayButton() {
 		const btn = document.createElement("button");
@@ -1546,7 +1702,8 @@ var OperaControl = class {
 							lat: lngLat.lat,
 							granuleUr: granule.id,
 							bands: band ? [band] : product.render.bands,
-							bandsRegex: product.render.bandsRegex
+							bandsRegex: product.render.bandsRegex,
+							expression: this._state.expression.trim()
 						}))
 					};
 				} catch {
@@ -1630,8 +1787,50 @@ var OperaControl = class {
 	}
 	_buildStatsPanel() {
 		const panel = el("div", "opera-stats");
+		panel.addEventListener("click", (ev) => {
+			const target = ev.target;
+			const rescaleBtn = target?.closest(".opera-stats-apply-rescale");
+			if (rescaleBtn?.dataset.rescale) {
+				this._applyRescale(rescaleBtn.dataset.rescale);
+				return;
+			}
+			if (target?.closest(".opera-hist-download")) {
+				const container = target.closest(".opera-hist");
+				if (container) this._downloadHistogram(container);
+			}
+		});
 		this._statsPanel = panel;
 		return panel;
+	}
+	/** Fill the Rendering rescale field from a suggested "min,max" value. */
+	_applyRescale(value) {
+		this._state.rescale = value;
+		if (this._rescaleInput) this._rescaleInput.value = value;
+		this._setStatus(`Rescale set to ${value}. Click Display to apply it.`);
+	}
+	/** Export the histogram (data stashed on the container) as a standalone SVG. */
+	_downloadHistogram(container) {
+		const raw = container.dataset.hist;
+		if (!raw) return;
+		let data;
+		try {
+			data = JSON.parse(raw);
+		} catch {
+			this._setStatus("Could not read histogram data for export.");
+			return;
+		}
+		const svg = buildHistogramSvg(data);
+		const name = `histogram-${slug(data.band)}${data.granuleId ? `-${slug(data.granuleId)}` : ""}.svg`;
+		const blob = new Blob([svg], { type: "image/svg+xml;charset=utf-8" });
+		const url = URL.createObjectURL(blob);
+		const a = document.createElement("a");
+		a.href = url;
+		a.download = name;
+		document.body.appendChild(a);
+		a.click();
+		a.remove();
+		setTimeout(() => URL.revokeObjectURL(url), 0);
+		this._setStatus(`Downloaded ${name}.`);
 	}
 	_clearStats() {
 		if (this._statsPanel) this._statsPanel.innerHTML = "";
@@ -1687,7 +1886,8 @@ var OperaControl = class {
 			return;
 		}
 		const band = this._bandSelect?.value || product.render.bands?.[0];
-		const categorical = isCategoricalBand(product.shortName, band);
+		const expression = this._state.expression.trim();
+		const categorical = !expression && isCategoricalBand(product.shortName, band);
 		this._setStatsContent(`<div class="opera-stats-loading">Computing statistics for ${selected.length} granule(s)…</div>`);
 		this._setStatus(`Computing statistics for ${selected.length} granule(s)…`);
 		try {
@@ -1703,7 +1903,9 @@ var OperaControl = class {
 							granuleUr: granule.id,
 							bands: band ? [band] : product.render.bands,
 							bandsRegex: product.render.bandsRegex,
-							categorical
+							categorical,
+							expression,
+							histogramBins: categorical ? void 0 : 20
 						}), aoi.feature)
 					};
 				} catch {
@@ -1726,7 +1928,7 @@ var OperaControl = class {
 			const head = `<div class="opera-stats-granule" title="${escapeHtml(granule.id)}">${escapeHtml(shorten(granule.id, 26))}</div>`;
 			const bandStats = stats ? firstBandStats(stats) : void 0;
 			if (!bandStats) return `<div class="opera-stats-block">${head}<div class="opera-stats-empty">no data in AOI</div></div>`;
-			return `<div class="opera-stats-block">${head}${isDswxWaterBand(shortName, band) ? renderWaterStats(bandStats) : renderContinuousStats(bandStats)}</div>`;
+			return `<div class="opera-stats-block">${head}${isDswxWaterBand(shortName, band) && !this._state.expression.trim() ? renderWaterStats(bandStats) : renderContinuousStats(bandStats, band, granule.id)}</div>`;
 		});
 		const [w, s, e, n] = aoi.bbox;
 		const extentNote = aoi.fromMapExtent ? " · map extent" : "";
@@ -1880,28 +2082,37 @@ var OperaControl = class {
 		const buttonLeft = buttonRect.left - mapRect.left;
 		const buttonRight = mapRect.right - buttonRect.right;
 		const gap = 5;
+		const margin = 8;
+		const minPanelHeight = 200;
 		this._panel.style.top = "";
 		this._panel.style.bottom = "";
 		this._panel.style.left = "";
 		this._panel.style.right = "";
+		let available;
 		switch (position) {
 			case "top-left":
 				this._panel.style.top = `${buttonTop + buttonRect.height + gap}px`;
 				this._panel.style.left = `${buttonLeft}px`;
+				available = mapRect.height - (buttonTop + buttonRect.height + gap);
 				break;
 			case "top-right":
 				this._panel.style.top = `${buttonTop + buttonRect.height + gap}px`;
 				this._panel.style.right = `${buttonRight}px`;
+				available = mapRect.height - (buttonTop + buttonRect.height + gap);
 				break;
 			case "bottom-left":
 				this._panel.style.bottom = `${buttonBottom + buttonRect.height + gap}px`;
 				this._panel.style.left = `${buttonLeft}px`;
+				available = mapRect.height - (buttonBottom + buttonRect.height + gap);
 				break;
 			case "bottom-right":
 				this._panel.style.bottom = `${buttonBottom + buttonRect.height + gap}px`;
 				this._panel.style.right = `${buttonRight}px`;
+				available = mapRect.height - (buttonBottom + buttonRect.height + gap);
 				break;
+			default: available = mapRect.height;
 		}
+		this._panel.style.maxHeight = `${Math.max(minPanelHeight, available - margin)}px`;
 	}
 };
 function el(tag, className) {
@@ -1949,7 +2160,7 @@ function pixelsToKm2(pixels) {
 	return pixels * 30 * 30 / 1e6;
 }
 /** Continuous-band statistics block (min/max/mean/std/median/coverage). */
-function renderContinuousStats(s) {
+function renderContinuousStats(s, band, granuleId) {
 	const rows = [
 		["min", formatStat(s.min)],
 		["max", formatStat(s.max)],
@@ -1962,7 +2173,74 @@ function renderContinuousStats(s) {
 		rows.push(["valid area", `${formatArea(pixelsToKm2(s.validPixels))} km²`]);
 	} else rows.push(["count", formatStat(s.count)]);
 	if (s.validPercent != null) rows.push(["valid %", `${s.validPercent.toFixed(1)}%`]);
-	return statGrid(rows);
+	return statGrid(rows) + renderHistogram(s, band, granuleId) + renderRescaleSuggestion(s);
+}
+/**
+* A compact bar-chart of the band's value distribution over the AOI, from the
+* `/statistics` histogram (`[counts, edges]`). The chart area is vertically
+* resizable (CSS), and the histogram data is stashed on the container so the
+* Download button can export a self-contained, labeled SVG. Empty when no
+* histogram is present.
+*/
+function renderHistogram(s, band, granuleId) {
+	const hist = s.histogram;
+	if (!hist || hist[0].length === 0) return "";
+	const [counts, edges] = hist;
+	const categorical = edges.length === counts.length;
+	const max = Math.max(...counts, 1);
+	const bars = counts.map((c, i) => {
+		const label = categorical ? formatStat(edges[i]) : `${formatStat(edges[i])}–${formatStat(edges[i + 1])}`;
+		return `<span class="opera-hist-bar" style="height:${Math.max(Math.round(c / max * 100), c > 0 ? 2 : 0)}%" title="${escapeHtml(`${label}: ${c.toLocaleString()}`)}"></span>`;
+	}).join("");
+	return `<div class="opera-hist" data-hist="${escapeHtml(JSON.stringify({
+		counts,
+		edges,
+		band: band ?? "band",
+		granuleId
+	}))}"><div class="opera-hist-bars" title="Drag the bottom-right corner to resize">${bars}</div><div class="opera-hist-axis"><span>${escapeHtml(formatStat(edges[0]))}</span><span>${escapeHtml(formatStat(edges[edges.length - 1]))}</span></div><button type="button" class="opera-link-button opera-hist-download">Download SVG</button></div>`;
+}
+/**
+* Build a standalone, labeled SVG of a histogram for download. Self-contained
+* (inline attributes, no external CSS or fonts beyond a generic family) so it
+* renders on its own when opened as a file.
+*/
+function buildHistogramSvg(data) {
+	const W = 480;
+	const H = 260;
+	const m = {
+		t: 34,
+		r: 14,
+		b: 36,
+		l: 52
+	};
+	const cw = W - m.l - m.r;
+	const ch = H - m.t - m.b;
+	const { counts, edges } = data;
+	const max = Math.max(...counts, 1);
+	const bw = cw / (counts.length || 1);
+	const bars = counts.map((c, i) => {
+		const h = c / max * ch;
+		const x = m.l + i * bw;
+		const y = m.t + (ch - h);
+		return `<rect x="${x.toFixed(1)}" y="${y.toFixed(1)}" width="${Math.max(bw - 1, .5).toFixed(1)}" height="${h.toFixed(1)}" fill="#2b7fff"/>`;
+	}).join("");
+	const baseY = m.t + ch;
+	const text = (x, y, value, anchor = "start", size = 12, weight = "normal") => `<text x="${x}" y="${y}" font-size="${size}" font-weight="${weight}" text-anchor="${anchor}" fill="#333">${escapeHtml(value)}</text>`;
+	const labels = text(W / 2, 20, `${data.band} — value distribution`, "middle", 14, "600") + text(m.l, H - 12, formatStat(edges[0]), "start") + text(m.l + cw, H - 12, formatStat(edges[edges.length - 1]), "end") + text(m.l - 6, m.t + 10, max.toLocaleString(), "end", 11) + text(m.l - 6, baseY, "0", "end", 11);
+	const axis = `<line x1="${m.l}" y1="${baseY}" x2="${m.l + cw}" y2="${baseY}" stroke="#999" stroke-width="1"/>`;
+	return `<svg xmlns="http://www.w3.org/2000/svg" width="${W}" height="${H}" viewBox="0 0 ${W} ${H}" font-family="-apple-system, Segoe UI, Roboto, sans-serif"><rect width="${W}" height="${H}" fill="#ffffff"/>` + bars + axis + labels + `</svg>`;
+}
+/**
+* A one-click "apply a 2–98% rescale" button, when the stats carry sensible
+* percentile bounds. The bounds are stashed on `data-rescale` and applied by
+* the panel's delegated click handler.
+*/
+function renderRescaleSuggestion(s) {
+	const lo = s.percentile2;
+	const hi = s.percentile98;
+	if (lo == null || hi == null || !(hi > lo)) return "";
+	const value = `${formatNumber(lo)},${formatNumber(hi)}`;
+	return `<button type="button" class="plugin-control-button opera-secondary-button opera-block-button opera-stats-apply-rescale" data-rescale="${escapeHtml(value)}">Apply 2–98% rescale (${escapeHtml(value)})</button>`;
 }
 /**
 * DSWx water-band block: derive open-water area from the categorical histogram
@@ -2012,7 +2290,7 @@ var position = "top-left";
 var pendingState = null;
 function createControl(app) {
 	const next = new OperaControl({
-		collapsed: pendingState?.collapsed ?? true,
+		collapsed: pendingState?.collapsed ?? false,
 		panelWidth: pendingState?.panelWidth ?? 340,
 		title: "NASA OPERA",
 		addGeoJsonLayer: (name, data) => app.addGeoJsonLayer?.(name, data),
@@ -2042,7 +2320,7 @@ function isOperaState(value) {
 var plugin = {
 	id: "geolibre-nasa-opera",
 	name: "NASA OPERA",
-	version: "0.2.0",
+	version: "0.2.1",
 	activate(app) {
 		control = control ?? createControl(app);
 		if (!app.addMapControl(control, position)) {
