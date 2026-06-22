@@ -26,3 +26,29 @@
   background: hsl(var(--accent));
   color: hsl(var(--accent-foreground));
 }
+
+/*
+ * Body of the sample's right-sidebar and floating panels. The host provides the
+ * panel/card chrome and theme; the plugin only styles its own content, using
+ * GeoLibre's --foreground token so the text matches the light/dark theme.
+ */
+.geolibre-sample-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 12px;
+  font-size: 13px;
+  line-height: 1.5;
+  color: hsl(var(--foreground));
+}
+
+.geolibre-sample-panel h2 {
+  margin: 0;
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.geolibre-sample-panel p {
+  margin: 0;
+  opacity: 0.85;
+}
