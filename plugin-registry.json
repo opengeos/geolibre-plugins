@@ -4,8 +4,8 @@
     {
       "id": "geolibre-sample-plugin",
       "name": "Sample Plugin",
-      "version": "1.1.0",
-      "description": "An example plugin that adds a map control and demonstrates the plugin UI surface APIs: a right-sidebar panel, a top toolbar menu, and a floating panel. Use it as a template for marketplace entries.",
+      "version": "1.2.0",
+      "description": "An example plugin that adds a map control and demonstrates the plugin UI surface APIs: a shared-rail right-sidebar panel (dock: replace-style, sharing the Style rail), a top toolbar menu, and a floating panel. Use it as a template for marketplace entries.",
       "author": "GeoLibre",
       "homepage": "https://github.com/opengeos/geolibre-plugins",
       "manifestUrl": "plugins/sample/plugin.json",
