@@ -3,9 +3,11 @@
 // GeoLibrePlugin contract, the same shape any external plugin must provide.
 //
 // Besides a theme-aware map control, it demonstrates the optional plugin UI
-// surface APIs: a right-sidebar panel, a top toolbar menu, and a floating
-// panel. Every UI-surface call is optional-chained, so on a host that does not
-// provide a given surface the plugin still works as a plain map control.
+// surface APIs: a right-sidebar panel (in the shared-rail "replace-style" mode,
+// where it shares the Style sidebar's single rail), a top toolbar menu, and a
+// floating panel. Every UI-surface call is optional-chained, so on a host that
+// does not provide a given surface the plugin still works as a plain map
+// control.
 // It ships style.css so its control and panels are theme-aware in light/dark.
 
 const SVG_NS = "http://www.w3.org/2000/svg";
@@ -92,14 +94,28 @@ function registerSurfaces(app) {
     app.registerRightPanel?.({
       id: RIGHT_PANEL_ID,
       title: "Sample Workbench",
+      // Shared-rail mode: the panel shares the Style sidebar's single rail
+      // instead of docking beside it. The host shows one far-right rail listing
+      // both this Workbench and Style; selecting one expands it while the other
+      // stays a rail entry, so a workbench-style plugin reads as a first-class
+      // right-sidebar workspace rather than a second rail next to Style.
+      //
+      // Other dock values: "left-of-layers", "right-of-layers", "left-of-style",
+      // "right-of-style" (the positional default). A host too old to know
+      // "replace-style" falls back to "right-of-style", so the panel still works
+      // as a normal dockable sidebar.
+      dock: "replace-style",
       defaultWidth: 320,
       render: (container) =>
         fillPanel(
           container,
           "Sample Workbench",
-          "A right-sidebar panel registered via app.registerRightPanel(). " +
-            "Click the star control or the Sample menu to open it; use the " +
-            "header buttons to move it left/right, collapse, or close.",
+          "A right-sidebar panel registered via app.registerRightPanel() with " +
+            'dock: "replace-style". It shares the Style panel\'s single rail: ' +
+            "the rail lists both this Workbench and Style, and opening one " +
+            "collapses the other, so you never see two adjacent rails. Click the " +
+            "star control or the Sample menu to open it; use the header buttons " +
+            "to collapse or close it, or pick Style in the rail to switch.",
         ),
     }),
   );
@@ -161,7 +177,7 @@ function registerSurfaces(app) {
 export const plugin = {
   id: "geolibre-sample-plugin",
   name: "Sample Plugin",
-  version: "1.1.0",
+  version: "1.2.0",
   activate(app) {
     appApi = app;
     app.addMapControl(control, "top-right");
