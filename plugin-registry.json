@@ -26,7 +26,7 @@
     {
       "id": "geolibre-nasa-opera",
       "name": "NASA OPERA",
-      "version": "0.2.2",
+      "version": "0.2.3",
       "description": "Search, visualize, and analyze NASA OPERA products with GeoAgent-assisted CMR search, titiler-cmr raster display, change detection, time-series statistics, report export, pixel inspection, AOI statistics, and granule downloads. No Earthdata login needed for search or display.",
       "author": "Qiusheng Wu",
       "homepage": "https://github.com/opengeos/geolibre-nasa-opera",
