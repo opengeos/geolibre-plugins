@@ -1,3 +1,681 @@
+.geoagent-control {
+  background: #fff;
+  border-radius: 4px;
+  box-shadow: 0 0 0 2px rgb(0 0 0 / 10%);
+  color: #17202a;
+  color-scheme: light;
+  font-family:
+    Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont,
+    "Segoe UI", sans-serif;
+}
+
+.geoagent-control-toggle {
+  display: grid;
+  place-items: center;
+  width: 29px;
+  height: 29px;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: #17202a;
+  cursor: pointer;
+}
+
+.geoagent-control-toggle:hover {
+  background-color: rgb(0 0 0 / 5%);
+}
+
+.geoagent-control-icon,
+.geoagent-control-icon svg {
+  width: 22px;
+  height: 22px;
+}
+
+.geoagent-control-icon {
+  display: grid;
+  place-items: center;
+  line-height: 0;
+}
+
+.geoagent-control-icon svg {
+  stroke: currentColor;
+}
+
+.geoagent-panel {
+  position: absolute;
+  z-index: 1000;
+  display: none;
+  max-width: calc(100% - 20px);
+  max-height: calc(100% - 20px);
+  padding: 14px;
+  border: 1px solid #d7dde5;
+  border-radius: 8px;
+  background: color-mix(in srgb, #ffffff 94%, transparent);
+  box-shadow: 0 18px 50px rgb(15 23 42 / 18%);
+  color: #17202a;
+  color-scheme: light;
+  font-family:
+    Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont,
+    "Segoe UI", sans-serif;
+  font-size: 13px;
+  line-height: 1.4;
+}
+
+.geoagent-panel.expanded {
+  display: grid;
+  grid-template-rows: auto minmax(0, 1fr);
+  gap: 12px;
+}
+
+.geoagent-panel-resize-handle {
+  position: absolute;
+  bottom: -3px;
+  z-index: 3;
+  width: 18px;
+  height: 18px;
+  touch-action: none;
+}
+
+.geoagent-panel-resize-handle-bl {
+  left: -3px;
+  cursor: nesw-resize;
+}
+
+.geoagent-panel-resize-handle-br {
+  right: -3px;
+  cursor: nwse-resize;
+}
+
+.geoagent-panel-resize-handle::before {
+  position: absolute;
+  bottom: 4px;
+  width: 9px;
+  height: 9px;
+  border-color: #c7d2df;
+  border-style: solid;
+  content: "";
+  opacity: 0;
+  transition: opacity 0.15s ease;
+}
+
+.geoagent-panel-resize-handle-bl::before {
+  left: 4px;
+  border-width: 0 0 2px 2px;
+  border-bottom-left-radius: 3px;
+}
+
+.geoagent-panel-resize-handle-br::before {
+  right: 4px;
+  border-width: 0 2px 2px 0;
+  border-bottom-right-radius: 3px;
+}
+
+.geoagent-panel-resize-handle:hover::before,
+.geoagent-panel.resizing .geoagent-panel-resize-handle::before {
+  opacity: 1;
+}
+
+body.geoagent-panel-resizing {
+  cursor: ew-resize;
+  user-select: none;
+}
+
+.geoagent-panel * {
+  box-sizing: border-box;
+}
+
+.geoagent-panel-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  min-width: 0;
+}
+
+.geoagent-panel-title {
+  overflow: hidden;
+  color: #17202a;
+  font-size: 17px;
+  font-weight: 700;
+  line-height: 1.2;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.geoagent-title-actions {
+  display: flex;
+  flex: 0 0 auto;
+  align-items: center;
+  gap: 8px;
+}
+
+.geoagent-status {
+  display: inline-flex;
+  flex: 0 0 auto;
+  align-items: center;
+  min-height: 24px;
+  padding: 0 8px;
+  border-radius: 999px;
+  background: #edf2f7;
+  color: #5f6b7a;
+  font-size: 12px;
+  font-weight: 650;
+}
+
+.geoagent-status.connected {
+  background: #dff6ee;
+  color: #076448;
+}
+
+.geoagent-status.setup {
+  background: #fef0c7;
+  color: #b54708;
+}
+
+.geoagent-status.connecting {
+  background: #e0eaff;
+  color: #1d4ed8;
+}
+
+.geoagent-status.error {
+  background: #fee4e2;
+  color: #b42318;
+}
+
+.geoagent-icon-button {
+  display: inline-grid;
+  place-items: center;
+  width: 28px;
+  min-width: 28px;
+  height: 28px;
+  min-height: 28px;
+  padding: 0;
+  border: 1px solid #d7dde5;
+  border-radius: 6px;
+  background: #fff;
+  color: #5f6b7a;
+  cursor: pointer;
+}
+
+.geoagent-icon-button svg {
+  width: 16px;
+  height: 16px;
+  stroke: currentColor;
+}
+
+.geoagent-panel-content {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  min-height: 0;
+  /* The log flexes to absorb spare/short space; if the panel is still too short
+     for the fixed sections, the whole content scrolls so nothing is clipped. */
+  overflow-x: hidden;
+  overflow-y: auto;
+}
+
+/* Settings, Earth Engine, toggles and the prompt form keep their natural size;
+   only the conversation log flexes to fill (and scrolls) so the form and its
+   action buttons stay visible instead of being pushed past the panel. */
+.geoagent-settings,
+.geoagent-earth-engine,
+.geoagent-toggle-row,
+.geoagent-form {
+  flex: 0 0 auto;
+}
+
+.geoagent-panel label {
+  display: grid;
+  gap: 5px;
+  color: #5f6b7a;
+  font-size: 12px;
+  font-weight: 650;
+}
+
+.geoagent-panel input,
+.geoagent-panel select,
+.geoagent-panel textarea,
+.geoagent-panel button {
+  font: inherit;
+}
+
+.geoagent-panel input,
+.geoagent-panel select,
+.geoagent-panel textarea {
+  width: 100%;
+  border: 1px solid #d7dde5;
+  border-radius: 6px;
+  background: #fff;
+  color: #17202a;
+}
+
+.geoagent-panel input,
+.geoagent-panel select {
+  height: 36px;
+  padding: 0 10px;
+}
+
+.geoagent-panel select {
+  cursor: pointer;
+}
+
+.geoagent-panel textarea {
+  min-height: 86px;
+  max-height: min(180px, 24vh);
+  resize: vertical;
+  overflow: auto;
+  padding: 9px 10px;
+  line-height: 1.35;
+}
+
+.geoagent-settings {
+  border: 1px solid #d7dde5;
+  border-radius: 6px;
+  background: #f8fafc;
+}
+
+.geoagent-settings > summary {
+  padding: 8px 10px;
+  color: #17202a;
+  font-size: 12px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.geoagent-settings-grid {
+  display: grid;
+  grid-template-columns: 1fr minmax(110px, 0.55fr);
+  gap: 8px;
+  align-items: end;
+  padding: 0 10px 10px;
+}
+
+/* The model cell, optional base URL / region rows, and the inline config note
+   each occupy their own full-width row beneath the provider + key row. */
+.geoagent-settings-grid .geoagent-model-cell,
+.geoagent-settings-grid .geoagent-base-url-row,
+.geoagent-settings-grid .geoagent-bedrock-region-row,
+.geoagent-settings-grid .geoagent-config-note {
+  grid-column: 1 / -1;
+}
+
+.geoagent-bedrock-region-row[hidden],
+.geoagent-base-url-row[hidden],
+.geoagent-config-note[hidden] {
+  display: none;
+}
+
+.geoagent-model-row {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+.geoagent-model-row .geoagent-model-id {
+  flex: 1 1 auto;
+  /* Allow the input to shrink in the resizable panel instead of overflowing the
+     row next to the fixed-width Use latest button. */
+  min-width: 0;
+}
+
+.geoagent-panel button.geoagent-load-models {
+  flex: 0 0 auto;
+  min-height: 36px;
+  padding: 0 12px;
+  white-space: nowrap;
+}
+
+/* Custom model suggestion dropdown (replaces a native <datalist>, whose popup
+   hangs Chrome on long lists). In-flow so it cannot be clipped by the panel's
+   scroll container; it pushes the rest of the settings down while open. */
+.geoagent-model-suggestions {
+  margin: 4px 0 0;
+  padding: 4px;
+  max-height: 180px;
+  overflow-y: auto;
+  list-style: none;
+  border: 1px solid #d7dde5;
+  border-radius: 6px;
+  background: #fff;
+  scrollbar-color: #8a96a6 #e6ebf1;
+  scrollbar-width: thin;
+}
+
+.geoagent-model-suggestions[hidden] {
+  display: none;
+}
+
+.geoagent-model-suggestion {
+  padding: 6px 8px;
+  border-radius: 4px;
+  color: #17202a;
+  font-size: 13px;
+  line-height: 1.3;
+  cursor: pointer;
+  overflow-wrap: anywhere;
+}
+
+.geoagent-model-suggestion:hover,
+.geoagent-model-suggestion.active {
+  background: #e8edf3;
+}
+
+.geoagent-config-note {
+  padding: 6px 9px;
+  border-radius: 6px;
+  font-size: 12px;
+  font-weight: 600;
+  line-height: 1.35;
+}
+
+.geoagent-config-note.success {
+  background: #dff6ee;
+  color: #076448;
+}
+
+.geoagent-config-note.error {
+  background: #fee4e2;
+  color: #b42318;
+}
+
+.geoagent-config-note.info {
+  background: #eef2f7;
+  color: #475569;
+}
+
+.geoagent-earth-engine {
+  border: 1px solid #d7dde5;
+  border-radius: 6px;
+  background: #f8fafc;
+}
+
+.geoagent-earth-engine[hidden] {
+  display: none;
+}
+
+.geoagent-earth-engine summary {
+  padding: 8px 10px;
+  color: #17202a;
+  font-size: 12px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.geoagent-earth-engine-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+  padding: 0 10px 8px;
+}
+
+.geoagent-earth-engine-status {
+  padding: 0 10px 10px;
+  color: #64748b;
+  font-size: 12px;
+  line-height: 1.35;
+}
+
+.geoagent-toggle-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.geoagent-toggle-row[hidden] {
+  display: none;
+}
+
+.geoagent-panel .geoagent-checkbox-row {
+  display: inline-flex;
+  grid-template-columns: none;
+  align-items: center;
+  gap: 7px;
+  min-height: 30px;
+  padding: 0 9px;
+  border: 1px solid #d7dde5;
+  border-radius: 6px;
+  background: #fff;
+  color: #17202a;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.geoagent-panel .geoagent-checkbox-row input {
+  flex: 0 0 auto;
+  width: 14px;
+  height: 14px;
+  margin: 0;
+  accent-color: #0f766e;
+}
+
+.geoagent-panel .geoagent-checkbox-row span {
+  display: inline-block;
+  line-height: 1;
+  white-space: nowrap;
+}
+
+.geoagent-log {
+  flex: 1 1 160px;
+  min-height: 0;
+  overflow: auto;
+  padding: 10px;
+  border: 1px solid #d7dde5;
+  border-radius: 6px;
+  background: #f6f8fb;
+  scrollbar-color: #8a96a6 #e6ebf1;
+  scrollbar-width: thin;
+  font-size: 13px;
+  line-height: 1.4;
+}
+
+.geoagent-panel textarea,
+.geoagent-text.markdown pre,
+.geoagent-text.markdown table {
+  scrollbar-color: #8a96a6 #e6ebf1;
+  scrollbar-width: thin;
+}
+
+.geoagent-log::-webkit-scrollbar,
+.geoagent-panel textarea::-webkit-scrollbar,
+.geoagent-text.markdown pre::-webkit-scrollbar,
+.geoagent-text.markdown table::-webkit-scrollbar {
+  width: 12px;
+  height: 12px;
+}
+
+.geoagent-log::-webkit-scrollbar-track,
+.geoagent-panel textarea::-webkit-scrollbar-track,
+.geoagent-text.markdown pre::-webkit-scrollbar-track,
+.geoagent-text.markdown table::-webkit-scrollbar-track {
+  background: #e6ebf1;
+}
+
+.geoagent-log::-webkit-scrollbar-thumb,
+.geoagent-panel textarea::-webkit-scrollbar-thumb,
+.geoagent-text.markdown pre::-webkit-scrollbar-thumb,
+.geoagent-text.markdown table::-webkit-scrollbar-thumb {
+  border: 3px solid #e6ebf1;
+  border-radius: 999px;
+  background: #8a96a6;
+}
+
+.geoagent-log::-webkit-scrollbar-thumb:hover,
+.geoagent-panel textarea::-webkit-scrollbar-thumb:hover,
+.geoagent-text.markdown pre::-webkit-scrollbar-thumb:hover,
+.geoagent-text.markdown table::-webkit-scrollbar-thumb:hover {
+  background: #647386;
+}
+
+.geoagent-entry {
+  margin: 0 0 10px;
+  padding-bottom: 10px;
+  border-bottom: 1px solid #e3e8ef;
+}
+
+.geoagent-entry:last-child {
+  margin-bottom: 0;
+  padding-bottom: 0;
+  border-bottom: 0;
+}
+
+.geoagent-role {
+  margin-bottom: 3px;
+  color: #5f6b7a;
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0;
+  text-transform: uppercase;
+}
+
+.geoagent-text {
+  overflow-wrap: anywhere;
+  white-space: pre-wrap;
+}
+
+.geoagent-text.markdown {
+  white-space: normal;
+}
+
+.geoagent-text.markdown > :first-child {
+  margin-top: 0;
+}
+
+.geoagent-text.markdown > :last-child {
+  margin-bottom: 0;
+}
+
+.geoagent-text.markdown p,
+.geoagent-text.markdown ul,
+.geoagent-text.markdown ol,
+.geoagent-text.markdown pre,
+.geoagent-text.markdown blockquote,
+.geoagent-text.markdown table {
+  margin: 0 0 8px;
+}
+
+.geoagent-text.markdown ul,
+.geoagent-text.markdown ol {
+  padding-left: 18px;
+}
+
+.geoagent-text.markdown li {
+  margin: 2px 0;
+}
+
+.geoagent-text.markdown a {
+  color: #0f766e;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+.geoagent-text.markdown code {
+  padding: 1px 4px;
+  border-radius: 4px;
+  background: #e8edf3;
+  color: #111827;
+  font-family: ui-monospace, SFMono-Regular, Consolas, "Liberation Mono", monospace;
+  font-size: 0.92em;
+}
+
+.geoagent-text.markdown pre {
+  max-width: 100%;
+  overflow: auto;
+  padding: 8px;
+  border: 1px solid #d8dee8;
+  border-radius: 6px;
+  background: #111827;
+  color: #f8fafc;
+}
+
+.geoagent-text.markdown pre code {
+  padding: 0;
+  background: transparent;
+  color: inherit;
+  white-space: pre;
+}
+
+.geoagent-text.markdown blockquote {
+  padding-left: 10px;
+  border-left: 3px solid #c7d2df;
+  color: #5f6b7a;
+}
+
+.geoagent-text.markdown table {
+  display: block;
+  max-width: 100%;
+  overflow: auto;
+  border-collapse: collapse;
+}
+
+.geoagent-text.markdown th,
+.geoagent-text.markdown td {
+  padding: 4px 6px;
+  border: 1px solid #d8dee8;
+  text-align: left;
+  vertical-align: top;
+}
+
+.geoagent-form {
+  display: grid;
+  min-height: 0;
+}
+
+.geoagent-form label {
+  min-height: 0;
+}
+
+.geoagent-actions {
+  display: flex;
+  flex: 0 0 auto;
+  gap: 8px;
+  margin-top: 8px;
+}
+
+.geoagent-panel button.geoagent-send,
+.geoagent-panel button.geoagent-cancel,
+.geoagent-panel button.geoagent-copy,
+.geoagent-panel button.geoagent-clear {
+  min-height: 36px;
+  padding: 0 12px;
+  border: 1px solid transparent;
+  border-radius: 6px;
+  background: #0f766e;
+  color: #fff;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.geoagent-panel button.secondary {
+  border-color: #d7dde5;
+  background: #fff;
+  color: #17202a;
+}
+
+.geoagent-panel button:disabled {
+  cursor: not-allowed;
+  opacity: 0.55;
+}
+
+@media (max-width: 700px) {
+  .geoagent-panel {
+    right: 10px !important;
+    left: 10px !important;
+    width: auto !important;
+    max-height: min(72vh, 620px);
+  }
+
+  .geoagent-settings-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .geoagent-earth-engine-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .geoagent-panel-resize-handle {
+    display: none;
+  }
+}
 /**
  * MapLibre GL Plugin Control Styles
  *
@@ -38,6 +716,196 @@
   --pc-accent: hsl(var(--primary, 221.2 83.2% 53.3%));
   --pc-accent-hover: hsl(var(--primary, 221.2 83.2% 53.3%));
   --pc-accent-ring: hsl(var(--ring, 221.2 83.2% 53.3%) / 0.25);
+}
+
+/*
+ * GeoAgent theme bridge. The upstream GeoAgent stylesheet ships concrete light
+ * colors and `color-scheme: light`; these scoped overrides map it onto the same
+ * GeoLibre tokens used by the OPERA panel.
+ */
+.geoagent-control,
+.geoagent-panel {
+  --ga-bg: hsl(var(--popover, 0 0% 100%));
+  --ga-text: hsl(var(--popover-foreground, 222.2 84% 4.9%));
+  --ga-muted: hsl(var(--muted-foreground, 215.4 16.3% 40%));
+  --ga-border: hsl(var(--border, 214.3 31.8% 91.4%));
+  --ga-input-bg: hsl(var(--background, 0 0% 100%));
+  --ga-subtle-bg: hsl(var(--muted, 210 40% 96.1%));
+  --ga-hover-bg: hsl(var(--accent, 210 40% 96.1%));
+  --ga-primary: hsl(var(--primary, 221.2 83.2% 53.3%));
+  --ga-primary-fg: hsl(var(--primary-foreground, 210 40% 98%));
+  --ga-ring: hsl(var(--ring, 221.2 83.2% 53.3%) / 0.25);
+  --ga-success: hsl(160 84% 39%);
+  --ga-warning: hsl(38 92% 50%);
+  --ga-danger: hsl(0 72% 51%);
+  color-scheme: light dark;
+}
+
+.maplibregl-ctrl-group.geoagent-control {
+  background: var(--ga-bg);
+  color: var(--ga-text);
+  box-shadow: 0 0 0 2px hsl(var(--border, 214.3 31.8% 91.4%) / 0.65);
+}
+
+.geoagent-control-toggle {
+  color: var(--ga-text);
+}
+
+.geoagent-control-toggle .geoagent-control-icon,
+.geoagent-control-toggle .geoagent-control-icon svg {
+  color: inherit;
+  fill: none;
+  stroke: currentColor;
+}
+
+.geoagent-control-toggle:hover {
+  background-color: var(--ga-hover-bg);
+}
+
+.geoagent-panel {
+  border-color: var(--ga-border);
+  background: color-mix(in srgb, var(--ga-bg) 94%, transparent);
+  color: var(--ga-text);
+  box-shadow:
+    0 18px 36px hsl(0 0% 0% / 0.28),
+    0 0 0 1px hsl(var(--border, 214.3 31.8% 91.4%) / 0.72);
+}
+
+.geoagent-panel-title,
+.geoagent-settings > summary,
+.geoagent-earth-engine summary,
+.geoagent-model-suggestion,
+.geoagent-panel .geoagent-checkbox-row {
+  color: var(--ga-text);
+}
+
+.geoagent-panel label,
+.geoagent-role,
+.geoagent-earth-engine-status,
+.geoagent-panel button.secondary,
+.geoagent-config-note,
+.geoagent-text.markdown blockquote {
+  color: var(--ga-muted);
+}
+
+.geoagent-panel-header,
+.geoagent-entry,
+.geoagent-text.markdown th,
+.geoagent-text.markdown td {
+  border-color: var(--ga-border);
+}
+
+.geoagent-icon-button,
+.geoagent-panel input,
+.geoagent-panel select,
+.geoagent-panel textarea,
+.geoagent-panel .geoagent-checkbox-row,
+.geoagent-model-suggestions {
+  background: var(--ga-input-bg);
+  color: var(--ga-text);
+  border-color: var(--ga-border);
+}
+
+.geoagent-panel input:focus,
+.geoagent-panel select:focus,
+.geoagent-panel textarea:focus {
+  border-color: var(--ga-primary);
+  box-shadow: 0 0 0 3px var(--ga-ring);
+}
+
+.geoagent-icon-button:hover,
+.geoagent-panel button.secondary:hover,
+.geoagent-model-suggestion:hover,
+.geoagent-model-suggestion.active {
+  background: var(--ga-hover-bg);
+}
+
+.geoagent-settings,
+.geoagent-earth-engine,
+.geoagent-log {
+  background: var(--ga-subtle-bg);
+  border-color: var(--ga-border);
+  color: var(--ga-text);
+}
+
+.geoagent-panel button.geoagent-send,
+.geoagent-panel button.geoagent-cancel,
+.geoagent-panel button.geoagent-copy,
+.geoagent-panel button.geoagent-clear,
+.geoagent-panel button.geoagent-load-models {
+  background: var(--ga-primary);
+  color: var(--ga-primary-fg);
+}
+
+.geoagent-panel button.secondary {
+  background: var(--ga-input-bg);
+  color: var(--ga-text);
+  border-color: var(--ga-border);
+}
+
+.geoagent-status {
+  background: var(--ga-hover-bg);
+  color: var(--ga-muted);
+}
+
+.geoagent-status.connected,
+.geoagent-config-note.success {
+  background: color-mix(in srgb, var(--ga-success) 18%, transparent);
+  color: var(--ga-success);
+}
+
+.geoagent-status.setup {
+  background: color-mix(in srgb, var(--ga-warning) 22%, transparent);
+  color: var(--ga-warning);
+}
+
+.geoagent-status.connecting,
+.geoagent-config-note.info {
+  background: var(--ga-hover-bg);
+  color: var(--ga-primary);
+}
+
+.geoagent-status.error,
+.geoagent-config-note.error {
+  background: color-mix(in srgb, var(--ga-danger) 18%, transparent);
+  color: var(--ga-danger);
+}
+
+.geoagent-text.markdown code {
+  background: var(--ga-hover-bg);
+  color: var(--ga-text);
+}
+
+.geoagent-text.markdown pre,
+.geoagent-text.markdown table {
+  background: var(--ga-input-bg);
+  color: var(--ga-text);
+  border-color: var(--ga-border);
+}
+
+.geoagent-text.markdown a {
+  color: var(--ga-primary);
+}
+
+.geoagent-log,
+.geoagent-panel textarea,
+.geoagent-text.markdown pre,
+.geoagent-text.markdown table {
+  scrollbar-color: var(--ga-muted) transparent;
+}
+
+.geoagent-log::-webkit-scrollbar-track,
+.geoagent-panel textarea::-webkit-scrollbar-track,
+.geoagent-text.markdown pre::-webkit-scrollbar-track,
+.geoagent-text.markdown table::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.geoagent-log::-webkit-scrollbar-thumb,
+.geoagent-panel textarea::-webkit-scrollbar-thumb,
+.geoagent-text.markdown pre::-webkit-scrollbar-thumb,
+.geoagent-text.markdown table::-webkit-scrollbar-thumb {
+  background: var(--ga-muted);
 }
 
 /*
@@ -744,683 +1612,5 @@
 
 .opera-stats-apply-rescale {
   margin-top: 6px;
-}
-.geoagent-control {
-  background: #fff;
-  border-radius: 4px;
-  box-shadow: 0 0 0 2px rgb(0 0 0 / 10%);
-  color: #17202a;
-  color-scheme: light;
-  font-family:
-    Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont,
-    "Segoe UI", sans-serif;
-}
-
-.geoagent-control-toggle {
-  display: grid;
-  place-items: center;
-  width: 29px;
-  height: 29px;
-  padding: 0;
-  border: 0;
-  background: transparent;
-  color: #17202a;
-  cursor: pointer;
-}
-
-.geoagent-control-toggle:hover {
-  background-color: rgb(0 0 0 / 5%);
-}
-
-.geoagent-control-icon,
-.geoagent-control-icon svg {
-  width: 22px;
-  height: 22px;
-}
-
-.geoagent-control-icon {
-  display: grid;
-  place-items: center;
-  line-height: 0;
-}
-
-.geoagent-control-icon svg {
-  stroke: currentColor;
-}
-
-.geoagent-panel {
-  position: absolute;
-  z-index: 1000;
-  display: none;
-  max-width: calc(100% - 20px);
-  max-height: calc(100% - 20px);
-  padding: 14px;
-  border: 1px solid #d7dde5;
-  border-radius: 8px;
-  background: color-mix(in srgb, #ffffff 94%, transparent);
-  box-shadow: 0 18px 50px rgb(15 23 42 / 18%);
-  color: #17202a;
-  color-scheme: light;
-  font-family:
-    Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont,
-    "Segoe UI", sans-serif;
-  font-size: 13px;
-  line-height: 1.4;
-}
-
-.geoagent-panel.expanded {
-  display: grid;
-  grid-template-rows: auto minmax(0, 1fr);
-  gap: 12px;
-}
-
-.geoagent-panel-resize-handle {
-  position: absolute;
-  bottom: -3px;
-  z-index: 3;
-  width: 18px;
-  height: 18px;
-  touch-action: none;
-}
-
-.geoagent-panel-resize-handle-bl {
-  left: -3px;
-  cursor: nesw-resize;
-}
-
-.geoagent-panel-resize-handle-br {
-  right: -3px;
-  cursor: nwse-resize;
-}
-
-.geoagent-panel-resize-handle::before {
-  position: absolute;
-  bottom: 4px;
-  width: 9px;
-  height: 9px;
-  border-color: #c7d2df;
-  border-style: solid;
-  content: "";
-  opacity: 0;
-  transition: opacity 0.15s ease;
-}
-
-.geoagent-panel-resize-handle-bl::before {
-  left: 4px;
-  border-width: 0 0 2px 2px;
-  border-bottom-left-radius: 3px;
-}
-
-.geoagent-panel-resize-handle-br::before {
-  right: 4px;
-  border-width: 0 2px 2px 0;
-  border-bottom-right-radius: 3px;
-}
-
-.geoagent-panel-resize-handle:hover::before,
-.geoagent-panel.resizing .geoagent-panel-resize-handle::before {
-  opacity: 1;
-}
-
-body.geoagent-panel-resizing {
-  cursor: ew-resize;
-  user-select: none;
-}
-
-.geoagent-panel * {
-  box-sizing: border-box;
-}
-
-.geoagent-panel-header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 10px;
-  min-width: 0;
-}
-
-.geoagent-panel-title {
-  overflow: hidden;
-  color: #17202a;
-  font-size: 17px;
-  font-weight: 700;
-  line-height: 1.2;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.geoagent-title-actions {
-  display: flex;
-  flex: 0 0 auto;
-  align-items: center;
-  gap: 8px;
-}
-
-.geoagent-status {
-  display: inline-flex;
-  flex: 0 0 auto;
-  align-items: center;
-  min-height: 24px;
-  padding: 0 8px;
-  border-radius: 999px;
-  background: #edf2f7;
-  color: #5f6b7a;
-  font-size: 12px;
-  font-weight: 650;
-}
-
-.geoagent-status.connected {
-  background: #dff6ee;
-  color: #076448;
-}
-
-.geoagent-status.setup {
-  background: #fef0c7;
-  color: #b54708;
-}
-
-.geoagent-status.connecting {
-  background: #e0eaff;
-  color: #1d4ed8;
-}
-
-.geoagent-status.error {
-  background: #fee4e2;
-  color: #b42318;
-}
-
-.geoagent-icon-button {
-  display: inline-grid;
-  place-items: center;
-  width: 28px;
-  min-width: 28px;
-  height: 28px;
-  min-height: 28px;
-  padding: 0;
-  border: 1px solid #d7dde5;
-  border-radius: 6px;
-  background: #fff;
-  color: #5f6b7a;
-  cursor: pointer;
-}
-
-.geoagent-icon-button svg {
-  width: 16px;
-  height: 16px;
-  stroke: currentColor;
-}
-
-.geoagent-panel-content {
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-  min-height: 0;
-  /* The log flexes to absorb spare/short space; if the panel is still too short
-     for the fixed sections, the whole content scrolls so nothing is clipped. */
-  overflow-x: hidden;
-  overflow-y: auto;
-}
-
-/* Settings, Earth Engine, toggles and the prompt form keep their natural size;
-   only the conversation log flexes to fill (and scrolls) so the form and its
-   action buttons stay visible instead of being pushed past the panel. */
-.geoagent-settings,
-.geoagent-earth-engine,
-.geoagent-toggle-row,
-.geoagent-form {
-  flex: 0 0 auto;
-}
-
-.geoagent-panel label {
-  display: grid;
-  gap: 5px;
-  color: #5f6b7a;
-  font-size: 12px;
-  font-weight: 650;
-}
-
-.geoagent-panel input,
-.geoagent-panel select,
-.geoagent-panel textarea,
-.geoagent-panel button {
-  font: inherit;
-}
-
-.geoagent-panel input,
-.geoagent-panel select,
-.geoagent-panel textarea {
-  width: 100%;
-  border: 1px solid #d7dde5;
-  border-radius: 6px;
-  background: #fff;
-  color: #17202a;
-}
-
-.geoagent-panel input,
-.geoagent-panel select {
-  height: 36px;
-  padding: 0 10px;
-}
-
-.geoagent-panel select {
-  cursor: pointer;
-}
-
-.geoagent-panel textarea {
-  min-height: 86px;
-  max-height: min(180px, 24vh);
-  resize: vertical;
-  overflow: auto;
-  padding: 9px 10px;
-  line-height: 1.35;
-}
-
-.geoagent-settings {
-  border: 1px solid #d7dde5;
-  border-radius: 6px;
-  background: #f8fafc;
-}
-
-.geoagent-settings > summary {
-  padding: 8px 10px;
-  color: #17202a;
-  font-size: 12px;
-  font-weight: 700;
-  cursor: pointer;
-}
-
-.geoagent-settings-grid {
-  display: grid;
-  grid-template-columns: 1fr minmax(110px, 0.55fr);
-  gap: 8px;
-  align-items: end;
-  padding: 0 10px 10px;
-}
-
-/* The model cell, optional base URL / region rows, and the inline config note
-   each occupy their own full-width row beneath the provider + key row. */
-.geoagent-settings-grid .geoagent-model-cell,
-.geoagent-settings-grid .geoagent-base-url-row,
-.geoagent-settings-grid .geoagent-bedrock-region-row,
-.geoagent-settings-grid .geoagent-config-note {
-  grid-column: 1 / -1;
-}
-
-.geoagent-bedrock-region-row[hidden],
-.geoagent-base-url-row[hidden],
-.geoagent-config-note[hidden] {
-  display: none;
-}
-
-.geoagent-model-row {
-  display: flex;
-  gap: 8px;
-  align-items: center;
-}
-
-.geoagent-model-row .geoagent-model-id {
-  flex: 1 1 auto;
-  /* Allow the input to shrink in the resizable panel instead of overflowing the
-     row next to the fixed-width Use latest button. */
-  min-width: 0;
-}
-
-.geoagent-panel button.geoagent-load-models {
-  flex: 0 0 auto;
-  min-height: 36px;
-  padding: 0 12px;
-  white-space: nowrap;
-}
-
-/* Custom model suggestion dropdown (replaces a native <datalist>, whose popup
-   hangs Chrome on long lists). In-flow so it cannot be clipped by the panel's
-   scroll container; it pushes the rest of the settings down while open. */
-.geoagent-model-suggestions {
-  margin: 4px 0 0;
-  padding: 4px;
-  max-height: 180px;
-  overflow-y: auto;
-  list-style: none;
-  border: 1px solid #d7dde5;
-  border-radius: 6px;
-  background: #fff;
-  scrollbar-color: #8a96a6 #e6ebf1;
-  scrollbar-width: thin;
-}
-
-.geoagent-model-suggestions[hidden] {
-  display: none;
-}
-
-.geoagent-model-suggestion {
-  padding: 6px 8px;
-  border-radius: 4px;
-  color: #17202a;
-  font-size: 13px;
-  line-height: 1.3;
-  cursor: pointer;
-  overflow-wrap: anywhere;
-}
-
-.geoagent-model-suggestion:hover,
-.geoagent-model-suggestion.active {
-  background: #e8edf3;
-}
-
-.geoagent-config-note {
-  padding: 6px 9px;
-  border-radius: 6px;
-  font-size: 12px;
-  font-weight: 600;
-  line-height: 1.35;
-}
-
-.geoagent-config-note.success {
-  background: #dff6ee;
-  color: #076448;
-}
-
-.geoagent-config-note.error {
-  background: #fee4e2;
-  color: #b42318;
-}
-
-.geoagent-config-note.info {
-  background: #eef2f7;
-  color: #475569;
-}
-
-.geoagent-earth-engine {
-  border: 1px solid #d7dde5;
-  border-radius: 6px;
-  background: #f8fafc;
-}
-
-.geoagent-earth-engine[hidden] {
-  display: none;
-}
-
-.geoagent-earth-engine summary {
-  padding: 8px 10px;
-  color: #17202a;
-  font-size: 12px;
-  font-weight: 700;
-  cursor: pointer;
-}
-
-.geoagent-earth-engine-grid {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 8px;
-  padding: 0 10px 8px;
-}
-
-.geoagent-earth-engine-status {
-  padding: 0 10px 10px;
-  color: #64748b;
-  font-size: 12px;
-  line-height: 1.35;
-}
-
-.geoagent-toggle-row {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 8px;
-}
-
-.geoagent-toggle-row[hidden] {
-  display: none;
-}
-
-.geoagent-panel .geoagent-checkbox-row {
-  display: inline-flex;
-  grid-template-columns: none;
-  align-items: center;
-  gap: 7px;
-  min-height: 30px;
-  padding: 0 9px;
-  border: 1px solid #d7dde5;
-  border-radius: 6px;
-  background: #fff;
-  color: #17202a;
-  font-size: 12px;
-  font-weight: 700;
-}
-
-.geoagent-panel .geoagent-checkbox-row input {
-  flex: 0 0 auto;
-  width: 14px;
-  height: 14px;
-  margin: 0;
-  accent-color: #0f766e;
-}
-
-.geoagent-panel .geoagent-checkbox-row span {
-  display: inline-block;
-  line-height: 1;
-  white-space: nowrap;
-}
-
-.geoagent-log {
-  flex: 1 1 160px;
-  min-height: 0;
-  overflow: auto;
-  padding: 10px;
-  border: 1px solid #d7dde5;
-  border-radius: 6px;
-  background: #f6f8fb;
-  scrollbar-color: #8a96a6 #e6ebf1;
-  scrollbar-width: thin;
-  font-size: 13px;
-  line-height: 1.4;
-}
-
-.geoagent-panel textarea,
-.geoagent-text.markdown pre,
-.geoagent-text.markdown table {
-  scrollbar-color: #8a96a6 #e6ebf1;
-  scrollbar-width: thin;
-}
-
-.geoagent-log::-webkit-scrollbar,
-.geoagent-panel textarea::-webkit-scrollbar,
-.geoagent-text.markdown pre::-webkit-scrollbar,
-.geoagent-text.markdown table::-webkit-scrollbar {
-  width: 12px;
-  height: 12px;
-}
-
-.geoagent-log::-webkit-scrollbar-track,
-.geoagent-panel textarea::-webkit-scrollbar-track,
-.geoagent-text.markdown pre::-webkit-scrollbar-track,
-.geoagent-text.markdown table::-webkit-scrollbar-track {
-  background: #e6ebf1;
-}
-
-.geoagent-log::-webkit-scrollbar-thumb,
-.geoagent-panel textarea::-webkit-scrollbar-thumb,
-.geoagent-text.markdown pre::-webkit-scrollbar-thumb,
-.geoagent-text.markdown table::-webkit-scrollbar-thumb {
-  border: 3px solid #e6ebf1;
-  border-radius: 999px;
-  background: #8a96a6;
-}
-
-.geoagent-log::-webkit-scrollbar-thumb:hover,
-.geoagent-panel textarea::-webkit-scrollbar-thumb:hover,
-.geoagent-text.markdown pre::-webkit-scrollbar-thumb:hover,
-.geoagent-text.markdown table::-webkit-scrollbar-thumb:hover {
-  background: #647386;
-}
-
-.geoagent-entry {
-  margin: 0 0 10px;
-  padding-bottom: 10px;
-  border-bottom: 1px solid #e3e8ef;
-}
-
-.geoagent-entry:last-child {
-  margin-bottom: 0;
-  padding-bottom: 0;
-  border-bottom: 0;
-}
-
-.geoagent-role {
-  margin-bottom: 3px;
-  color: #5f6b7a;
-  font-size: 11px;
-  font-weight: 800;
-  letter-spacing: 0;
-  text-transform: uppercase;
-}
-
-.geoagent-text {
-  overflow-wrap: anywhere;
-  white-space: pre-wrap;
-}
-
-.geoagent-text.markdown {
-  white-space: normal;
-}
-
-.geoagent-text.markdown > :first-child {
-  margin-top: 0;
-}
-
-.geoagent-text.markdown > :last-child {
-  margin-bottom: 0;
-}
-
-.geoagent-text.markdown p,
-.geoagent-text.markdown ul,
-.geoagent-text.markdown ol,
-.geoagent-text.markdown pre,
-.geoagent-text.markdown blockquote,
-.geoagent-text.markdown table {
-  margin: 0 0 8px;
-}
-
-.geoagent-text.markdown ul,
-.geoagent-text.markdown ol {
-  padding-left: 18px;
-}
-
-.geoagent-text.markdown li {
-  margin: 2px 0;
-}
-
-.geoagent-text.markdown a {
-  color: #0f766e;
-  text-decoration: underline;
-  text-underline-offset: 2px;
-}
-
-.geoagent-text.markdown code {
-  padding: 1px 4px;
-  border-radius: 4px;
-  background: #e8edf3;
-  color: #111827;
-  font-family: ui-monospace, SFMono-Regular, Consolas, "Liberation Mono", monospace;
-  font-size: 0.92em;
-}
-
-.geoagent-text.markdown pre {
-  max-width: 100%;
-  overflow: auto;
-  padding: 8px;
-  border: 1px solid #d8dee8;
-  border-radius: 6px;
-  background: #111827;
-  color: #f8fafc;
-}
-
-.geoagent-text.markdown pre code {
-  padding: 0;
-  background: transparent;
-  color: inherit;
-  white-space: pre;
-}
-
-.geoagent-text.markdown blockquote {
-  padding-left: 10px;
-  border-left: 3px solid #c7d2df;
-  color: #5f6b7a;
-}
-
-.geoagent-text.markdown table {
-  display: block;
-  max-width: 100%;
-  overflow: auto;
-  border-collapse: collapse;
-}
-
-.geoagent-text.markdown th,
-.geoagent-text.markdown td {
-  padding: 4px 6px;
-  border: 1px solid #d8dee8;
-  text-align: left;
-  vertical-align: top;
-}
-
-.geoagent-form {
-  display: grid;
-  min-height: 0;
-}
-
-.geoagent-form label {
-  min-height: 0;
-}
-
-.geoagent-actions {
-  display: flex;
-  flex: 0 0 auto;
-  gap: 8px;
-  margin-top: 8px;
-}
-
-.geoagent-panel button.geoagent-send,
-.geoagent-panel button.geoagent-cancel,
-.geoagent-panel button.geoagent-copy,
-.geoagent-panel button.geoagent-clear {
-  min-height: 36px;
-  padding: 0 12px;
-  border: 1px solid transparent;
-  border-radius: 6px;
-  background: #0f766e;
-  color: #fff;
-  font-weight: 700;
-  cursor: pointer;
-}
-
-.geoagent-panel button.secondary {
-  border-color: #d7dde5;
-  background: #fff;
-  color: #17202a;
-}
-
-.geoagent-panel button:disabled {
-  cursor: not-allowed;
-  opacity: 0.55;
-}
-
-@media (max-width: 700px) {
-  .geoagent-panel {
-    right: 10px !important;
-    left: 10px !important;
-    width: auto !important;
-    max-height: min(72vh, 620px);
-  }
-
-  .geoagent-settings-grid {
-    grid-template-columns: 1fr;
-  }
-
-  .geoagent-earth-engine-grid {
-    grid-template-columns: 1fr;
-  }
-
-  .geoagent-panel-resize-handle {
-    display: none;
-  }
 }
 /*$vite$:1*/
