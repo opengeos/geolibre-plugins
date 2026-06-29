@@ -26,8 +26,8 @@
     {
       "id": "geolibre-nasa-opera",
       "name": "NASA OPERA",
-      "version": "0.2.1",
-      "description": "Search NASA OPERA products (DSWx, RTC, CSLC, DIST) by area and date via NASA CMR, draw footprints, display Cloud-Optimized GeoTIFFs through titiler-cmr, click to inspect pixel values, compute zonal statistics over an AOI, and download granule data. No Earthdata login needed for search or display.",
+      "version": "0.2.2",
+      "description": "Search, visualize, and analyze NASA OPERA products with GeoAgent-assisted CMR search, titiler-cmr raster display, change detection, time-series statistics, report export, pixel inspection, AOI statistics, and granule downloads. No Earthdata login needed for search or display.",
       "author": "Qiusheng Wu",
       "homepage": "https://github.com/opengeos/geolibre-nasa-opera",
       "manifestUrl": "plugins/geolibre-nasa-opera/plugin.json",

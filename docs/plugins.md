@@ -49,9 +49,9 @@ There are **5** plugins in the registry. Install them from GeoLibre: open **Sett
 
     ---
 
-    Search NASA OPERA products (DSWx, RTC, CSLC, DIST) by area and date via NASA CMR, draw footprints, display Cloud-Optimized GeoTIFFs through titiler-cmr, click to inspect pixel values, compute zonal statistics over an AOI, and download granule data. No Earthdata login needed for search or display.
+    Search, visualize, and analyze NASA OPERA products with GeoAgent-assisted CMR search, titiler-cmr raster display, change detection, time-series statistics, report export, pixel inspection, AOI statistics, and granule downloads. No Earthdata login needed for search or display.
 
-    **Author:** Qiusheng Wu · **Version:** 0.2.1 · **Requires:** GeoLibre 0.9.0+
+    **Author:** Qiusheng Wu · **Version:** 0.2.2 · **Requires:** GeoLibre 0.9.0+
 
     `Data` `Imagery`
 
