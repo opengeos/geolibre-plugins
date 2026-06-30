@@ -1,0 +1,8 @@
+{
+  "id": "maplibre-gl-vantor",
+  "name": "Vantor Open Data",
+  "version": "0.1.0",
+  "entry": "index.js",
+  "description": "Search, visualize, and download satellite imagery from the Vantor Open Data STAC catalog.",
+  "style": "style.css"
+}
