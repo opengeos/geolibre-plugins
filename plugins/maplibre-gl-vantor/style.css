@@ -24,8 +24,17 @@
   --vantor-disabled: #bdbdbd;
 }
 
+/* Tell the browser which color scheme native form controls (select option
+   popups, scrollbars) should use, so they match the panel theme instead of
+   inheriting a host app's color-scheme (e.g. GeoLibre's dark scheme would
+   otherwise render dropdown popups dark with the panel's dark text on them). */
+.vantor-panel {
+  color-scheme: light;
+}
+
 /* Dark theme — applied explicitly via theme: 'dark' */
 .vantor-panel--theme-dark {
+  color-scheme: dark;
   --vantor-bg: #1e1e1e;
   --vantor-bg-alt: #2a2a2a;
   --vantor-text: #e6e6e6;
@@ -42,6 +51,7 @@
 /* Dark theme — follow the OS preference when theme: 'auto' (default) */
 @media (prefers-color-scheme: dark) {
   .vantor-panel--theme-auto {
+    color-scheme: dark;
     --vantor-bg: #1e1e1e;
     --vantor-bg-alt: #2a2a2a;
     --vantor-text: #e6e6e6;
@@ -308,6 +318,11 @@
   background: var(--vantor-bg);
   color: var(--vantor-text);
   box-sizing: border-box;
+}
+
+.vantor-panel select option {
+  background-color: var(--vantor-bg);
+  color: var(--vantor-text);
 }
 
 .vantor-panel select:focus,
