@@ -5,7 +5,7 @@ hide:
 
 # Plugins
 
-There are **5** plugins in the registry. Install them from GeoLibre: open **Settings → Manage Plugins**, then **Install** from the **All** or **Not installed** tab. No manual URL entry needed.
+There are **6** plugins in the registry. Install them from GeoLibre: open **Settings → Manage Plugins**, then **Install** from the **All** or **Not installed** tab. No manual URL entry needed.
 
 <div class="grid cards" markdown>
 
@@ -68,5 +68,17 @@ There are **5** plugins in the registry. Install them from GeoLibre: open **Sett
     `Example`
 
     [:octicons-mark-github-16: Homepage](https://github.com/opengeos/geolibre-plugins){ target=_blank } · [:octicons-package-16: Manifest](https://plugins.geolibre.app/plugins/sample/plugin.json){ target=_blank }
+
+-   :material-puzzle:{ .lg .middle } __Vantor Open Data__
+
+    ---
+
+    Search, visualize, and download satellite imagery from the Vantor Open Data STAC catalog. Browse disaster event collections, filter by phase and map extent, view pre/post footprints, render Cloud-Optimized GeoTIFFs on the map, and download selected scenes.
+
+    **Author:** Qiusheng Wu · **Version:** 0.1.0 · **Requires:** GeoLibre 1.8.0+
+
+    `Data` `Imagery`
+
+    [:octicons-mark-github-16: Homepage](https://github.com/opengeos/maplibre-gl-vantor){ target=_blank } · [:octicons-package-16: Manifest](https://plugins.geolibre.app/plugins/maplibre-gl-vantor/plugin.json){ target=_blank }
 
 </div>
