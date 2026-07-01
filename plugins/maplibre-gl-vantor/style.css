@@ -68,6 +68,13 @@
 
 .maplibregl-ctrl-vantor {
   max-width: none !important;
+  /* Sit above map raster overlays that share this control corner. In GeoLibre
+     the COG deck.gl overlay (#deckgl-overlay) is an absolutely positioned,
+     full-map canvas mounted as a sibling control at z-index 1, so a static
+     control paints under it. Give the panel a stacking context above it,
+     mirroring GeoLibre's own .geolibre-stac-search-control (z-index: 3). */
+  position: relative;
+  z-index: 3;
 }
 
 .vantor-panel {
