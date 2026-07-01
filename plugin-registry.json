@@ -59,7 +59,7 @@
     {
       "id": "maplibre-gl-vantor",
       "name": "Vantor Open Data",
-      "version": "0.1.0",
+      "version": "0.2.0",
       "description": "Search, visualize, and download satellite imagery from the Vantor Open Data STAC catalog. Browse disaster event collections, filter by phase and map extent, view pre/post footprints, render Cloud-Optimized GeoTIFFs on the map, and download selected scenes.",
       "author": "Qiusheng Wu",
       "homepage": "https://github.com/opengeos/maplibre-gl-vantor",
