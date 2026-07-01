@@ -1515,7 +1515,7 @@ function hostTheme() {
 }
 function createControl(app) {
   return new VantorControl({
-    collapsed: true,
+    collapsed: false,
     panelWidth: 380,
     theme: hostTheme(),
     // Prefer the host's addCogLayer so COGs become native layers in the Layers
@@ -1527,7 +1527,7 @@ function createControl(app) {
 const plugin = {
   id: "maplibre-gl-vantor",
   name: "Vantor Open Data",
-  version: "0.1.0",
+  version: "0.2.0",
   activate(app) {
     const isNew = !control;
     control = control ?? createControl(app);
@@ -1539,7 +1539,7 @@ const plugin = {
     if (isNew && app.setMapProjection) {
       control.getCogLayer()?.on("layeradd", () => app.setMapProjection("mercator"));
     }
-    if (!themeObserver && typeof MutationObserver !== "undefined") {
+    if (!themeObserver && typeof document !== "undefined" && typeof MutationObserver !== "undefined") {
       themeObserver = new MutationObserver(() => control?.setTheme(hostTheme()));
       themeObserver.observe(document.documentElement, {
         attributes: true,
