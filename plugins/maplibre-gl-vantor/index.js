@@ -1509,11 +1509,15 @@ class VantorControl {
 
 let control = null;
 let position = "top-left";
+let themeObserver = null;
+function hostTheme() {
+  return typeof document !== "undefined" && document.documentElement.classList.contains("dark") ? "dark" : "light";
+}
 function createControl(app) {
   return new VantorControl({
     collapsed: true,
     panelWidth: 380,
-    theme: "auto",
+    theme: hostTheme(),
     // Prefer the host's addCogLayer so COGs become native layers in the Layers
     // panel; fall back to the host's maplibre-gl-raster instance if absent.
     cogAdder: app.addCogLayer ? (name, url, options) => app.addCogLayer(name, url, options) : void 0,
@@ -1535,8 +1539,17 @@ const plugin = {
     if (isNew && app.setMapProjection) {
       control.getCogLayer()?.on("layeradd", () => app.setMapProjection("mercator"));
     }
+    if (!themeObserver && typeof MutationObserver !== "undefined") {
+      themeObserver = new MutationObserver(() => control?.setTheme(hostTheme()));
+      themeObserver.observe(document.documentElement, {
+        attributes: true,
+        attributeFilter: ["class"]
+      });
+    }
   },
   deactivate(app) {
+    themeObserver?.disconnect();
+    themeObserver = null;
     if (!control) return;
     app.removeMapControl(control);
     control = null;
