@@ -5,7 +5,7 @@ hide:
 
 # Plugins
 
-There are **6** plugins in the registry. Install them from GeoLibre: open **Settings → Manage Plugins**, then **Install** from the **All** or **Not installed** tab. No manual URL entry needed.
+There are **7** plugins in the registry. Install them from GeoLibre: open **Settings → Manage Plugins**, then **Install** from the **All** or **Not installed** tab. No manual URL entry needed.
 
 <div class="grid cards" markdown>
 
@@ -57,6 +57,18 @@ There are **6** plugins in the registry. Install them from GeoLibre: open **Sett
 
     [:octicons-mark-github-16: Homepage](https://github.com/opengeos/geolibre-nasa-opera){ target=_blank } · [:octicons-package-16: Manifest](https://plugins.geolibre.app/plugins/geolibre-nasa-opera/plugin.json){ target=_blank }
 
+-   :material-puzzle:{ .lg .middle } __NetCDF Loader__
+
+    ---
+
+    Load NetCDF4/HDF5 climate grids into GeoLibre as color-mapped raster layers with date-based time controls, colormaps, and pixel value inspection.
+
+    **Author:** Husayn El Sharif · **Version:** 0.5.7 · **Requires:** GeoLibre 1.9.0+
+
+    `Climate` `Raster` `Data`
+
+    [:octicons-mark-github-16: Homepage](https://github.com/helsharif/geolibre-netcdf-loader-plugin){ target=_blank } · [:octicons-package-16: Manifest](https://plugins.geolibre.app/plugins/geolibre-netcdf/plugin.json){ target=_blank }
+
 -   :material-puzzle:{ .lg .middle } __Sample Plugin__
 
     ---
@@ -75,7 +87,7 @@ There are **6** plugins in the registry. Install them from GeoLibre: open **Sett
 
     Search, visualize, and download satellite imagery from the Vantor Open Data STAC catalog. Browse disaster event collections, filter by phase and map extent, view pre/post footprints, render Cloud-Optimized GeoTIFFs on the map, and download selected scenes.
 
-    **Author:** Qiusheng Wu · **Version:** 0.1.0 · **Requires:** GeoLibre 1.8.0+
+    **Author:** Qiusheng Wu · **Version:** 0.2.1 · **Requires:** GeoLibre 1.8.0+
 
     `Data` `Imagery`
 

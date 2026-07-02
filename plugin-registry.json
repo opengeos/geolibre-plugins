@@ -13,6 +13,17 @@
       "minGeoLibreVersion": "0.9.0"
     },
     {
+      "id": "geolibre-netcdf",
+      "name": "NetCDF Loader",
+      "version": "0.5.7",
+      "description": "Load NetCDF4/HDF5 climate grids into GeoLibre as color-mapped raster layers with date-based time controls, colormaps, and pixel value inspection.",
+      "author": "Husayn El Sharif",
+      "homepage": "https://github.com/helsharif/geolibre-netcdf-loader-plugin",
+      "manifestUrl": "plugins/geolibre-netcdf/plugin.json",
+      "categories": ["Climate", "Raster", "Data"],
+      "minGeoLibreVersion": "1.9.0"
+    },
+    {
       "id": "geolibre-elevation-profile",
       "name": "Elevation Profile",
       "version": "0.1.0",
