@@ -15,7 +15,7 @@
     {
       "id": "geolibre-netcdf",
       "name": "NetCDF Loader",
-      "version": "0.5.7",
+      "version": "0.5.8",
       "description": "Load NetCDF4/HDF5 climate grids into GeoLibre as color-mapped raster layers with date-based time controls, colormaps, and pixel value inspection.",
       "author": "Husayn El Sharif",
       "homepage": "https://github.com/helsharif/geolibre-netcdf-loader-plugin",
