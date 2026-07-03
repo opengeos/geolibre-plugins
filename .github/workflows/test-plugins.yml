@@ -1,0 +1,42 @@
+name: Test Plugins
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v6
+        with:
+          node-version: "24"
+
+      - name: Validate plugin installation metadata
+        run: node scripts/validate_plugins.mjs
+
+      - name: Set up Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: "3.x"
+
+      - name: Install docs dependencies
+        run: pip install -r requirements.txt
+
+      - name: Build docs and published bundle layout
+        run: |
+          python scripts/generate_plugins_page.py
+          mkdocs build --strict
+          cp plugin-registry.json site/
+          mkdir -p site/plugins
+          cp -r plugins/. site/plugins/
+          cp CNAME .nojekyll site/
