@@ -63,7 +63,7 @@ There are **7** plugins in the registry. Install them from GeoLibre: open **Sett
 
     Load NetCDF4/HDF5 climate grids into GeoLibre as color-mapped raster layers with date-based time controls, colormaps, and pixel value inspection.
 
-    **Author:** Husayn El Sharif · **Version:** 0.5.7 · **Requires:** GeoLibre 1.9.0+
+    **Author:** Husayn El Sharif · **Version:** 0.5.9 · **Requires:** GeoLibre 1.9.0+
 
     `Climate` `Raster` `Data`
 
