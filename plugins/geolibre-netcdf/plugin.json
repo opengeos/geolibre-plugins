@@ -1,7 +1,7 @@
 {
   "id": "geolibre-netcdf",
   "name": "NetCDF Loader",
-  "version": "0.5.8",
+  "version": "0.5.9",
   "entry": "index.js",
   "style": "style.css",
   "description": "Load NetCDF4/HDF5 climate grids into GeoLibre as color-mapped raster layers.",
