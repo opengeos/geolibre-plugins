@@ -7,6 +7,17 @@
   box-sizing: content-box;
 }
 
+.md-typeset .md-button + .md-button {
+  margin-left: 0.4rem;
+}
+
+@media screen and (max-width: 30em) {
+  .md-typeset .md-button + .md-button {
+    margin-top: 0.6rem;
+    margin-left: 0;
+  }
+}
+
 /* Tighten the plugin catalog cards and give each a clear footer of links. */
 .md-typeset .grid.cards > ul > li {
   border-radius: 0.5rem;
