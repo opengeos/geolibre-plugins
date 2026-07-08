@@ -24,17 +24,6 @@
       "minGeoLibreVersion": "1.9.0"
     },
     {
-      "id": "geolibre-elevation-profile",
-      "name": "Elevation Profile",
-      "version": "0.1.0",
-      "description": "Draw a line on the map to chart an elevation profile with distance, ascent/descent, and min/max stats, a metric/imperial toggle, and CSV/SVG export. Samples elevation from the Open-Meteo API.",
-      "author": "Qiusheng Wu",
-      "homepage": "https://github.com/opengeos/geolibre-elevation-profile",
-      "manifestUrl": "plugins/geolibre-elevation-profile/plugin.json",
-      "categories": ["Analysis", "Terrain"],
-      "minGeoLibreVersion": "0.9.0"
-    },
-    {
       "id": "geolibre-nasa-opera",
       "name": "NASA OPERA",
       "version": "0.2.5",
