@@ -1,7 +1,7 @@
 {
   "id": "geolibre-nasa-opera",
   "name": "NASA OPERA",
-  "version": "0.2.5",
+  "version": "0.3.0",
   "entry": "index.js",
   "description": "Search, visualize, and analyze NASA OPERA products with GeoAgent-assisted CMR search, titiler-cmr raster display, change detection, time-series statistics, report export, pixel inspection, and AOI statistics.",
   "style": "style.css"
