@@ -5,7 +5,7 @@ hide:
 
 # Plugins
 
-There are **6** plugins in the registry. Install them from GeoLibre: open **Settings → Manage Plugins**, then **Install** from the **All** or **Not installed** tab. No manual URL entry needed.
+There are **7** plugins in the registry. Install them from GeoLibre: open **Settings → Manage Plugins**, then **Install** from the **All** or **Not installed** tab. No manual URL entry needed.
 
 <div class="grid cards" markdown>
 
@@ -32,6 +32,18 @@ There are **6** plugins in the registry. Install them from GeoLibre: open **Sett
     `Data` `Imagery`
 
     [:octicons-mark-github-16: Homepage](https://github.com/opengeos/geolibre-hypercoast){ target=_blank } · [:octicons-package-16: Manifest](https://plugins.geolibre.app/plugins/geolibre-hypercoast/plugin.json){ target=_blank }
+
+-   :material-puzzle:{ .lg .middle } __KML / KMZ Import__
+
+    ---
+
+    Import styled KML and KMZ files as organized GeoLibre vector and globe-compatible raster layers, with local parsing, feature information, altitude-aware 3D points, and GroundOverlay conversion.
+
+    **Author:** Husayn El Sharif · **Version:** 0.3.1 · **Requires:** GeoLibre 2.2.0+
+
+    `Data` `Raster` `Vector`
+
+    [:octicons-mark-github-16: Homepage](https://github.com/helsharif/geolibre-kml-kmz-import){ target=_blank } · [:octicons-package-16: Manifest](https://plugins.geolibre.app/plugins/kml-kmz-import/plugin.json){ target=_blank }
 
 -   :material-puzzle:{ .lg .middle } __NASA OPERA__
 
