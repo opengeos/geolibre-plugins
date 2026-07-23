@@ -91,7 +91,7 @@ jobs:
           echo "sha=$sha" >> "$GITHUB_OUTPUT"
 
       - name: Checkout PR head for review context (read-only; never executed)
-        uses: actions/checkout@v6
+        uses: actions/checkout@v7
         with:
           # Check out the PR head so Read/Grep/Glob show the *proposed* file
           # contents (and newly added files) that Claude is reviewing — the base
@@ -104,6 +104,14 @@ jobs:
           ref: ${{ steps.pr.outputs.sha }}
           persist-credentials: false
           fetch-depth: 1
+          # actions/checkout v7 refuses to check out fork PR code from a
+          # pull_request_target workflow unless this opt-in is set. That guard
+          # targets "pwn request" workflows, which install or execute the
+          # checked-out code; this job does neither — it only reads the diff
+          # with a credential-free working tree, per the note above. Without
+          # the opt-in, review of every fork PR would fail, which is the whole
+          # reason this workflow uses pull_request_target.
+          allow-unsafe-pr-checkout: true
 
       - name: Run Claude Code Review
         id: claude-review

@@ -1,0 +1,50 @@
+name: Lint
+
+# Runs the pre-commit hooks (Prettier, Ruff, and the 10 MB file-size guard) so
+# the checks are enforced even for contributors who have not installed the git
+# hook locally. Fix failures with `pre-commit run --all-files`.
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+# Cancel a superseded run when a PR is pushed to repeatedly, so obsolete lint
+# runs do not hold a runner.
+concurrency:
+  group: lint-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  pre-commit:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+        with:
+          # pre-commit clones and executes hook repositories, so keep the
+          # checkout token out of the environment it runs in. Nothing here
+          # needs authenticated git.
+          persist-credentials: false
+
+      - name: Set up Python
+        uses: actions/setup-python@v7
+        with:
+          python-version: "3.x"
+
+      - name: Cache pre-commit environments
+        uses: actions/cache@v6
+        with:
+          path: ~/.cache/pre-commit
+          key: pre-commit-${{ runner.os }}-${{ hashFiles('.pre-commit-config.yaml') }}
+          restore-keys: pre-commit-${{ runner.os }}-
+
+      - name: Install pre-commit
+        run: pip install pre-commit
+
+      - name: Run pre-commit
+        run: pre-commit run --all-files --show-diff-on-failure --color=always

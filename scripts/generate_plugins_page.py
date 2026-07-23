@@ -120,7 +120,7 @@ def render_page(entries: list[dict]) -> str:
     if not entries:
         return header + "_The registry is currently empty._\n"
     cards = "\n\n".join(render_card(e) for e in entries)
-    return f"{header}<div class=\"grid cards\" markdown>\n\n{cards}\n\n</div>\n"
+    return f'{header}<div class="grid cards" markdown>\n\n{cards}\n\n</div>\n'
 
 
 def main() -> None:
