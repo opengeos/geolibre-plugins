@@ -191,6 +191,38 @@ jobs:
           VITE_MAPILLARY_ACCESS_TOKEN: ${{ secrets.VITE_MAPILLARY_ACCESS_TOKEN }}
         run: npm run build -w geolibre-desktop
 
+      # Vite copies public/ verbatim, so GeoLibre's public/plugins/.gitignore
+      # ("*", keeping only itself and README.md -- it exists so private plugin
+      # bundles stay out of that repo's history) lands in dist/plugins/. The
+      # deploy step publishes by running `git add`, which HONORS that file and
+      # silently drops the plugin we just baked in: the build looks fine, the
+      # site 404s on plugin.json. Strip every .gitignore from the output, not
+      # just that one, since a submitted plugin can ship its own.
+      - name: Strip .gitignore files that would exclude the build from the deploy
+        if: github.event.action != 'closed' && steps.select.outputs.found == 'true'
+        run: |
+          set -euo pipefail
+          find geolibre/apps/geolibre-desktop/dist -name .gitignore -print -delete
+
+      # The plugin reaching dist/ is the entire point of this workflow, and the
+      # .gitignore bug above proved a green build says nothing about that. Fail
+      # here rather than shipping a preview that 404s on its own plugin.
+      - name: Verify the plugins reached the build output
+        if: github.event.action != 'closed' && steps.select.outputs.found == 'true'
+        env:
+          IDS: ${{ steps.select.outputs.ids }}
+        run: |
+          set -euo pipefail
+          dist=geolibre/apps/geolibre-desktop/dist
+          for id in $IDS; do
+            if [ ! -f "$dist/plugins/$id/plugin.json" ]; then
+              echo "::error::$id is missing from the build output ($dist/plugins/$id/plugin.json)."
+              find "$dist/plugins" -maxdepth 2 || true
+              exit 1
+            fi
+            echo "present in build: $id"
+          done
+
       - name: Check the build fits GitHub Pages
         if: github.event.action != 'closed' && steps.select.outputs.found == 'true'
         run: |
