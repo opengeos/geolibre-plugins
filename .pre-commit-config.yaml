@@ -19,7 +19,15 @@ repos:
         args: [--maxkb=10240, --enforce-all]
       - id: check-json
       - id: check-yaml
-        args: [--unsafe] # mkdocs.yml uses `!!python/name:` tags
+        exclude: ^mkdocs\.yml$
+      # mkdocs.yml needs `!!python/name:` tags, which only the syntax-only
+      # `--unsafe` parse accepts. Scope that relaxation to this one file so the
+      # workflows and Dependabot config keep full validation (duplicate key
+      # detection included).
+      - id: check-yaml
+        name: check yaml (mkdocs.yml)
+        args: [--unsafe]
+        files: ^mkdocs\.yml$
       - id: check-merge-conflict
       - id: end-of-file-fixer
         exclude: &bundles ^plugins/.*\.(js|css)$

@@ -13,12 +13,23 @@ on:
 permissions:
   contents: read
 
+# Cancel a superseded run when a PR is pushed to repeatedly, so obsolete lint
+# runs do not hold a runner.
+concurrency:
+  group: lint-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
 jobs:
   pre-commit:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
         uses: actions/checkout@v7
+        with:
+          # pre-commit clones and executes hook repositories, so keep the
+          # checkout token out of the environment it runs in. Nothing here
+          # needs authenticated git.
+          persist-credentials: false
 
       - name: Set up Python
         uses: actions/setup-python@v7
