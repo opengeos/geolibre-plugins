@@ -70,7 +70,24 @@ VITE_GEOLIBRE_PLUGIN_REGISTRY_URL=http://localhost:8090/plugin-registry.json
 `http://localhost` and HTTPS registries are accepted; other schemes are
 rejected.
 
-## 5. Open a pull request
+## 5. Format and check
+
+This repo uses [pre-commit](https://pre-commit.com) to format code (Prettier for
+JS/CSS/JSON/YAML, Ruff for Python) and to reject files larger than 10 MB:
+
+```bash
+pip install pre-commit
+pre-commit install   # run automatically on `git commit`
+pre-commit run --all-files
+```
+
+Built plugin bundles (`plugins/*/index.js`, `plugins/*/style.css`) are size
+checked but never reformatted — keep them exactly as your build emits them.
+
+The same hooks run on every pull request in the **Lint** workflow, so a branch
+that has not been formatted will fail CI.
+
+## 6. Open a pull request
 
 On merge to `main`, the Pages workflow publishes the update to
 `plugins.geolibre.app` and the new plugin appears in the catalog and in

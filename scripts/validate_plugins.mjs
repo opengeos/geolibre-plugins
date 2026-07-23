@@ -47,7 +47,9 @@ function resolveContainedPath(baseDir, relativePath, label) {
   const resolved = path.resolve(baseDir, relativePath);
   const relative = path.relative(baseDir, resolved);
   if (relative.startsWith("..") || path.isAbsolute(relative)) {
-    addError(`${label} must stay inside ${path.relative(root, baseDir)}: ${relativePath}`);
+    addError(
+      `${label} must stay inside ${path.relative(root, baseDir)}: ${relativePath}`,
+    );
     return null;
   }
 
@@ -92,13 +94,21 @@ async function validateLocalPlugin(registryEntry, manifestPath, label) {
   }
 
   const pluginDir = path.dirname(manifestPath);
-  const entryPath = resolveContainedPath(pluginDir, manifest.entry, `${label} entry`);
+  const entryPath = resolveContainedPath(
+    pluginDir,
+    manifest.entry,
+    `${label} entry`,
+  );
   if (!entryPath || !(await fileExists(entryPath, `${label} entry`))) {
     return;
   }
 
   if (manifest.style !== undefined) {
-    const stylePath = resolveContainedPath(pluginDir, manifest.style, `${label} style`);
+    const stylePath = resolveContainedPath(
+      pluginDir,
+      manifest.style,
+      `${label} style`,
+    );
     if (stylePath) {
       await fileExists(stylePath, `${label} style`);
     }
@@ -114,7 +124,9 @@ async function validateLocalPlugin(registryEntry, manifestPath, label) {
 
   const plugin = moduleExports.plugin ?? moduleExports.default;
   if (!isPlainObject(plugin)) {
-    addError(`${label} entry must export a plugin object as named "plugin" or default.`);
+    addError(
+      `${label} entry must export a plugin object as named "plugin" or default.`,
+    );
     return;
   }
 
@@ -159,14 +171,19 @@ async function main() {
       seenIds.add(entry.id);
     }
 
-    if (typeof entry.homepage === "string" && !/^https?:\/\//.test(entry.homepage)) {
+    if (
+      typeof entry.homepage === "string" &&
+      !/^https?:\/\//.test(entry.homepage)
+    ) {
       addError(`${label} homepage must use http(s): ${entry.homepage}`);
     }
 
     if (
       entry.categories !== undefined &&
       (!Array.isArray(entry.categories) ||
-        !entry.categories.every((category) => typeof category === "string" && category.trim() !== ""))
+        !entry.categories.every(
+          (category) => typeof category === "string" && category.trim() !== "",
+        ))
     ) {
       addError(`${label} categories must contain only non-empty strings.`);
     }
@@ -184,15 +201,28 @@ async function main() {
       continue;
     }
     if (/^[a-z]+:\/\//i.test(entry.manifestUrl)) {
-      addError(`${label} manifestUrl must be relative or HTTPS: ${entry.manifestUrl}`);
+      addError(
+        `${label} manifestUrl must be relative or HTTPS: ${entry.manifestUrl}`,
+      );
       continue;
     }
 
-    const manifestPath = resolveContainedPath(root, entry.manifestUrl, `${label} manifestUrl`);
-    if (!manifestPath || !(await fileExists(manifestPath, `${label} manifest`))) {
+    const manifestPath = resolveContainedPath(
+      root,
+      entry.manifestUrl,
+      `${label} manifestUrl`,
+    );
+    if (
+      !manifestPath ||
+      !(await fileExists(manifestPath, `${label} manifest`))
+    ) {
       continue;
     }
-    await validateLocalPlugin(entry, manifestPath, `${label} (${entry.id ?? entry.manifestUrl})`);
+    await validateLocalPlugin(
+      entry,
+      manifestPath,
+      `${label} (${entry.id ?? entry.manifestUrl})`,
+    );
   }
 
   if (errors.length > 0) {
