@@ -1,0 +1,204 @@
+name: Plugin preview
+
+# Builds GeoLibre with the plugin(s) touched by a pull request baked in, and
+# publishes it to opengeos/geolibre-plugins-preview under pr-preview/pr-<N>/.
+# A sticky comment carries the URL; the preview is deleted when the PR closes.
+#
+#   preview #N: https://opengeos.org/geolibre-plugins-preview/pr-preview/pr-<N>/
+#
+# HOW THE PLUGIN GETS IN
+# GeoLibre has a drop-in folder, apps/geolibre-desktop/public/plugins/, whose
+# README documents exactly this flow ("copy the plugin folder in at build/deploy
+# time"). A Vite plugin scans it at build start and the app loads whatever it
+# finds on startup, with no registry entry and no manifest URL. So this workflow
+# only has to copy the folder in before `npm run build` -- there is no registry
+# plumbing, and the PR's own plugin-registry.json is irrelevant here.
+#
+# WHY pull_request_target
+# Fork PRs get no secrets on `pull_request`, and fork PRs are the main case we
+# want previews for. The usual "pwn request" hazard does not apply: Vite copies
+# public/ verbatim without bundling or executing it, so the submitted plugin
+# never runs during the build -- only in the reviewer's browser, later, which is
+# the entire point of a preview. To keep it that way, this job:
+#   - copies ONLY plugins/<id>/ data directories out of the PR checkout,
+#   - never runs a script, install, or build step from that checkout,
+#   - rejects plugin ids that are not plain [A-Za-z0-9._-] names,
+#   - rejects symlinks, which would otherwise publish runner files to the site.
+# npm ci and the build run against opengeos/GeoLibre's own committed lockfile.
+#
+# SETUP (one time)
+# Secret PREVIEW_DEPLOY_TOKEN: a fine-grained PAT scoped to
+# opengeos/geolibre-plugins-preview ONLY, with "Contents: Read and write".
+# It never needs access to this repository -- the sticky comment is posted with
+# this workflow's own GITHUB_TOKEN.
+
+on:
+  pull_request_target:
+    types: [opened, reopened, synchronize, closed]
+  workflow_dispatch:
+    inputs:
+      pr:
+        description: PR number to build a preview for
+        required: true
+
+permissions:
+  contents: read
+  pull-requests: write
+
+concurrency:
+  group: plugin-preview-${{ github.event.pull_request.number || inputs.pr }}
+  cancel-in-progress: true
+
+jobs:
+  preview:
+    name: Build and deploy preview
+    runs-on: ubuntu-latest
+    # Skip bot-authored PRs (e.g. a Dependabot bump touches no plugin anyway).
+    if: github.event_name == 'workflow_dispatch' || github.event.sender.type != 'Bot'
+    steps:
+      - name: Resolve target PR
+        id: pr
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          # Via env, never interpolated straight into the script body.
+          NUMBER: ${{ github.event.pull_request.number || inputs.pr }}
+        run: |
+          set -euo pipefail
+          number="$NUMBER"
+          {
+            echo "number=$number"
+            gh api "repos/${{ github.repository }}/pulls/$number" \
+              --jq '"sha=\(.head.sha)\nrepo=\(.head.repo.full_name)"'
+          } >> "$GITHUB_OUTPUT"
+
+      # ---------------------------------------------------------------- build
+      - name: Check out the pull request (data only, never executed)
+        if: github.event.action != 'closed'
+        uses: actions/checkout@v7
+        with:
+          repository: ${{ steps.pr.outputs.repo }}
+          ref: ${{ steps.pr.outputs.sha }}
+          path: plugins-pr
+          persist-credentials: false
+          fetch-depth: 1
+          # Required by checkout v7 to read fork PR code under
+          # pull_request_target. Safe here for the reasons in the header: only
+          # plugin data folders are copied out, and nothing from this checkout
+          # is ever executed.
+          allow-unsafe-pr-checkout: true
+
+      - name: Select the plugins this PR touches
+        if: github.event.action != 'closed'
+        id: select
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          PR: ${{ steps.pr.outputs.number }}
+        run: |
+          set -euo pipefail
+          ids=$(gh api --paginate "repos/${{ github.repository }}/pulls/$PR/files" \
+                  --jq '.[].filename' \
+                | awk -F/ '$1 == "plugins" && NF > 2 { print $2 }' | sort -u)
+          selected=()
+          for id in $ids; do
+            # Reject anything that is not a plain directory name, so a crafted
+            # path cannot escape plugins/ when it is used below.
+            if ! printf '%s' "$id" | grep -qE '^[A-Za-z0-9._-]+$'; then
+              echo "::error::Refusing suspicious plugin directory name: $id"
+              exit 1
+            fi
+            dir="plugins-pr/plugins/$id"
+            # A deleted plugin has changed files but no directory; skip it.
+            [ -f "$dir/plugin.json" ] || continue
+            # Symlinks would let a PR publish arbitrary runner files (including
+            # anything the build wrote) to a public site. Refuse outright.
+            if [ -n "$(find "$dir" -type l -print -quit)" ]; then
+              echo "::error::Plugin $id contains a symlink; refusing to publish it."
+              exit 1
+            fi
+            selected+=("$id")
+          done
+          if [ ${#selected[@]} -eq 0 ]; then
+            echo "No plugin directories changed; skipping preview."
+            echo "found=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "Selected: ${selected[*]}"
+            echo "found=true" >> "$GITHUB_OUTPUT"
+            echo "ids=${selected[*]}" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Check out GeoLibre
+        if: github.event.action != 'closed' && steps.select.outputs.found == 'true'
+        uses: actions/checkout@v7
+        with:
+          repository: opengeos/GeoLibre
+          path: geolibre
+          persist-credentials: false
+
+      - name: Bake the plugins into the build
+        if: github.event.action != 'closed' && steps.select.outputs.found == 'true'
+        env:
+          IDS: ${{ steps.select.outputs.ids }}
+        run: |
+          set -euo pipefail
+          dest=geolibre/apps/geolibre-desktop/public/plugins
+          mkdir -p "$dest"
+          for id in $IDS; do
+            cp -r "plugins-pr/plugins/$id" "$dest/$id"
+            echo "baked in: $id"
+          done
+          ls -la "$dest"
+
+      - name: Set up Node.js
+        if: github.event.action != 'closed' && steps.select.outputs.found == 'true'
+        uses: actions/setup-node@v7
+        with:
+          node-version: lts/*
+          cache: npm
+          cache-dependency-path: geolibre/package-lock.json
+
+      - name: Install dependencies
+        if: github.event.action != 'closed' && steps.select.outputs.found == 'true'
+        working-directory: geolibre
+        run: npm ci
+
+      - name: Build the web app
+        if: github.event.action != 'closed' && steps.select.outputs.found == 'true'
+        working-directory: geolibre
+        env:
+          # Relative base: the preview is served from a subdirectory, not root.
+          GEOLIBRE_APP_BASE: ./
+          # Optional. Absent secrets resolve to "" and simply disable the
+          # corresponding data source, which does not affect plugin testing.
+          VITE_GEE_OAUTH_CLIENT_ID: ${{ secrets.VITE_GEE_OAUTH_CLIENT_ID }}
+          VITE_PROTOMAPS_API_KEY: ${{ secrets.VITE_PROTOMAPS_API_KEY }}
+          VITE_MAPILLARY_ACCESS_TOKEN: ${{ secrets.VITE_MAPILLARY_ACCESS_TOKEN }}
+        run: npm run build -w geolibre-desktop
+
+      - name: Check the build fits GitHub Pages
+        if: github.event.action != 'closed' && steps.select.outputs.found == 'true'
+        run: |
+          set -euo pipefail
+          dist=geolibre/apps/geolibre-desktop/dist
+          echo "preview size: $(du -sh "$dist" | cut -f1)"
+          # 104857600 bytes = 100 MB, the Pages per-file hard limit.
+          oversized=$(find "$dist" -type f -size +104857600c -printf '%s\t%p\n' || true)
+          if [ -n "$oversized" ]; then
+            echo "::error::Files exceed the 100 MB GitHub Pages limit:"
+            echo "$oversized"
+            exit 1
+          fi
+
+      # --------------------------------------------------------------- deploy
+      # On `closed` this removes pr-preview/pr-<N>/ instead of deploying.
+      - name: Publish preview
+        if: github.event.action == 'closed' || steps.select.outputs.found == 'true'
+        uses: rossjrw/pr-preview-action@v1
+        with:
+          source-dir: geolibre/apps/geolibre-desktop/dist
+          deploy-repository: opengeos/geolibre-plugins-preview
+          token: ${{ secrets.PREVIEW_DEPLOY_TOKEN }}
+          pages-base-url: opengeos.org/geolibre-plugins-preview
+          preview-branch: gh-pages
+          umbrella-dir: pr-preview
+          pr-number: ${{ steps.pr.outputs.number }}
+          action: ${{ github.event.action == 'closed' && 'remove' || 'deploy' }}
