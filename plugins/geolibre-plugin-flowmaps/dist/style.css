@@ -77,96 +77,7 @@
 }
 
 /* Toggle button - 29x29 to match navigation control */
-.plugin-control-toggle {
-  background: none;
-  border: none;
-  padding: 0;
-  width: 29px;
-  height: 29px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  cursor: pointer;
-/**
- * MapLibre GL Plugin Control Styles
- *
- * This stylesheet provides the base styles for the plugin control.
- * Customize these styles to match your plugin's design.
- *
- * Colors are defined as CSS custom properties so the control adapts to the
- * system theme (light/dark) via `prefers-color-scheme`. Override these
- * variables to apply a custom theme.
- */
-
-/*
- * Theme tokens. Defined on both the container and the panel because the panel
- * is appended to the map container (a separate DOM subtree from the control),
- * so it cannot inherit variables scoped only to `.plugin-control`.
- */
-.plugin-control,
-.plugin-control-panel,
-.flowmaps-panel {
-  --pc-bg: #fff;
-  --pc-shadow: 0 0 0 2px rgba(0, 0, 0, 0.1);
-  --pc-icon: #1f2a37;
-  --pc-hover-bg: rgba(0, 0, 0, 0.05);
-  --pc-text: #333;
-  --pc-muted: #888;
-  --pc-label: #555;
-  --pc-border: #e0e0e0;
-  --pc-close: #999;
-  --pc-close-hover: #333;
-  --pc-scrollbar-thumb: #ccc;
-  --pc-scrollbar-thumb-hover: #aaa;
-  --pc-input-bg: #fff;
-  --pc-input-text: inherit;
-  --pc-input-border: #ddd;
-  --pc-accent: #4a90d9;
-  --pc-accent-hover: #3a7bc8;
-  --pc-accent-ring: rgba(74, 144, 217, 0.15);
-}
-
-/* Dark theme: follows the user's system preference */
-@media (prefers-color-scheme: dark) {
-  .plugin-control,
-  .plugin-control-panel,
-  .flowmaps-panel {
-    --pc-bg: #1f2937;
-    --pc-shadow: 0 0 0 2px rgba(0, 0, 0, 0.4);
-    --pc-icon: #e5e7eb;
-    --pc-hover-bg: rgba(255, 255, 255, 0.08);
-    --pc-text: #e5e7eb;
-    --pc-muted: #9ca3af;
-    --pc-label: #cbd5e1;
-    --pc-border: #374151;
-    --pc-close: #9ca3af;
-    --pc-close-hover: #e5e7eb;
-    --pc-scrollbar-thumb: #4b5563;
-    --pc-scrollbar-thumb-hover: #6b7280;
-    --pc-input-bg: #111827;
-    --pc-input-text: #e5e7eb;
-    --pc-input-border: #4b5563;
-    --pc-accent: #4a90d9;
-    --pc-accent-hover: #5a9fe5;
-    --pc-accent-ring: rgba(74, 144, 217, 0.25);
-  }
-}
-
-/*
- * Container - matches maplibregl-ctrl styling.
- * The `.maplibregl-ctrl-group` part raises specificity above MapLibre's own
- * `.maplibregl-ctrl-group { background: #fff }` rule, which otherwise wins on
- * source order and keeps the button white (poor contrast in dark mode).
- */
-.maplibregl-ctrl-group.plugin-control {
-  background: var(--pc-bg);
-  border-radius: 4px;
-  box-shadow: var(--pc-shadow);
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-}
-
-/* Toggle button - 29x29 to match navigation control */
-.plugin-control-toggle {
+.maplibregl-ctrl-group button.plugin-control-toggle {
   background: none;
   border: none;
   padding: 0;
@@ -180,8 +91,7 @@
   color: var(--pc-icon);
 }
 
-.plugin-control-toggle:hover,
-.plugin-control-toggle:focus-visible {
+.plugin-control-toggle:hover {
   background-color: var(--pc-hover-bg);
 }
 
@@ -478,23 +388,18 @@
   font-weight: 600;
 }
 
-.flowmaps-panel .control-group {
+.control-group {
   display: flex;
   flex-direction: column;
   gap: 8px;
 }
 
-.flowmaps-panel .control-group label {
+.control-group label {
   font-weight: 500;
   font-size: 13px;
 }
 
-.flowmaps-panel .select-input:focus-visible {
-  outline: 2px solid var(--pc-accent);
-  outline-offset: -1px;
-}
-
-.flowmaps-panel .select-input {
+.select-input {
   background: var(--pc-input-bg);
   color: var(--pc-input-text);
   border: 1px solid var(--pc-input-border);
@@ -504,12 +409,7 @@
   outline: none;
 }
 
-.flowmaps-panel .slider-input:focus-visible {
-  outline: 2px solid var(--pc-accent);
-  outline-offset: 2px;
-}
-
-.flowmaps-panel .slider-input {
+.slider-input {
   -webkit-appearance: none;
   width: 100%;
   height: 6px;
@@ -518,7 +418,7 @@
   outline: none;
 }
 
-.flowmaps-panel .slider-input::-webkit-slider-thumb {
+.slider-input::-webkit-slider-thumb {
   -webkit-appearance: none;
   appearance: none;
   width: 16px;
@@ -528,7 +428,7 @@
   cursor: pointer;
 }
 
-.flowmaps-panel .slider-input::-moz-range-thumb {
+.slider-input::-moz-range-thumb {
   width: 16px;
   height: 16px;
   border-radius: 50%;
@@ -537,7 +437,7 @@
 }
 
 /* Drop Zone */
-.flowmaps-panel .drop-zone {
+.drop-zone {
   border: 2px dashed var(--pc-input-border);
   border-radius: 6px;
   padding: 24px;
@@ -548,44 +448,43 @@
   cursor: pointer;
 }
 
-.flowmaps-panel .drop-zone:hover,
-.flowmaps-panel .drop-zone:focus-within {
+.drop-zone:hover {
   background: rgba(255, 255, 255, 0.05);
 }
 
-.flowmaps-panel .drop-zone input[type="file"] {
+.drop-zone input[type="file"] {
   position: absolute;
   top: 0; left: 0; right: 0; bottom: 0;
   opacity: 0;
   cursor: pointer;
 }
 
-.flowmaps-panel .drop-zone span {
+.drop-zone span {
   font-size: 13px;
   color: var(--pc-muted);
 }
 
 /* Toggle Switch */
-.flowmaps-panel .toggle-group {
+.toggle-group {
   flex-direction: row;
   justify-content: space-between;
   align-items: center;
 }
 
-.flowmaps-panel .switch {
+.switch {
   position: relative;
   display: inline-block;
   width: 36px;
   height: 20px;
 }
 
-.flowmaps-panel .switch input { 
+.switch input { 
   opacity: 0;
   width: 0;
   height: 0;
 }
 
-.flowmaps-panel .slider.round {
+.slider.round {
   position: absolute;
   cursor: pointer;
   top: 0; left: 0; right: 0; bottom: 0;
@@ -594,12 +493,7 @@
   border-radius: 20px;
 }
 
-.flowmaps-panel input:focus-visible + .slider.round {
-  outline: 2px solid var(--pc-accent);
-  outline-offset: 2px;
-}
-
-.flowmaps-panel .slider.round:before {
+.slider.round:before {
   position: absolute;
   content: "";
   height: 14px;
@@ -611,21 +505,21 @@
   border-radius: 50%;
 }
 
-.flowmaps-panel input:checked + .slider.round {
+input:checked + .slider.round {
   background-color: var(--pc-accent);
 }
 
-.flowmaps-panel input:checked + .slider.round:before {
+input:checked + .slider.round:before {
   transform: translateX(16px);
 }
 
-.flowmaps-panel .error-text {
+.error-text {
   color: #ef4444;
   font-size: 12px;
   margin: 0;
 }
 
-.flowmaps-panel .success-text {
+.success-text {
   color: #10b981;
   font-size: 12px;
   margin: 0;
