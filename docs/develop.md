@@ -89,6 +89,22 @@ that has not been formatted will fail CI.
 
 ## 6. Open a pull request
 
+Every pull request that touches `plugins/<id>/` gets a live preview: CI builds
+GeoLibre with your plugin baked in and posts the URL as a comment.
+
+```text
+https://opengeos.org/geolibre-plugins-preview/pr-preview/pr-<N>/
+```
+
+Your plugin loads automatically there, so you can exercise it in the real app
+before review. The preview rebuilds on every push and is deleted when the pull
+request closes.
+
+!!! warning "Previews run unreviewed code"
+    A preview executes the pull request's plugin with full app privileges in
+    your browser. Open previews only for pull requests you are reviewing.
+
+
 On merge to `main`, the Pages workflow publishes the update to
 `plugins.geolibre.app` and the new plugin appears in the catalog and in
 GeoLibre's Manage Plugins dialog.
