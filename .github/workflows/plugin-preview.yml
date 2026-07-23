@@ -1,10 +1,10 @@
 name: Plugin preview
 
 # Builds GeoLibre with the plugin(s) touched by a pull request baked in, and
-# publishes it to opengeos/geolibre-plugins-preview under pr-preview/pr-<N>/.
+# publishes it to opengeos/pages-preview under geolibre-plugins/pr-<N>/.
 # A sticky comment carries the URL; the preview is deleted when the PR closes.
 #
-#   preview #N: https://opengeos.org/geolibre-plugins-preview/pr-preview/pr-<N>/
+#   preview #N: https://opengeos.org/pages-preview/geolibre-plugins/pr-<N>/
 #
 # HOW THE PLUGIN GETS IN
 # GeoLibre has a drop-in folder, apps/geolibre-desktop/public/plugins/, whose
@@ -28,7 +28,7 @@ name: Plugin preview
 #
 # SETUP (one time)
 # Secret PREVIEW_DEPLOY_TOKEN: a fine-grained PAT scoped to
-# opengeos/geolibre-plugins-preview ONLY, with two permissions:
+# opengeos/pages-preview ONLY, with two permissions:
 #   Contents: Read and write   -- push the preview to gh-pages
 #   Pages:    Read             -- poll the Pages build so the comment is only
 #                                 posted once the URL actually resolves
@@ -248,11 +248,15 @@ jobs:
         uses: rossjrw/pr-preview-action@ffa7509e91a3ec8dfc2e5536c4d5c1acdf7a6de9 # v1.8.1
         with:
           source-dir: geolibre/apps/geolibre-desktop/dist
-          deploy-repository: opengeos/geolibre-plugins-preview
+          deploy-repository: opengeos/pages-preview
           token: ${{ secrets.PREVIEW_DEPLOY_TOKEN }}
-          pages-base-url: opengeos.org/geolibre-plugins-preview
+          pages-base-url: opengeos.org/pages-preview
           preview-branch: gh-pages
-          umbrella-dir: pr-preview
+          # pages-preview is shared across opengeos repositories, and the action
+          # composes the path as "<umbrella-dir>/pr-<number>". Namespacing by
+          # this repository's name is what keeps our pr-35 from colliding with
+          # another repository's pr-35.
+          umbrella-dir: geolibre-plugins
           pr-number: ${{ steps.pr.outputs.number }}
           action: ${{ github.event.action == 'closed' && 'remove' || 'deploy' }}
           # Without this the sticky comment is posted as soon as the commit is

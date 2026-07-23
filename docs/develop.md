@@ -93,7 +93,7 @@ Every pull request that touches `plugins/<id>/` gets a live preview: CI builds
 GeoLibre with your plugin baked in and posts the URL as a comment.
 
 ```text
-https://opengeos.org/geolibre-plugins-preview/pr-preview/pr-<N>/
+https://opengeos.org/pages-preview/geolibre-plugins/pr-<N>/
 ```
 
 Your plugin loads automatically there, so you can exercise it in the real app
