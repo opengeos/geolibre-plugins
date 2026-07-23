@@ -1,0 +1,526 @@
+/**
+ * MapLibre GL Plugin Control Styles
+ *
+ * This stylesheet provides the base styles for the plugin control.
+ * Customize these styles to match your plugin's design.
+ *
+ * Colors are defined as CSS custom properties so the control adapts to the
+ * system theme (light/dark) via `prefers-color-scheme`. Override these
+ * variables to apply a custom theme.
+ */
+
+/*
+ * Theme tokens. Defined on both the container and the panel because the panel
+ * is appended to the map container (a separate DOM subtree from the control),
+ * so it cannot inherit variables scoped only to `.plugin-control`.
+ */
+.plugin-control,
+.plugin-control-panel,
+.flowmaps-panel {
+  --pc-bg: #fff;
+  --pc-shadow: 0 0 0 2px rgba(0, 0, 0, 0.1);
+  --pc-icon: #1f2a37;
+  --pc-hover-bg: rgba(0, 0, 0, 0.05);
+  --pc-text: #333;
+  --pc-muted: #888;
+  --pc-label: #555;
+  --pc-border: #e0e0e0;
+  --pc-close: #999;
+  --pc-close-hover: #333;
+  --pc-scrollbar-thumb: #ccc;
+  --pc-scrollbar-thumb-hover: #aaa;
+  --pc-input-bg: #fff;
+  --pc-input-text: inherit;
+  --pc-input-border: #ddd;
+  --pc-accent: #4a90d9;
+  --pc-accent-hover: #3a7bc8;
+  --pc-accent-ring: rgba(74, 144, 217, 0.15);
+}
+
+/* Dark theme: follows the user's system preference */
+@media (prefers-color-scheme: dark) {
+  .plugin-control,
+  .plugin-control-panel,
+  .flowmaps-panel {
+    --pc-bg: #1f2937;
+    --pc-shadow: 0 0 0 2px rgba(0, 0, 0, 0.4);
+    --pc-icon: #e5e7eb;
+    --pc-hover-bg: rgba(255, 255, 255, 0.08);
+    --pc-text: #e5e7eb;
+    --pc-muted: #9ca3af;
+    --pc-label: #cbd5e1;
+    --pc-border: #374151;
+    --pc-close: #9ca3af;
+    --pc-close-hover: #e5e7eb;
+    --pc-scrollbar-thumb: #4b5563;
+    --pc-scrollbar-thumb-hover: #6b7280;
+    --pc-input-bg: #111827;
+    --pc-input-text: #e5e7eb;
+    --pc-input-border: #4b5563;
+    --pc-accent: #4a90d9;
+    --pc-accent-hover: #5a9fe5;
+    --pc-accent-ring: rgba(74, 144, 217, 0.25);
+  }
+}
+
+/*
+ * Container - matches maplibregl-ctrl styling.
+ * The `.maplibregl-ctrl-group` part raises specificity above MapLibre's own
+ * `.maplibregl-ctrl-group { background: #fff }` rule, which otherwise wins on
+ * source order and keeps the button white (poor contrast in dark mode).
+ */
+.maplibregl-ctrl-group.plugin-control {
+  background: var(--pc-bg);
+  border-radius: 4px;
+  box-shadow: var(--pc-shadow);
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+}
+
+/* Toggle button - 29x29 to match navigation control */
+.maplibregl-ctrl-group button.plugin-control-toggle {
+  background: none;
+  border: none;
+  padding: 0;
+  width: 29px;
+  height: 29px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  outline: none;
+  color: var(--pc-icon);
+}
+
+.plugin-control-toggle:hover {
+  background-color: var(--pc-hover-bg);
+}
+
+.plugin-control-toggle .plugin-control-icon {
+  width: 100%;
+  height: 100%;
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  line-height: 0;
+}
+
+.plugin-control-toggle .plugin-control-icon svg {
+  width: 22px;
+  height: 22px;
+  display: block;
+  stroke: currentColor;
+  fill: none;
+}
+
+/* Panel - positioned dynamically by JavaScript for floating behavior */
+.plugin-control-panel {
+  position: absolute;
+  /* Position is set dynamically by _updatePanelPosition() */
+  background: var(--pc-bg);
+  color: var(--pc-text);
+  border-radius: 4px;
+  box-shadow: var(--pc-shadow);
+  min-width: 240px;
+  max-width: 420px;
+  max-height: 500px;
+  overflow-y: auto;
+  z-index: 1000;
+  padding: 8px;
+  font-size: 12px;
+  line-height: 1.4;
+  display: none;
+}
+
+.plugin-control-panel.expanded {
+  display: block;
+}
+
+/* Panel header */
+.plugin-control-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  font-weight: 600;
+  color: var(--pc-text);
+  padding: 4px 0 8px 0;
+  border-bottom: 1px solid var(--pc-border);
+  margin-bottom: 8px;
+}
+
+.plugin-control-title {
+  flex: 1 1 auto;
+  font-size: 13px;
+}
+
+.plugin-control-close {
+  width: 20px;
+  height: 20px;
+  border: none;
+  background: transparent;
+  color: var(--pc-close);
+  font-size: 18px;
+  line-height: 1;
+  cursor: pointer;
+  padding: 0;
+  transition: color 0.2s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.plugin-control-close:hover {
+  color: var(--pc-close-hover);
+}
+
+/* Content */
+.plugin-control-content {
+  max-height: 400px;
+  overflow-y: auto;
+}
+
+.plugin-control-placeholder {
+  margin: 0;
+  color: var(--pc-muted);
+  font-size: 12px;
+  text-align: center;
+  padding: 16px 0;
+}
+
+/* Demo actions wiring the host callbacks (open folder, deep-link status) */
+.plugin-control-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.plugin-control-action {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 8px 16px;
+  font-size: 14px;
+  font-weight: 500;
+  color: white;
+  background: var(--pc-accent);
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: background-color 0.15s;
+}
+
+.plugin-control-action:hover {
+  background: var(--pc-accent-hover);
+}
+
+.plugin-control-action:focus {
+  outline: 2px solid var(--pc-accent);
+  outline-offset: 2px;
+}
+
+.plugin-control-status {
+  margin-top: 8px;
+  font-size: 12px;
+  color: var(--pc-muted);
+  overflow-wrap: break-word;
+}
+
+.plugin-control-status:empty {
+  display: none;
+}
+
+/* Scrollbar styling */
+.plugin-control-content::-webkit-scrollbar {
+  width: 6px;
+}
+
+.plugin-control-content::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.plugin-control-content::-webkit-scrollbar-thumb {
+  background: var(--pc-scrollbar-thumb);
+  border-radius: 3px;
+}
+
+.plugin-control-content::-webkit-scrollbar-thumb:hover {
+  background: var(--pc-scrollbar-thumb-hover);
+}
+
+/* Form elements */
+.plugin-control-group {
+  margin-bottom: 12px;
+}
+
+.plugin-control-group:last-child {
+  margin-bottom: 0;
+}
+
+.plugin-control-label {
+  display: block;
+  margin-bottom: 4px;
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--pc-label);
+}
+
+.plugin-control-input {
+  width: 100%;
+  padding: 8px 10px;
+  font-size: 14px;
+  color: var(--pc-input-text);
+  background: var(--pc-input-bg);
+  border: 1px solid var(--pc-input-border);
+  border-radius: 4px;
+  outline: none;
+  transition: border-color 0.15s, box-shadow 0.15s;
+}
+
+.plugin-control-input:focus {
+  border-color: var(--pc-accent);
+  box-shadow: 0 0 0 3px var(--pc-accent-ring);
+}
+
+.plugin-control-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 8px 16px;
+  font-size: 14px;
+  font-weight: 500;
+  color: white;
+  background: var(--pc-accent);
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: background-color 0.15s;
+}
+
+.plugin-control-button:hover {
+  background: var(--pc-accent-hover);
+}
+
+.plugin-control-button:focus {
+  outline: 2px solid var(--pc-accent);
+  outline-offset: 2px;
+}
+
+.plugin-control-button:disabled {
+  background: var(--pc-scrollbar-thumb);
+  cursor: not-allowed;
+}
+
+/* Utility classes */
+.plugin-control-flex {
+  display: flex;
+  gap: 8px;
+}
+
+.plugin-control-flex-col {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.plugin-control-divider {
+  height: 1px;
+  background: var(--pc-border);
+  margin: 12px 0;
+}
+
+/* Demo right-sidebar panel body (see src/lib/geolibre/right-panel.ts). The host
+   provides the dock chrome and theme; the plugin only styles its own content. */
+.geolibre-plugin-right-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 12px;
+  font-size: 13px;
+  line-height: 1.5;
+}
+
+.geolibre-plugin-right-panel h2 {
+  margin: 0;
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.geolibre-plugin-right-panel p {
+  margin: 0;
+  opacity: 0.85;
+}
+
+/* Demo floating panel body (see src/lib/geolibre/floating-panel.ts). The host
+   provides the draggable card chrome and theme; the plugin styles its body. */
+.geolibre-plugin-floating-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 12px;
+  font-size: 13px;
+  line-height: 1.5;
+}
+
+.geolibre-plugin-floating-panel h2 {
+  margin: 0;
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.geolibre-plugin-floating-panel p {
+  margin: 0;
+  opacity: 0.85;
+}
+
+/* --- Flowmaps Premium UI Styles --- */
+
+.flowmaps-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  padding: 16px;
+}
+
+.flowmaps-panel h2 {
+  margin: 0 0 4px 0;
+  font-size: 16px;
+  font-weight: 600;
+}
+
+.control-group {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.control-group label {
+  font-weight: 500;
+  font-size: 13px;
+}
+
+.select-input {
+  background: var(--pc-input-bg);
+  color: var(--pc-input-text);
+  border: 1px solid var(--pc-input-border);
+  border-radius: 4px;
+  padding: 8px;
+  font-size: 13px;
+  outline: none;
+}
+
+.slider-input {
+  -webkit-appearance: none;
+  width: 100%;
+  height: 6px;
+  border-radius: 3px;
+  background: var(--pc-input-border);
+  outline: none;
+}
+
+.slider-input::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: var(--pc-accent);
+  cursor: pointer;
+}
+
+.slider-input::-moz-range-thumb {
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: var(--pc-accent);
+  cursor: pointer;
+}
+
+/* Drop Zone */
+.drop-zone {
+  border: 2px dashed var(--pc-input-border);
+  border-radius: 6px;
+  padding: 24px;
+  text-align: center;
+  position: relative;
+  background: rgba(255, 255, 255, 0.02);
+  transition: background 0.2s;
+  cursor: pointer;
+}
+
+.drop-zone:hover {
+  background: rgba(255, 255, 255, 0.05);
+}
+
+.drop-zone input[type="file"] {
+  position: absolute;
+  top: 0; left: 0; right: 0; bottom: 0;
+  opacity: 0;
+  cursor: pointer;
+}
+
+.drop-zone span {
+  font-size: 13px;
+  color: var(--pc-muted);
+}
+
+/* Toggle Switch */
+.toggle-group {
+  flex-direction: row;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.switch {
+  position: relative;
+  display: inline-block;
+  width: 36px;
+  height: 20px;
+}
+
+.switch input { 
+  opacity: 0;
+  width: 0;
+  height: 0;
+}
+
+.slider.round {
+  position: absolute;
+  cursor: pointer;
+  top: 0; left: 0; right: 0; bottom: 0;
+  background-color: var(--pc-input-border);
+  transition: .4s;
+  border-radius: 20px;
+}
+
+.slider.round:before {
+  position: absolute;
+  content: "";
+  height: 14px;
+  width: 14px;
+  left: 3px;
+  bottom: 3px;
+  background-color: white;
+  transition: .4s;
+  border-radius: 50%;
+}
+
+input:checked + .slider.round {
+  background-color: var(--pc-accent);
+}
+
+input:checked + .slider.round:before {
+  transform: translateX(16px);
+}
+
+.error-text {
+  color: #ef4444;
+  font-size: 12px;
+  margin: 0;
+}
+
+.success-text {
+  color: #10b981;
+  font-size: 12px;
+  margin: 0;
+}
