@@ -62,6 +62,17 @@ jobs:
     # Skip bot-authored PRs (e.g. a Dependabot bump touches no plugin anyway).
     if: github.event_name == 'workflow_dispatch' || github.event.sender.type != 'Bot'
     steps:
+      # The publish step runs `git config user.name` in the workspace root, so
+      # that root has to be a git repository. Both checkouts below use `path:`,
+      # which would leave it bare and fail the deploy with "not in a git
+      # directory". This is the base branch (pull_request_target), so it is our
+      # own trusted code, and nothing here is executed either way.
+      - name: Check out this repository into the workspace root
+        uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+          fetch-depth: 1
+
       - name: Resolve target PR
         id: pr
         env:
