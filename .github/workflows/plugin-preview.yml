@@ -28,9 +28,15 @@ name: Plugin preview
 #
 # SETUP (one time)
 # Secret PREVIEW_DEPLOY_TOKEN: a fine-grained PAT scoped to
-# opengeos/geolibre-plugins-preview ONLY, with "Contents: Read and write".
-# It never needs access to this repository -- the sticky comment is posted with
-# this workflow's own GITHUB_TOKEN.
+# opengeos/geolibre-plugins-preview ONLY, with two permissions:
+#   Contents: Read and write   -- push the preview to gh-pages
+#   Pages:    Read             -- poll the Pages build so the comment is only
+#                                 posted once the URL actually resolves
+# Pages read is not optional: the wait polls /repos/.../pages/builds with this
+# token, and a token without it never sees a build, so the job spends the
+# timeout and then fails with "Timed out waiting for build to start".
+# The token never needs access to this repository -- the sticky comment is
+# posted with this workflow's own GITHUB_TOKEN.
 
 on:
   pull_request_target:
@@ -192,7 +198,11 @@ jobs:
       # On `closed` this removes pr-preview/pr-<N>/ instead of deploying.
       - name: Publish preview
         if: github.event.action == 'closed' || steps.select.outputs.found == 'true'
-        uses: rossjrw/pr-preview-action@v1
+        # Pinned to a SHA rather than the mutable v1 tag: unlike the first-party
+        # actions/* steps above, this is a third-party action and it receives
+        # PREVIEW_DEPLOY_TOKEN, so a moved tag would hand that token to code
+        # nobody reviewed.
+        uses: rossjrw/pr-preview-action@ffa7509e91a3ec8dfc2e5536c4d5c1acdf7a6de9 # v1.8.1
         with:
           source-dir: geolibre/apps/geolibre-desktop/dist
           deploy-repository: opengeos/geolibre-plugins-preview
@@ -202,3 +212,6 @@ jobs:
           umbrella-dir: pr-preview
           pr-number: ${{ steps.pr.outputs.number }}
           action: ${{ github.event.action == 'closed' && 'remove' || 'deploy' }}
+          # Without this the sticky comment is posted as soon as the commit is
+          # pushed to gh-pages, so the link 404s until Pages finishes building.
+          wait-for-pages-deployment: true
