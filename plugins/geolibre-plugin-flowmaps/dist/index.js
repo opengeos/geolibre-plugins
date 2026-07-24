@@ -67498,12 +67498,8 @@ const nA = "geolibre-plugin-flowmaps-workbench", Exe = ({ state: t, updatePlugin
 };
 function Sxe({ control: t }) {
   var se, de, Ne;
-  const [e, r] = ye.useState("montrealBixi"), n = ye.useRef("montrealBixi"), [i, o] = ye.useState(null), [c, s] = ye.useState(null), [p, m] = ye.useState(null), [x, E] = ye.useState({}), [A, I] = ye.useState(() => t.getState());
+  const [e, r] = ye.useState("custom"), n = ye.useRef("custom"), [i, o] = ye.useState(null), [c, s] = ye.useState(null), [p, m] = ye.useState(null), [x, E] = ye.useState({}), [A, I] = ye.useState(() => t.getState());
   ye.useEffect(() => {
-    var be, Be;
-    (Be = (be = A.data) == null ? void 0 : be.flows) != null && Be.length || setTimeout(() => {
-      W("montrealBixi");
-    }, 50);
   }, []);
   const L = ye.useMemo(() => {
     if (!A.data || !A.data.flows || A.data.flows.length === 0)
