@@ -1,0 +1,8 @@
+{
+  "id": "geolibre-plugin-flowmaps",
+  "name": "Flowmaps.gl",
+  "version": "0.1.0",
+  "entry": "dist/index.js",
+  "description": "A plugin for visualizing origin-destination data using flowmap.gl.",
+  "style": "dist/style.css"
+}

@@ -49,7 +49,7 @@
       "id": "geolibre-hypercoast",
       "name": "HyperCoast",
       "version": "0.1.0",
-      "description": "Visualize and analyze hyperspectral imagery (EMIT, PACE, NEON, PRISMA, Tanager, AVIRIS, DESIS, EnMAP, Wyvern). Load a scene, build a wavelength-based RGB composite with adjustable bands and reflectance stretch, click pixels to plot reflectance spectra, and export the collected spectra to CSV. The control follows the host app's light/dark theme.",
+      "description": "Visualize and analyze hyperspectral imagery (EMIT, PACE, NEON, PRISMA, Tanager, AVIRIS, DESIS, EnMAP, Wyvern). Load a scene, build a wavelength-based RGB composite with adjustable bands and reflectance stretch, click pixels to plot reflectance spectra, and export the collected spectra to CSV. The control follows the host app\u0027s light/dark theme.",
       "author": "Qiusheng Wu",
       "homepage": "https://github.com/opengeos/geolibre-hypercoast",
       "manifestUrl": "plugins/geolibre-hypercoast/plugin.json",
@@ -66,6 +66,17 @@
       "manifestUrl": "plugins/maplibre-gl-vantor/plugin.json",
       "categories": ["Data", "Imagery"],
       "minGeoLibreVersion": "1.8.0"
+    },
+    {
+      "id": "geolibre-plugin-flowmaps",
+      "name": "Flowmaps.gl",
+      "version": "0.1.0",
+      "description": "A plugin for visualizing origin-destination data using flowmap.gl.",
+      "author": "Kai Erlenbusch",
+      "homepage": "https://github.com/kai-erlenbusch/geolibre-plugin-flowmaps",
+      "manifestUrl": "plugins/geolibre-plugin-flowmaps/plugin.json",
+      "categories": ["Visualization"],
+      "minGeoLibreVersion": "0.9.0"
     }
   ]
 }
