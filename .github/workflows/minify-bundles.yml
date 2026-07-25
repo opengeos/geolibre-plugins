@@ -108,7 +108,7 @@ jobs:
 
       - name: Upload the minified bundles
         if: steps.changes.outputs.dirty == 'true' && steps.mode.outputs.can-push != 'true'
-        uses: actions/upload-artifact@v5
+        uses: actions/upload-artifact@v7
         with:
           name: minified-bundles
           path: plugins/**/*.js
