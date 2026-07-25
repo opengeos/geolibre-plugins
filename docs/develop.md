@@ -50,6 +50,27 @@ plugins/
     style.css
 ```
 
+Commit the bundle exactly as your build emits it — CI takes care of the size.
+The **Minify plugin bundles** workflow whitespace-minifies every committed
+`plugins/**/*.js`, which is worth roughly 73% of the line count here (most
+plugin builds mangle identifiers but leave the whitespace in, so a 3.5 MB
+bundle can land as a 92,000-line diff). Nothing else changes: no identifier
+mangling, no syntax rewriting, no tree shaking, and dependency license headers
+are preserved.
+
+For a branch in this repository the workflow pushes the minified bundles back
+to your branch automatically. From a fork it cannot — GitHub's Actions token
+has no write access to your fork — so it fails instead and you run it yourself:
+
+```bash
+npm ci
+npm run minify        # rewrite the bundles in place
+npm run minify:check  # what CI checks
+```
+
+The failing run also uploads a `minified-bundles` artifact you can download and
+commit if you would rather not install Node locally.
+
 ## 3. Register it
 
 Add an entry to [`plugin-registry.json`](registry.md) with `manifestUrl`
@@ -82,7 +103,8 @@ pre-commit run --all-files
 ```
 
 Built plugin bundles (`plugins/*/index.js`, `plugins/*/style.css`) are size
-checked but never reformatted — keep them exactly as your build emits them.
+checked but never reformatted by pre-commit — the only thing that rewrites them
+is the whitespace minification in step 2, which pre-commit leaves alone.
 
 The same hooks run on every pull request in the **Lint** workflow, so a branch
 that has not been formatted will fail CI.

@@ -19,3 +19,14 @@ updates:
     groups:
       python:
         patterns: ["*"]
+
+  # esbuild, used only by scripts/minify_bundles.mjs.
+  - package-ecosystem: npm
+    directory: /
+    schedule:
+      interval: monthly
+    commit-message:
+      prefix: "deps"
+    groups:
+      npm:
+        patterns: ["*"]
