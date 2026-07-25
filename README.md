@@ -105,6 +105,24 @@ starting point.
 Create `plugins/<id>/` containing `plugin.json`, the built `entry` JS, and any
 `style` CSS. Keep `entry`/`style` paths relative and inside the folder.
 
+Commit the bundle as your build emits it. The
+[Minify plugin bundles](.github/workflows/minify-bundles.yml) workflow
+whitespace-minifies every committed `plugins/**/*.js` — worth about 73% of the
+line count here, since most plugin builds mangle identifiers but leave the
+whitespace in. It only strips whitespace: no identifier mangling, no syntax
+rewriting, no tree shaking, and dependency license headers are kept.
+
+On a branch in this repository the workflow pushes the result back to your
+branch. From a fork it cannot (the Actions token has no write access to your
+fork), so it fails and you run it yourself — or download the `minified-bundles`
+artifact it uploads and commit that:
+
+```bash
+npm ci
+npm run minify        # rewrite the bundles in place
+npm run minify:check  # what CI checks
+```
+
 ### 3. Register it
 
 Add an entry to `plugin-registry.json` with `manifestUrl` pointing at

@@ -1,0 +1,123 @@
+name: Minify plugin bundles
+
+# Keeps the committed plugin bundles whitespace-minified. Plugin `entry` files
+# are build output copied in from each plugin's own build, and most of those
+# builds mangle identifiers but leave the whitespace in -- one 3.5 MB flowmap.gl
+# bundle arrived as a 92,381-line diff. `scripts/minify_bundles.mjs` strips the
+# whitespace and nothing else (no mangling, no syntax rewriting, no tree
+# shaking), which is worth roughly 73% of the line count across this registry.
+#
+# On a pull request from a branch in THIS repository the job minifies and pushes
+# the result back, so contributors never have to think about it. On a pull
+# request from a fork it cannot: GITHUB_TOKEN is scoped to the base repository
+# and is read-only for fork PRs, so there the job uploads the minified bundles
+# as an artifact and fails with instructions instead. Reproduce either locally
+# with `npm ci && npm run minify`.
+#
+# The push uses GITHUB_TOKEN, and pushes made with GITHUB_TOKEN do not trigger
+# new workflow runs, so this cannot loop.
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+# Cancel a superseded run when a PR is pushed to repeatedly. Auto-fix runs are
+# not worth holding a runner for once they are obsolete.
+concurrency:
+  group: minify-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  minify:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Decide whether this run can push its fix
+        id: mode
+        env:
+          HEAD_REPO: ${{ github.event.pull_request.head.repo.full_name }}
+          HEAD_REF: ${{ github.event.pull_request.head.ref }}
+        run: |
+          if [ "${{ github.event_name }}" = "pull_request" ] &&
+             [ "$HEAD_REPO" = "${{ github.repository }}" ]; then
+            echo "can-push=true" >> "$GITHUB_OUTPUT"
+            echo "checkout-ref=$HEAD_REF" >> "$GITHUB_OUTPUT"
+          else
+            echo "can-push=false" >> "$GITHUB_OUTPUT"
+            echo "checkout-ref=" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Checkout
+        uses: actions/checkout@v7
+        with:
+          # Empty for fork PRs and pushes, which is actions/checkout's default
+          # (the merge commit / pushed ref). Same-repo PRs check out the branch
+          # tip instead, because a detached merge commit cannot be pushed back.
+          ref: ${{ steps.mode.outputs.checkout-ref }}
+          # `npm ci` runs the pinned dependency's install script, and on a fork
+          # PR the checkout it runs in is untrusted. Keep git credentials out of
+          # that environment; the push step below passes the token explicitly.
+          persist-credentials: false
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v7
+        with:
+          node-version: "24"
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Minify plugin bundles
+        run: node scripts/minify_bundles.mjs --fix
+
+      # A push made with GITHUB_TOKEN does not trigger new workflow runs, so the
+      # Test Plugins workflow will not re-run against an auto-fixed branch.
+      # Import the minified bundles here instead, so nothing is pushed back
+      # without having been loaded at least once.
+      - name: Validate the minified bundles
+        run: node scripts/validate_plugins.mjs
+
+      - name: Check for changes
+        id: changes
+        run: |
+          if git diff --quiet; then
+            echo "dirty=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "dirty=true" >> "$GITHUB_OUTPUT"
+            git diff --stat
+          fi
+
+      - name: Commit and push the minified bundles
+        if: steps.changes.outputs.dirty == 'true' && steps.mode.outputs.can-push == 'true'
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          HEAD_REF: ${{ steps.mode.outputs.checkout-ref }}
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add --update plugins
+          git commit -m "Whitespace-minify plugin bundles"
+          git push \
+            "https://x-access-token:${GITHUB_TOKEN}@github.com/${{ github.repository }}.git" \
+            "HEAD:refs/heads/${HEAD_REF}"
+
+      - name: Upload the minified bundles
+        if: steps.changes.outputs.dirty == 'true' && steps.mode.outputs.can-push != 'true'
+        uses: actions/upload-artifact@v5
+        with:
+          name: minified-bundles
+          path: plugins/**/*.js
+          retention-days: 7
+
+      - name: Fail with instructions
+        if: steps.changes.outputs.dirty == 'true' && steps.mode.outputs.can-push != 'true'
+        run: |
+          echo "::error::Plugin bundles are not whitespace-minified." \
+            "Run 'npm ci && npm run minify' and commit the result, or download" \
+            "the 'minified-bundles' artifact from this run and commit that."
+          exit 1
