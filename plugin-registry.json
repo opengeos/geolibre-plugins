@@ -81,7 +81,7 @@
     {
       "id": "open-climate-service",
       "name": "Open Climate Service",
-      "version": "0.2.0",
+      "version": "0.2.1",
       "description": "Browse an Open Climate Service (OCS) STAC catalog and render its published GeoZarr datasets.",
       "author": "DHIS2 for Climate & Health",
       "homepage": "https://github.com/dhis2/open-climate-service-geolibre-plugin",
