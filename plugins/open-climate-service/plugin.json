@@ -4,7 +4,7 @@
   "version": "0.2.0",
   "entry": "index.js",
   "style": "style.css",
-  "description": "Browse an Open Climate Service (OCS) STAC catalog and render its published climate datasets, with CRS, time, variable, colormap, and value range taken from the dataset metadata.",
+  "description": "Browse an Open Climate Service (OCS) STAC catalog and render its published GeoZarr datasets.",
   "author": "DHIS2",
   "homepage": "https://github.com/dhis2/open-climate-service-geolibre-plugin"
 }
