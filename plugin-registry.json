@@ -88,6 +88,17 @@
       "manifestUrl": "plugins/open-climate-service/plugin.json",
       "categories": ["Climate", "Raster", "Data"],
       "minGeoLibreVersion": "2.4.0"
+    },
+    {
+      "id": "aorctodss",
+      "name": "AORCtoDSS",
+      "version": "0.2.0",
+      "description": "Prepare NOAA AORC watershed time series, variable-aware event summaries, animations, and SHG HEC-DSS grids. Requires Windows and the AORCtoDSS companion service.",
+      "author": "Mohsen Tahmasebi Nasab",
+      "homepage": "https://github.com/mohsennasab/aorc-to-dss",
+      "manifestUrl": "plugins/aorctodss/plugin.json",
+      "categories": ["Climate", "Raster", "Data"],
+      "minGeoLibreVersion": "2.4.0"
     }
   ]
 }
