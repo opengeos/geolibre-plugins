@@ -1,0 +1,8 @@
+{
+  "id": "aorctodss",
+  "name": "AORCtoDSS",
+  "version": "0.2.0",
+  "entry": "dist/index.js",
+  "style": "dist/style.css",
+  "description": "Prepare NOAA AORC watershed time series, variable-aware event summaries, animations, and SHG HEC-DSS grids. Requires the AORCtoDSS Windows companion service."
+}
