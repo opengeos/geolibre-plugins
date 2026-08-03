@@ -1,0 +1,10 @@
+{
+  "id": "kml-kmz-import",
+  "name": "KML / KMZ Import",
+  "version": "0.3.1",
+  "entry": "index.js",
+  "style": "style.css",
+  "description": "Import styled KML and KMZ files as organized GeoLibre vector and globe-compatible raster layers.",
+  "author": "Husayn El Sharif",
+  "homepage": "https://github.com/helsharif/geolibre-kml-kmz-import"
+}
