@@ -49,7 +49,7 @@
       "id": "geolibre-hypercoast",
       "name": "HyperCoast",
       "version": "0.1.0",
-      "description": "Visualize and analyze hyperspectral imagery (EMIT, PACE, NEON, PRISMA, Tanager, AVIRIS, DESIS, EnMAP, Wyvern). Load a scene, build a wavelength-based RGB composite with adjustable bands and reflectance stretch, click pixels to plot reflectance spectra, and export the collected spectra to CSV. The control follows the host app\u0027s light/dark theme.",
+      "description": "Visualize and analyze hyperspectral imagery (EMIT, PACE, NEON, PRISMA, Tanager, AVIRIS, DESIS, EnMAP, Wyvern). Load a scene, build a wavelength-based RGB composite with adjustable bands and reflectance stretch, click pixels to plot reflectance spectra, and export the collected spectra to CSV. The control follows the host app's light/dark theme.",
       "author": "Qiusheng Wu",
       "homepage": "https://github.com/opengeos/geolibre-hypercoast",
       "manifestUrl": "plugins/geolibre-hypercoast/plugin.json",
@@ -99,6 +99,16 @@
       "manifestUrl": "plugins/aorctodss/plugin.json",
       "categories": ["Climate", "Raster", "Data"],
       "minGeoLibreVersion": "2.4.0"
+    },
+    {
+      "id": "lst-super-resolution",
+      "name": "LST Super-Resolution (SR2D4)",
+      "description": "Downscaling espacial avançado (TsHARP) da temperatura de superfície Landsat (100m para 1m) utilizando Sentinel SR2D4 com análise estatística de Ilhas de Calor (UHI).",
+      "version": "1.0.0",
+      "author": "Leandro Gregorio",
+      "homepage": "https://github.com/LeandroGregorio7/lst-super-resolution",
+      "manifestUrl": "plugins/lst-super-resolution/plugin.json",
+      "minGeoLibreVersion": "1.0.0"
     }
   ]
 }
