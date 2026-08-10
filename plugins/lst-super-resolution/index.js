@@ -655,12 +655,12 @@ function isPluginState(value) {
 	return true;
 }
 var plugin = {
-	id: "geolibre-plugin-template",
-	name: "GeoLibre Plugin Template",
-	version: "0.1.0",
-	urlParameterNames: [PLUGIN_DATA_PARAM],
-	activate(app) {
-		control = control ?? createControl(app);
+    id: "lst-super-resolution",
+    name: "LST Super-Resolution (SR2D4)",
+    version: "1.0.0",
+    urlParameterNames: [PLUGIN_DATA_PARAM],
+    activate(app) {
+        control = control ?? createControl(app);
 		if (!app.addMapControl(control, position)) {
 			control = null;
 			return false;
