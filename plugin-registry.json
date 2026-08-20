@@ -9,7 +9,9 @@
       "author": "GeoLibre",
       "homepage": "https://github.com/opengeos/geolibre-plugins",
       "manifestUrl": "plugins/sample/plugin.json",
-      "categories": ["Example"],
+      "categories": [
+        "Example"
+      ],
       "minGeoLibreVersion": "0.9.0"
     },
     {
@@ -20,7 +22,11 @@
       "author": "Husayn El Sharif",
       "homepage": "https://github.com/helsharif/geolibre-netcdf-loader-plugin",
       "manifestUrl": "plugins/geolibre-netcdf/plugin.json",
-      "categories": ["Climate", "Raster", "Data"],
+      "categories": [
+        "Climate",
+        "Raster",
+        "Data"
+      ],
       "minGeoLibreVersion": "1.9.0"
     },
     {
@@ -31,7 +37,10 @@
       "author": "Qiusheng Wu",
       "homepage": "https://github.com/opengeos/geolibre-nasa-opera",
       "manifestUrl": "plugins/geolibre-nasa-opera/plugin.json",
-      "categories": ["Data", "Imagery"],
+      "categories": [
+        "Data",
+        "Imagery"
+      ],
       "minGeoLibreVersion": "0.9.0"
     },
     {
@@ -42,18 +51,24 @@
       "author": "Qiusheng Wu",
       "homepage": "https://github.com/opengeos/geolibre-d2s",
       "manifestUrl": "plugins/geolibre-d2s/plugin.json",
-      "categories": ["Data", "Imagery"],
+      "categories": [
+        "Data",
+        "Imagery"
+      ],
       "minGeoLibreVersion": "0.9.0"
     },
     {
       "id": "geolibre-hypercoast",
       "name": "HyperCoast",
       "version": "0.1.0",
-      "description": "Visualize and analyze hyperspectral imagery (EMIT, PACE, NEON, PRISMA, Tanager, AVIRIS, DESIS, EnMAP, Wyvern). Load a scene, build a wavelength-based RGB composite with adjustable bands and reflectance stretch, click pixels to plot reflectance spectra, and export the collected spectra to CSV. The control follows the host app\u0027s light/dark theme.",
+      "description": "Visualize and analyze hyperspectral imagery (EMIT, PACE, NEON, PRISMA, Tanager, AVIRIS, DESIS, EnMAP, Wyvern). Load a scene, build a wavelength-based RGB composite with adjustable bands and reflectance stretch, click pixels to plot reflectance spectra, and export the collected spectra to CSV. The control follows the host app's light/dark theme.",
       "author": "Qiusheng Wu",
       "homepage": "https://github.com/opengeos/geolibre-hypercoast",
       "manifestUrl": "plugins/geolibre-hypercoast/plugin.json",
-      "categories": ["Data", "Imagery"],
+      "categories": [
+        "Data",
+        "Imagery"
+      ],
       "minGeoLibreVersion": "0.9.0"
     },
     {
@@ -64,7 +79,10 @@
       "author": "Qiusheng Wu",
       "homepage": "https://github.com/opengeos/maplibre-gl-vantor",
       "manifestUrl": "plugins/maplibre-gl-vantor/plugin.json",
-      "categories": ["Data", "Imagery"],
+      "categories": [
+        "Data",
+        "Imagery"
+      ],
       "minGeoLibreVersion": "1.8.0"
     },
     {
@@ -75,7 +93,9 @@
       "author": "Kai Erlenbusch",
       "homepage": "https://github.com/kai-erlenbusch/geolibre-plugin-flowmaps",
       "manifestUrl": "plugins/geolibre-plugin-flowmaps/plugin.json",
-      "categories": ["Visualization"],
+      "categories": [
+        "Visualization"
+      ],
       "minGeoLibreVersion": "0.9.0"
     },
     {
@@ -86,7 +106,11 @@
       "author": "DHIS2 for Climate & Health",
       "homepage": "https://github.com/dhis2/open-climate-service-geolibre-plugin",
       "manifestUrl": "plugins/open-climate-service/plugin.json",
-      "categories": ["Climate", "Raster", "Data"],
+      "categories": [
+        "Climate",
+        "Raster",
+        "Data"
+      ],
       "minGeoLibreVersion": "2.4.0"
     },
     {
@@ -97,8 +121,26 @@
       "author": "Mohsen Tahmasebi Nasab",
       "homepage": "https://github.com/mohsennasab/aorc-to-dss",
       "manifestUrl": "plugins/aorctodss/plugin.json",
-      "categories": ["Climate", "Raster", "Data"],
+      "categories": [
+        "Climate",
+        "Raster",
+        "Data"
+      ],
       "minGeoLibreVersion": "2.4.0"
+    },
+    {
+      "id": "geolibre-flood-gauges",
+      "name": "US Live Flood Gauges",
+      "version": "0.4.1",
+      "description": "NOAA/NWPS river and coastal gauges. For informational purposes only. Not for life-safety decisions. Flood-category symbology, H3 overview, hydrographs, and deep links. By flood.live.",
+      "author": "chuofringer (flood.live)",
+      "homepage": "https://github.com/chuofringer/geolibre-flood-gauges",
+      "manifestUrl": "plugins/geolibre-flood-gauges/plugin.json",
+      "categories": [
+        "Hydrology",
+        "Data"
+      ],
+      "minGeoLibreVersion": "2.0.0"
     }
   ]
 }
