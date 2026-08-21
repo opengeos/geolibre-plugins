@@ -101,6 +101,14 @@
       "minGeoLibreVersion": "2.4.0"
     },
     {
+      "id": "lst-super-resolution",
+      "name": "LST Super-Resolution (SR2D4)",
+      "description": "Advanced spatial downscaling (TsHARP) of Landsat Land Surface Temperature (100m to 1m) using Sentinel SR2D4, featuring statistical Urban Heat Island (UHI) analysis.",
+      "version": "1.0.0",
+      "author": "Leandro Gregorio",
+      "homepage": "https://github.com/LeandroGregorio7/lst-super-resolution",
+      "manifestUrl": "plugins/lst-super-resolution/plugin.json",
+      "minGeoLibreVersion": "1.0.0"
       "id": "geolibre-flood-gauges",
       "name": "US Live Flood Gauges",
       "version": "0.4.1",
