@@ -99,7 +99,8 @@ async function main() {
   const unminified = [];
   let failed = 0;
   for (const absolute of bundles.sort()) {
-    const relative = path.relative(root, absolute);
+    // Normalize separators so SKIP entries work on Windows as well as POSIX.
+    const relative = path.relative(root, absolute).split(path.sep).join("/");
     if (SKIP.has(relative)) {
       continue;
     }

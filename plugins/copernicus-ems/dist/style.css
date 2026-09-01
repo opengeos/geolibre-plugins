@@ -386,6 +386,8 @@
 .cems-search select {
   flex: 1;
   min-width: 0;
+  border-color: #64748b;
+  box-shadow: inset 0 0 0 1px rgba(100, 116, 139, 0.2);
 }
 
 /* Native Windows option menus stay light even when GeoLibre is in dark mode. */
