@@ -13,6 +13,17 @@
       "minGeoLibreVersion": "0.9.0"
     },
     {
+      "id": "copernicus-ems",
+      "name": "Copernicus EMS Rapid Mapping",
+      "version": "0.1.0",
+      "description": "Browse CEMS Rapid Mapping activations and load AOIs, product vectors, and source COG imagery.",
+      "author": "Joao Pereira",
+      "homepage": "https://github.com/JPPereira93/geolibre-copernicus-ems",
+      "manifestUrl": "plugins/copernicus-ems/plugin.json",
+      "categories": ["Data", "Imagery"],
+      "minGeoLibreVersion": "2.7.0"
+    },
+    {
       "id": "geolibre-netcdf",
       "name": "NetCDF Loader",
       "version": "0.5.9",

@@ -1,0 +1,8 @@
+{
+  "id": "copernicus-ems",
+  "name": "Copernicus EMS Rapid Mapping",
+  "version": "0.1.0",
+  "entry": "dist/index.js",
+  "description": "Browse CEMS Rapid Mapping activations and load AOIs, product vectors, and source COG imagery.",
+  "style": "dist/style.css"
+}
