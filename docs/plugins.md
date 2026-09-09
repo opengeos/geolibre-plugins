@@ -5,7 +5,7 @@ hide:
 
 # Plugins
 
-There are **9** plugins in the registry. Install them from GeoLibre: open **Settings → Manage Plugins**, then **Install** from the **All** or **Not installed** tab. No manual URL entry needed.
+There are **10** plugins in the registry. Install them from GeoLibre: open **Settings → Manage Plugins**, then **Install** from the **All** or **Not installed** tab. No manual URL entry needed.
 
 <div class="grid cards" markdown>
 
@@ -20,6 +20,18 @@ There are **9** plugins in the registry. Install them from GeoLibre: open **Sett
     `Climate` `Raster` `Data`
 
     [:octicons-mark-github-16: Homepage](https://github.com/mohsennasab/aorc-to-dss){ target=_blank } · [:octicons-package-16: Manifest](https://plugins.geolibre.app/plugins/aorctodss/plugin.json){ target=_blank }
+
+-   :material-puzzle:{ .lg .middle } __Copernicus EMS Rapid Mapping__
+
+    ---
+
+    Browse CEMS Rapid Mapping activations and load AOIs, product vectors, and source COG imagery.
+
+    **Author:** Joao Pereira · **Version:** 0.2.0 · **Requires:** GeoLibre 2.7.0+
+
+    `Data` `Imagery`
+
+    [:octicons-mark-github-16: Homepage](https://github.com/JPPereira93/geolibre-copernicus-ems){ target=_blank } · [:octicons-package-16: Manifest](https://plugins.geolibre.app/plugins/copernicus-ems/plugin.json){ target=_blank }
 
 -   :material-puzzle:{ .lg .middle } __Data to Science (D2S)__
 
