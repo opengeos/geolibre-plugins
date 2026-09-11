@@ -1,0 +1,129 @@
+.contour-panel {
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  color: var(--contour-text, #1e1e24);
+  padding: 12px;
+  background: var(--contour-bg, #ffffff);
+}
+
+.contour-heading {
+  margin: 0 0 4px;
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--contour-text, #1e1e24);
+}
+
+.contour-description {
+  margin: 0 0 16px;
+  font-size: 12px;
+  color: var(--contour-text, #1e1e24);
+  opacity: 0.7;
+  line-height: 1.4;
+}
+
+.contour-section {
+  margin-bottom: 16px;
+  padding: 12px;
+  border: 1px solid var(--contour-border, #d1d5db);
+  border-radius: 8px;
+  background: var(--contour-input-bg, #f3f4f6);
+}
+
+.contour-section-title {
+  margin: 0 0 10px;
+  font-size: 13px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: var(--contour-accent, #3b82f6);
+}
+
+.contour-field {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin-bottom: 10px;
+}
+
+.contour-field:last-child {
+  margin-bottom: 0;
+}
+
+.contour-label {
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--contour-text, #1e1e24);
+  opacity: 0.8;
+}
+
+.contour-input,
+.contour-select {
+  padding: 6px 10px;
+  font-size: 13px;
+  border: 1px solid var(--contour-border, #d1d5db);
+  border-radius: 6px;
+  background: var(--contour-bg, #ffffff);
+  color: var(--contour-text, #1e1e24);
+  outline: none;
+  box-sizing: border-box;
+  width: 100%;
+}
+
+.contour-input:focus,
+.contour-select:focus {
+  border-color: var(--contour-accent, #3b82f6);
+  box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.15);
+}
+
+.contour-buttons {
+  display: flex;
+  gap: 8px;
+  margin-top: 8px;
+}
+
+.contour-btn {
+  flex: 1;
+  padding: 8px 16px;
+  font-size: 13px;
+  font-weight: 500;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: opacity 0.15s;
+}
+
+.contour-btn:hover {
+  opacity: 0.85;
+}
+
+.contour-btn-primary {
+  background: var(--contour-accent, #3b82f6);
+  color: #ffffff;
+}
+
+.contour-btn-secondary {
+  background: var(--contour-input-bg, #f3f4f6);
+  color: var(--contour-text, #1e1e24);
+  border: 1px solid var(--contour-border, #d1d5db);
+}
+
+.contour-status {
+  margin-top: 10px;
+  font-size: 12px;
+  padding: 6px 10px;
+  border-radius: 6px;
+}
+
+.contour-status-success {
+  background: rgba(34, 197, 94, 0.1);
+  color: #15803d;
+}
+
+.contour-status-error {
+  background: rgba(239, 68, 68, 0.1);
+  color: #b91c1c;
+}
+
+.contour-status-loading {
+  background: rgba(59, 130, 246, 0.1);
+  color: #2563eb;
+}

@@ -99,6 +99,17 @@
       "manifestUrl": "plugins/geolibre-flood-gauges/plugin.json",
       "categories": ["Hydrology", "Data"],
       "minGeoLibreVersion": "2.0.0"
+    },
+    {
+      "id": "geolibre-contour",
+      "name": "Contour Lines from DEM",
+      "version": "0.3.7",
+      "description": "Generate dynamic contour lines from loaded Cloud-Optimized GeoTIFF elevation rasters.",
+      "author": "Cedric Bouffard",
+      "homepage": "https://github.com/cedricbouffard/geolibre-contour",
+      "manifestUrl": "plugins/geolibre-contour/plugin.json",
+      "categories": ["Raster", "Visualization"],
+      "minGeoLibreVersion": "0.9.0"
     }
   ]
 }
