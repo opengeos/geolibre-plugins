@@ -1,0 +1,417 @@
+/*
+ * The host injects this file globally, so every selector is namespaced under
+ * `.mcx-` and colours come from GeoLibre's own design tokens rather than fixed
+ * values — that is what keeps the panel readable in both the light and dark
+ * themes without a second stylesheet.
+ */
+
+.mcx-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  padding: 12px 14px 24px;
+  font-size: 12.5px;
+  line-height: 1.45;
+  color: hsl(var(--foreground));
+}
+
+.mcx-section {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid hsl(var(--border));
+}
+
+.mcx-section:last-child {
+  border-bottom: none;
+}
+
+.mcx-section--intro {
+  gap: 4px;
+}
+
+.mcx-section__title {
+  margin: 0;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: hsl(var(--muted-foreground));
+}
+
+.mcx-subtitle {
+  margin: 6px 0 0;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.mcx-intro,
+.mcx-description,
+.mcx-versions,
+.mcx-rfunc,
+.mcx-summary {
+  margin: 0;
+  color: hsl(var(--muted-foreground));
+}
+
+.mcx-description {
+  font-size: 11.5px;
+}
+
+.mcx-versions,
+.mcx-rfunc {
+  font-size: 11px;
+  font-variant-numeric: tabular-nums;
+}
+
+.mcx-summary {
+  font-size: 11.5px;
+  color: hsl(var(--foreground));
+}
+
+.mcx-summary--empty {
+  color: hsl(var(--muted-foreground));
+  font-style: italic;
+}
+
+/* --- form controls -------------------------------------------------------- */
+
+.mcx-field {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.mcx-field--inline {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  align-items: center;
+  gap: 6px 10px;
+}
+
+.mcx-field--inline .mcx-field__hint {
+  grid-column: 1 / -1;
+}
+
+.mcx-field__label {
+  font-size: 11.5px;
+  font-weight: 500;
+}
+
+.mcx-field__hint {
+  font-size: 10.5px;
+  color: hsl(var(--muted-foreground));
+}
+
+.mcx-input,
+.mcx-select,
+.mcx-file {
+  width: 100%;
+  box-sizing: border-box;
+  padding: 5px 7px;
+  font: inherit;
+  font-size: 12px;
+  color: hsl(var(--foreground));
+  background: hsl(var(--background));
+  border: 1px solid hsl(var(--border));
+  border-radius: 6px;
+}
+
+.mcx-field--inline .mcx-input,
+.mcx-field--inline .mcx-select {
+  width: 110px;
+}
+
+.mcx-input:focus-visible,
+.mcx-select:focus-visible,
+.mcx-file:focus-visible {
+  outline: 2px solid hsl(var(--ring));
+  outline-offset: 1px;
+}
+
+.mcx-file {
+  padding: 4px;
+  font-size: 11px;
+}
+
+.mcx-file-summary {
+  margin: 0;
+  font-size: 11.5px;
+  font-variant-numeric: tabular-nums;
+}
+
+.mcx-range {
+  width: 110px;
+}
+
+.mcx-check {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  align-items: center;
+  gap: 4px 7px;
+  font-size: 11.5px;
+}
+
+.mcx-check .mcx-field__hint {
+  grid-column: 2;
+}
+
+.mcx-checkbox {
+  margin: 0;
+  accent-color: hsl(var(--primary));
+}
+
+/* --- buttons -------------------------------------------------------------- */
+
+.mcx-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.mcx-button {
+  padding: 5px 10px;
+  font: inherit;
+  font-size: 11.5px;
+  font-weight: 500;
+  border-radius: 6px;
+  border: 1px solid hsl(var(--border));
+  background: hsl(var(--background));
+  color: hsl(var(--foreground));
+  cursor: pointer;
+}
+
+.mcx-button:hover:not(:disabled) {
+  background: hsl(var(--accent));
+}
+
+.mcx-button:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+.mcx-button--primary {
+  background: hsl(var(--primary));
+  color: hsl(var(--primary-foreground));
+  border-color: transparent;
+}
+
+.mcx-button--primary:hover:not(:disabled) {
+  filter: brightness(1.08);
+  background: hsl(var(--primary));
+}
+
+.mcx-button--danger {
+  border-color: hsl(var(--destructive));
+  color: hsl(var(--destructive));
+}
+
+.mcx-button--ghost {
+  border-color: transparent;
+  color: hsl(var(--muted-foreground));
+}
+
+/* --- status --------------------------------------------------------------- */
+
+.mcx-status-host {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.mcx-status {
+  margin: 0;
+  font-size: 11.5px;
+  color: hsl(var(--muted-foreground));
+}
+
+.mcx-progress {
+  height: 4px;
+  border-radius: 2px;
+  overflow: hidden;
+  background: hsl(var(--muted));
+}
+
+.mcx-progress__fill {
+  height: 100%;
+  background: hsl(var(--primary));
+  transition: width 200ms ease;
+}
+
+.mcx-progress__fill--indeterminate {
+  width: 35%;
+  animation: mcx-slide 1.4s ease-in-out infinite;
+}
+
+@keyframes mcx-slide {
+  0% { transform: translateX(-100%); }
+  100% { transform: translateX(320%); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .mcx-progress__fill--indeterminate {
+    animation: none;
+    width: 100%;
+    opacity: 0.5;
+  }
+}
+
+.mcx-note {
+  margin: 0;
+  padding: 6px 8px;
+  font-size: 11.5px;
+  border-radius: 6px;
+  border-left: 3px solid hsl(var(--border));
+  background: hsl(var(--muted));
+}
+
+.mcx-note--warn {
+  border-left-color: hsl(38 92% 50%);
+}
+
+.mcx-note--error {
+  border-left-color: hsl(var(--destructive));
+  color: hsl(var(--destructive));
+}
+
+/* --- results -------------------------------------------------------------- */
+
+.mcx-layer-list {
+  margin: 0;
+  padding-left: 16px;
+  font-size: 11.5px;
+}
+
+.mcx-layer-list__item {
+  margin: 1px 0;
+}
+
+/* Raster thumbnails in the results list; the "--only" variant is the fallback
+   rendering when the host gave us no way to draw the raster on the map. */
+.mcx-thumb {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 3px 0 5px;
+}
+
+.mcx-thumb canvas {
+  display: block;
+  max-width: 96px;
+  max-height: 72px;
+  border: 1px solid hsl(var(--border));
+  border-radius: 3px;
+  image-rendering: pixelated;
+  background:
+    repeating-conic-gradient(hsl(var(--muted)) 0 25%, transparent 0 50%) 0 0 / 8px 8px;
+}
+
+.mcx-thumb--only canvas {
+  max-width: 100%;
+  max-height: 240px;
+}
+
+.mcx-thumb__range {
+  font-size: 10.5px;
+  color: hsl(var(--muted-foreground));
+}
+
+.mcx-legend canvas {
+  display: block;
+  width: 100%;
+  height: 10px;
+  border-radius: 3px;
+  border: 1px solid hsl(var(--border));
+}
+
+.mcx-table summary {
+  cursor: pointer;
+  font-size: 11.5px;
+  color: hsl(var(--muted-foreground));
+}
+
+.mcx-pre {
+  max-height: 220px;
+  overflow: auto;
+  margin: 6px 0 0;
+  padding: 6px;
+  font-size: 10.5px;
+  border-radius: 6px;
+  background: hsl(var(--muted));
+}
+
+/* --- map control ---------------------------------------------------------- */
+
+/* Two classes so this outranks MapLibre's `.maplibregl-ctrl-group button {
+   display: block }`, which loads later and would leave the icon at the top-left
+   of the cell. GeoLibre keeps map control buttons white in both themes, so the
+   icon gets a fixed dark colour rather than the theme foreground, which is
+   near-white in dark mode and made the icon vanish. Same approach as the host's
+   graticule and spin-globe controls. */
+.mcx-ctrl .mcx-ctrl__button {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-sizing: border-box;
+  width: 29px;
+  height: 29px;
+  margin: 0;
+  padding: 0;
+  border: none;
+  background: none;
+  color: #1f2a37;
+  cursor: pointer;
+}
+
+.mcx-ctrl .mcx-ctrl__button:hover {
+  background-color: rgb(0 0 0 / 0.05);
+}
+
+.mcx-ctrl .mcx-ctrl__button > svg {
+  display: block;
+  flex: 0 0 auto;
+  width: 18px;
+  height: 18px;
+  margin: 0 auto;
+}
+
+/* --- floating fallback ---------------------------------------------------- */
+
+.mcx-floating {
+  position: absolute;
+  top: 12px;
+  right: 52px;
+  z-index: 5;
+  width: 340px;
+  max-height: calc(100% - 24px);
+  display: flex;
+  flex-direction: column;
+  border-radius: 10px;
+  border: 1px solid hsl(var(--border));
+  background: hsl(var(--background));
+  box-shadow: 0 8px 28px rgb(0 0 0 / 0.18);
+}
+
+.mcx-floating__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 8px 12px;
+  font-size: 12px;
+  font-weight: 600;
+  border-bottom: 1px solid hsl(var(--border));
+}
+
+.mcx-floating__close {
+  border: none;
+  background: none;
+  font-size: 16px;
+  line-height: 1;
+  cursor: pointer;
+  color: hsl(var(--muted-foreground));
+}
+
+.mcx-floating__body {
+  overflow: auto;
+}

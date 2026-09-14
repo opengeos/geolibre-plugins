@@ -99,6 +99,17 @@
       "manifestUrl": "plugins/geolibre-flood-gauges/plugin.json",
       "categories": ["Hydrology", "Data"],
       "minGeoLibreVersion": "2.0.0"
+    },
+    {
+      "id": "movecost",
+      "name": "movecost — least-cost analysis",
+      "version": "0.2.4",
+      "description": "Least-cost paths, corridors, networks, cost allocation, isochrones and ranked alternative paths on a DEM with the movecost R package (26 slope-dependent cost functions), running in the browser through webR or against a local R service. Download the DEM for a drawn area or upload a GeoTIFF.",
+      "author": "Enzo Cocca",
+      "homepage": "https://github.com/enzococca/geolibre-movecost",
+      "manifestUrl": "plugins/movecost/plugin.json",
+      "categories": ["Analysis", "Archaeology", "Terrain"],
+      "minGeoLibreVersion": "2.9.0"
     }
   ]
 }

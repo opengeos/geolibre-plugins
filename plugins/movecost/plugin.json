@@ -1,0 +1,10 @@
+{
+  "id": "movecost",
+  "name": "movecost — least-cost analysis",
+  "version": "0.2.4",
+  "entry": "index.js",
+  "style": "style.css",
+  "description": "Slope-dependent accumulated cost surfaces, least-cost paths, corridors, networks, cost allocation and isochrones, using the movecost R package.",
+  "author": "Enzo Cocca",
+  "homepage": "https://github.com/enzococca/geolibre-movecost"
+}
