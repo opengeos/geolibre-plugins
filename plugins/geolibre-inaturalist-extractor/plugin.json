@@ -1,0 +1,9 @@
+{
+  "id": "geolibre-inaturalist-extractor",
+  "name": "iNaturalist Extractor",
+  "version": "1.5.0",
+  "entry": "index.js",
+  "description": "Fetch georeferenced iNaturalist observations by view or layer extent, with date, species, iconic-taxa, observer, keyword, quality-grade and advanced (taxon ID, place ID, photo license, project, annotation) filters, and a photo popup when available.",
+  "style": "style.css",
+  "engines": ["maplibre"]
+}
