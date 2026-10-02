@@ -169,7 +169,7 @@
     {
       "id": "openrndt-geolibre",
       "name": "RNDT catalogue",
-      "version": "0.1.4",
+      "version": "0.1.5",
       "description": "Search the Italian national catalogue of spatial data (RNDT) and add its WMS/WFS services to the map.",
       "author": "onData",
       "homepage": "https://github.com/ondata/openrndt-geolibre",
