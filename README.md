@@ -6,7 +6,8 @@ This repository is published to GitHub Pages at **https://plugins.geolibre.app**
 and hosts:
 
 - `plugin-registry.json` — the curated index the GeoLibre Manage Plugins dialog
-  reads (`https://plugins.geolibre.app/plugin-registry.json`).
+  reads (`https://plugins.geolibre.app/plugin-registry.json`). It is generated
+  at deploy time from one file per plugin in `registry/<id>.json`.
 - A `plugins/` directory with one folder per plugin (e.g. `plugins/sample/`),
   each containing its `plugin.json` manifest and built assets.
 
@@ -15,7 +16,8 @@ GitHub Pages serves these files with permissive CORS, so the GeoLibre app
 
 ## Registry format
 
-`plugin-registry.json` is an object with a `plugins` array. Each entry:
+`plugin-registry.json` is an object with a `plugins` array. Each entry comes
+from its own `registry/<id>.json` file, which holds just that entry:
 
 ```json
 {
@@ -130,10 +132,13 @@ npm run minify:check  # what CI checks
 
 ### 3. Register it
 
-Add an entry to `plugin-registry.json` with `manifestUrl` pointing at
+Add a `registry/<id>.json` file holding your plugin's registry entry (the file
+name must match its `id`), with `manifestUrl` pointing at
 `plugins/<id>/plugin.json` (relative) — or an absolute HTTPS URL if you host the
 plugin elsewhere. Set `minGeoLibreVersion` to the lowest GeoLibre version you
-support.
+support. Don't edit `plugin-registry.json`: it is generated from `registry/`
+when the site is deployed, so pull requests for different plugins never
+conflict.
 
 ### 4. Test locally
 
@@ -141,6 +146,8 @@ Point a local GeoLibre build at your branch's registry, then open
 **Settings → Manage Plugins** and install it:
 
 ```bash
+npm run build:registry   # generate plugin-registry.json from registry/
+npm run validate         # check every entry and import every bundle
 # serve this repo with CORS on http://localhost:8090, then build GeoLibre with:
 VITE_GEOLIBRE_PLUGIN_REGISTRY_URL=http://localhost:8090/plugin-registry.json
 ```
@@ -155,10 +162,10 @@ the update to `plugins.geolibre.app`.
 
 ### Updating a plugin
 
-Bump `version` in both the plugin's `plugin.json` **and** its registry entry,
-update the built assets, and open a PR. GeoLibre shows an **Update** action to
-users whose installed version is older than the registry version; uninstalling
-removes it at runtime.
+Bump `version` in both the plugin's `plugin.json` **and** its
+`registry/<id>.json` entry, update the built assets, and open a PR. GeoLibre
+shows an **Update** action to users whose installed version is older than the
+registry version; uninstalling removes it at runtime.
 
 ## Deployment
 

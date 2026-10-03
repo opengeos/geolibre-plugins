@@ -1,0 +1,11 @@
+{
+  "id": "geoenergy-catalog",
+  "name": "Energy Data",
+  "version": "1.0.0",
+  "description": "A curated catalog of U.S. energy datasets: generation, transmission, data centers, fuels and reliability.",
+  "author": "Xinming Andy Zhang",
+  "homepage": "https://github.com/Andyzxm/geolibre-energy-plugin",
+  "manifestUrl": "plugins/geoenergy-catalog/plugin.json",
+  "categories": ["Data"],
+  "minGeoLibreVersion": "3.0.0"
+}

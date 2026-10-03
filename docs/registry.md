@@ -7,7 +7,11 @@ every plugin bundle) with permissive CORS, so the app can fetch it cross-origin.
 
 ## `plugin-registry.json`
 
-An object with a `plugins` array (a bare array is also accepted). Each entry:
+An object with a `plugins` array (a bare array is also accepted). The file is
+not committed: the deploy workflow generates it from one file per plugin,
+`registry/<id>.json`, each holding a single entry, so pull requests for
+different plugins never edit the same file. Run `npm run build:registry` to
+generate it locally. Each entry:
 
 ```json
 {

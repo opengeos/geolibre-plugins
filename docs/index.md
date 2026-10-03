@@ -59,8 +59,8 @@ there to move that menu out of the banner.
 
 1. A plugin lives in its own folder here (or anywhere on HTTPS) as a
    self-contained ES module plus a `plugin.json` manifest.
-2. An entry in [`plugin-registry.json`](registry.md) points GeoLibre at that
-   manifest.
+2. An entry in `registry/<id>.json`, published as part of
+   [`plugin-registry.json`](registry.md), points GeoLibre at that manifest.
 3. GeoLibre fetches the registry, lists the plugins, and loads the ones the user
    installs.
 

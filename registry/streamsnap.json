@@ -1,0 +1,11 @@
+{
+  "id": "streamsnap",
+  "name": "StreamSnap",
+  "version": "0.1.1",
+  "description": "Match river monitoring sites to the correct stream segment interactively and snap sites onto the network.",
+  "author": "wangzcl@WEN-Research-Group",
+  "homepage": "https://github.com/WEN-Research-Group/StreamSnap",
+  "manifestUrl": "plugins/streamsnap/plugin.json",
+  "categories": ["Hydrology"],
+  "minGeoLibreVersion": "2.9.0"
+}

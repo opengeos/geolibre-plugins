@@ -1,0 +1,11 @@
+{
+  "id": "geolibre-flood-gauges",
+  "name": "US Live Flood Gauges",
+  "version": "0.4.1",
+  "description": "NOAA/NWPS river and coastal gauges. For informational purposes only. Not for life-safety decisions. Flood-category symbology, H3 overview, hydrographs, and deep links. By flood.live.",
+  "author": "chuofringer (flood.live)",
+  "homepage": "https://github.com/chuofringer/geolibre-flood-gauges",
+  "manifestUrl": "plugins/geolibre-flood-gauges/plugin.json",
+  "categories": ["Hydrology", "Data"],
+  "minGeoLibreVersion": "2.0.0"
+}

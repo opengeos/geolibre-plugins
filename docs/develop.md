@@ -113,10 +113,12 @@ commit if you would rather not install Node locally.
 
 ## 3. Register it
 
-Add an entry to [`plugin-registry.json`](registry.md) with `manifestUrl`
-pointing at `plugins/my-plugin/plugin.json` (relative) — or an absolute HTTPS
-URL if you host the plugin elsewhere. Set `minGeoLibreVersion` to the lowest
-GeoLibre version you support.
+Add a `registry/my-plugin.json` file holding your plugin's
+[registry entry](registry.md) (the file name must match its `id`), with
+`manifestUrl` pointing at `plugins/my-plugin/plugin.json` (relative) — or an
+absolute HTTPS URL if you host the plugin elsewhere. Set `minGeoLibreVersion`
+to the lowest GeoLibre version you support. Don't edit `plugin-registry.json`:
+it is generated from `registry/` when the site is deployed.
 
 ## 4. Test locally
 
@@ -124,6 +126,8 @@ Point a local GeoLibre build at your branch's registry, then open
 **Settings → Manage Plugins** and install it:
 
 ```bash
+npm run build:registry   # generate plugin-registry.json from registry/
+npm run validate         # check every entry and import every bundle
 # serve this repo with CORS on http://localhost:8090, then build GeoLibre with:
 VITE_GEOLIBRE_PLUGIN_REGISTRY_URL=http://localhost:8090/plugin-registry.json
 ```
@@ -173,10 +177,10 @@ GeoLibre's Manage Plugins dialog.
 
 ## Updating a plugin
 
-Bump `version` in both the plugin's `plugin.json` **and** its registry entry,
-update the built assets, and open a pull request. GeoLibre shows an **Update**
-action to users whose installed version is older than the registry version;
-uninstalling removes the plugin at runtime.
+Bump `version` in both the plugin's `plugin.json` **and** its
+`registry/<id>.json` entry, update the built assets, and open a pull request.
+GeoLibre shows an **Update** action to users whose installed version is older
+than the registry version; uninstalling removes the plugin at runtime.
 
 ## Security model
 

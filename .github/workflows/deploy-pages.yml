@@ -1,9 +1,10 @@
 name: Deploy to GitHub Pages
 
 # Builds the MkDocs documentation site and publishes it to GitHub Pages at the
-# custom domain in CNAME (plugins.geolibre.app). The raw plugin-registry.json
-# and each plugin bundle are copied alongside the site so they stay served from
-# the domain root (where the GeoLibre app fetches them).
+# custom domain in CNAME (plugins.geolibre.app). plugin-registry.json is
+# generated from registry/*.json, then it and each plugin bundle are copied
+# alongside the site so they stay served from the domain root (where the
+# GeoLibre app fetches them).
 
 on:
   push:
@@ -29,6 +30,14 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v7
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v7
+        with:
+          node-version: "24"
+
+      - name: Generate plugin-registry.json
+        run: node scripts/build_registry.mjs
 
       - name: Set up Python
         uses: actions/setup-python@v7

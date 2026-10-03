@@ -4,6 +4,10 @@ on:
   pull_request:
   push:
     branches: [main]
+  # Pull requests only import the plugins they touch, so re-import every plugin
+  # nightly to catch anything that breaks without a change here.
+  schedule:
+    - cron: "17 6 * * *"
   workflow_dispatch:
 
 permissions:
@@ -15,6 +19,9 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v7
+        with:
+          # Pull requests diff against their base to find changed plugins.
+          fetch-depth: ${{ github.event_name == 'pull_request' && 0 || 1 }}
 
       - name: Set up Node.js
         uses: actions/setup-node@v7
@@ -22,7 +29,17 @@ jobs:
           node-version: "24"
 
       - name: Validate plugin installation metadata
-        run: node scripts/validate_plugins.mjs
+        env:
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+        run: |
+          if [ -n "$BASE_SHA" ]; then
+            node scripts/validate_plugins.mjs --changed-since "$BASE_SHA"
+          else
+            node scripts/validate_plugins.mjs
+          fi
+
+      - name: Generate plugin-registry.json
+        run: node scripts/build_registry.mjs
 
       - name: Set up Python
         uses: actions/setup-python@v7

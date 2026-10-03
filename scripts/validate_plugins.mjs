@@ -1,12 +1,34 @@
 #!/usr/bin/env node
 
-import { fileURLToPath, pathToFileURL } from "node:url";
+// Validate the per-plugin registry entries in `registry/<id>.json` and the
+// plugins they point at.
+//
+// Cheap metadata checks (required fields, duplicate ids, manifest paths) always
+// run on every entry. Importing a plugin's entry bundle is the expensive part,
+// so `--changed-since <git-ref>` limits it to the plugins whose registry entry
+// or plugin folder changed since that ref. Changes to the validation tooling
+// itself still import every plugin.
+//
+//   node scripts/validate_plugins.mjs                        # every plugin
+//   node scripts/validate_plugins.mjs --changed-since main   # only changed
+
+import { execFileSync } from "node:child_process";
+import { pathToFileURL } from "node:url";
 import fs from "node:fs/promises";
 import path from "node:path";
 
-const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
-const registryPath = path.join(root, "plugin-registry.json");
+import { loadRegistryEntries, root } from "./registry.mjs";
+
 const errors = [];
+
+// Changes to any of these re-validate every plugin, since they can change how
+// every plugin is checked.
+const TOOLING_PATHS = [
+  "scripts/",
+  "package.json",
+  "package-lock.json",
+  ".github/workflows/test-plugins.yml",
+];
 
 function addError(message) {
   errors.push(message);
@@ -143,20 +165,120 @@ async function validateLocalPlugin(registryEntry, manifestPath, label) {
   }
 }
 
+function parseArgs(argv) {
+  const args = { changedSince: null };
+  for (let i = 0; i < argv.length; i += 1) {
+    if (argv[i] === "--changed-since") {
+      args.changedSince = argv[i + 1];
+      i += 1;
+    } else if (argv[i].startsWith("--changed-since=")) {
+      args.changedSince = argv[i].slice("--changed-since=".length);
+    } else {
+      console.error(`Unknown argument: ${argv[i]}`);
+      process.exit(2);
+    }
+  }
+  if (args.changedSince === undefined || args.changedSince === "") {
+    console.error("--changed-since needs a git ref.");
+    process.exit(2);
+  }
+  return args;
+}
+
+/**
+ * List the files changed between the merge base of `ref` and HEAD.
+ *
+ * @param {string} ref Git ref to diff against.
+ * @returns {string[] | null} Repo-relative paths, or null when git fails.
+ */
+function changedFilesSince(ref) {
+  try {
+    const output = execFileSync(
+      "git",
+      ["diff", "--name-only", "--no-renames", `${ref}...HEAD`],
+      { cwd: root, encoding: "utf8", stdio: ["ignore", "pipe", "pipe"] },
+    );
+    return output.split("\n").filter(Boolean);
+  } catch (error) {
+    console.warn(
+      `Could not diff against ${ref} (${error.message.trim()}); validating every plugin.`,
+    );
+    return null;
+  }
+}
+
+/**
+ * Decide whether a registry entry's bundle should be imported.
+ *
+ * @param {string} file The entry's `registry/<id>.json` path.
+ * @param {string | null} pluginDir The entry's `plugins/<dir>` folder, if local.
+ * @param {string[] | null} changedFiles Changed paths, or null for "all".
+ * @returns {boolean}
+ */
+function isSelected(file, pluginDir, changedFiles) {
+  if (changedFiles === null) {
+    return true;
+  }
+  return changedFiles.some(
+    (changed) =>
+      changed === file ||
+      (pluginDir !== null && changed.startsWith(`${pluginDir}/`)),
+  );
+}
+
+/**
+ * Report folders under `plugins/` that no registry entry points at.
+ *
+ * @param {Set<string>} referencedDirs `plugins/<dir>` folders in use.
+ */
+async function checkOrphanPluginDirs(referencedDirs) {
+  let dirents;
+  try {
+    dirents = await fs.readdir(path.join(root, "plugins"), {
+      withFileTypes: true,
+    });
+  } catch {
+    return;
+  }
+  for (const dirent of dirents) {
+    const dir = path.posix.join("plugins", dirent.name);
+    if (dirent.isDirectory() && !referencedDirs.has(dir)) {
+      addError(
+        `${dir}/ is not referenced by any registry/*.json manifestUrl; add a registry entry or remove the folder.`,
+      );
+    }
+  }
+}
+
 async function main() {
-  const registry = await readJson(registryPath, "plugin-registry.json");
-  if (!isPlainObject(registry) || !Array.isArray(registry.plugins)) {
-    addError('plugin-registry.json must be an object with a "plugins" array.');
+  const { changedSince } = parseArgs(process.argv.slice(2));
+  let changedFiles = null;
+  if (changedSince) {
+    changedFiles = changedFilesSince(changedSince);
+    if (
+      changedFiles?.some((file) =>
+        TOOLING_PATHS.some((tooling) =>
+          tooling.endsWith("/") ? file.startsWith(tooling) : file === tooling,
+        ),
+      )
+    ) {
+      console.log("Validation tooling changed; validating every plugin.");
+      changedFiles = null;
+    }
   }
 
-  const plugins = Array.isArray(registry?.plugins) ? registry.plugins : [];
+  const loaded = await loadRegistryEntries();
+  loaded.errors.forEach(addError);
+
   const seenIds = new Set();
   const seenManifestUrls = new Set();
+  const referencedDirs = new Set();
+  let imported = 0;
 
-  for (const [index, entry] of plugins.entries()) {
-    const label = `plugins[${index}]`;
+  for (const { file, entry } of loaded.entries) {
+    const label = file;
     if (!isPlainObject(entry)) {
-      addError(`${label} must be an object.`);
+      addError(`${label} must be a JSON object.`);
       continue;
     }
 
@@ -165,6 +287,9 @@ async function main() {
     }
 
     if (typeof entry.id === "string") {
+      if (path.posix.basename(file) !== `${entry.id}.json`) {
+        addError(`${label} must be named registry/${entry.id}.json.`);
+      }
       if (seenIds.has(entry.id)) {
         addError(`Duplicate plugin id in registry: ${entry.id}`);
       }
@@ -207,23 +332,33 @@ async function main() {
       continue;
     }
 
+    // A relative manifestUrl resolves against the published
+    // plugin-registry.json, which sits at the repository root.
     const manifestPath = resolveContainedPath(
       root,
       entry.manifestUrl,
       `${label} manifestUrl`,
     );
-    if (
-      !manifestPath ||
-      !(await fileExists(manifestPath, `${label} manifest`))
-    ) {
+    if (!manifestPath) {
       continue;
     }
-    await validateLocalPlugin(
-      entry,
-      manifestPath,
-      `${label} (${entry.id ?? entry.manifestUrl})`,
-    );
+    const [top, dir] = path.relative(root, manifestPath).split(path.sep);
+    const pluginDir = top === "plugins" && dir ? `plugins/${dir}` : null;
+    if (pluginDir) {
+      referencedDirs.add(pluginDir);
+    }
+
+    if (!(await fileExists(manifestPath, `${label} manifest`))) {
+      continue;
+    }
+    if (!isSelected(file, pluginDir, changedFiles)) {
+      continue;
+    }
+    imported += 1;
+    await validateLocalPlugin(entry, manifestPath, label);
   }
+
+  await checkOrphanPluginDirs(referencedDirs);
 
   if (errors.length > 0) {
     console.error("Plugin validation failed:");
@@ -233,7 +368,9 @@ async function main() {
     process.exit(1);
   }
 
-  console.log(`Validated ${plugins.length} plugin registry entries.`);
+  console.log(
+    `Validated ${loaded.entries.length} registry entries; imported ${imported} plugin bundles.`,
+  );
 }
 
 await main();

@@ -3,3 +3,6 @@ __pycache__/
 *.pyc
 .playwright-cli/
 node_modules/
+
+# Generated from registry/*.json by scripts/build_registry.mjs
+/plugin-registry.json

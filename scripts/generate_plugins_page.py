@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Generate the MkDocs plugin catalog page from ``plugin-registry.json``.
+"""Generate the MkDocs plugin catalog page from the ``registry/*.json`` entries.
 
 The catalog (``docs/plugins.md``) is rendered as Material "grid cards", one per
 registry entry, so the published site stays in sync with the registry without
@@ -14,12 +14,12 @@ from pathlib import Path
 
 SITE_URL = "https://plugins.geolibre.app"
 ROOT = Path(__file__).resolve().parent.parent
-REGISTRY = ROOT / "plugin-registry.json"
+REGISTRY_DIR = ROOT / "registry"
 OUTPUT = ROOT / "docs" / "plugins.md"
 
 
 def load_entries() -> list[dict]:
-    """Return the registry entries from ``plugin-registry.json``.
+    """Return the registry entries from the ``registry/<id>.json`` files.
 
     Args:
         None.
@@ -27,8 +27,10 @@ def load_entries() -> list[dict]:
     Returns:
         A list of plugin entry dictionaries, sorted by display name.
     """
-    data = json.loads(REGISTRY.read_text(encoding="utf-8"))
-    entries = data["plugins"] if isinstance(data, dict) else data
+    entries = [
+        json.loads(path.read_text(encoding="utf-8"))
+        for path in REGISTRY_DIR.glob("*.json")
+    ]
     return sorted(entries, key=lambda e: str(e.get("name", "")).lower())
 
 
