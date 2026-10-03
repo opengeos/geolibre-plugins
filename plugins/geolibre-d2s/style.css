@@ -398,4 +398,40 @@
   background: var(--pc-border);
   margin: 12px 0;
 }
+
+/*
+ * Docked in a host's side panel (GeoLibre). The dock opens and closes the
+ * panel, so the toolbar button is hidden and the panel fills the dock instead
+ * of floating. Colors follow the host's in-app theme through its design tokens
+ * (HSL triplets that switch with its `.dark` class) rather than the system
+ * preference, with the floating values as fallbacks.
+ */
+.maplibregl-ctrl-group.plugin-control--docked {
+  display: none;
+}
+
+.plugin-control-panel.plugin-control-panel--docked {
+  --pc-bg: transparent;
+  --pc-text: hsl(var(--foreground, 222 47% 11%));
+  --pc-muted: hsl(var(--muted-foreground, 220 9% 46%));
+  --pc-label: hsl(var(--muted-foreground, 220 9% 46%));
+  --pc-border: hsl(var(--border, 220 13% 91%));
+  --pc-input-bg: hsl(var(--background, 0 0% 100%));
+  --pc-input-text: hsl(var(--foreground, 222 47% 11%));
+  --pc-input-border: hsl(var(--input, 220 13% 91%));
+  --pc-hover-bg: hsl(var(--accent, 220 14% 96%));
+  position: static;
+  display: flex;
+  width: 100%;
+  height: 100%;
+  min-width: 0;
+  min-height: 0;
+  max-width: none;
+  max-height: none;
+  resize: none;
+  border-radius: 0;
+  box-shadow: none;
+  padding: 12px;
+  z-index: auto;
+}
 /*$vite$:1*/
