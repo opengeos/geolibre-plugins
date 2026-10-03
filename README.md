@@ -100,6 +100,11 @@ injected globally, so scope your selectors (e.g. a plugin-specific class prefix)
 control can match the in-app light/dark theme. Copy [`sample/`](./sample) as a
 starting point.
 
+Installed plugins are listed under **Plugins → Installed** automatically. To add
+a few actions to a built-in menu (Add Data, Processing, or Controls), prefer
+`app.registerMenuContribution?.()` over a top-level `app.registerToolbarMenu?.()`
+menu; see [Develop a plugin](https://plugins.geolibre.app/develop/#where-your-plugin-shows-up-in-the-menus).
+
 ### 2. Add the plugin folder
 
 Create `plugins/<id>/` containing `plugin.json`, the built `entry` JS, and any

@@ -37,6 +37,46 @@ injected globally, so scope your selectors (e.g. a plugin-specific class
 prefix); `hsl(var(--foreground))` and the other GeoLibre design tokens are
 available so a control can match the in-app light/dark theme.
 
+### Where your plugin shows up in the menus
+
+GeoLibre keeps external plugins out of the way of the built-in menus, the way
+QGIS does. From least to most prominent:
+
+- **Plugins → Installed** (automatic). Every plugin installed from this
+  registry, a zip, or a manifest URL is listed in the **Plugins → Installed**
+  submenu, sorted alphabetically, ending with a **Manage Plugins…** shortcut.
+  You do not need to do anything for this.
+- **A submenu in a built-in menu** (recommended for a few actions). Like a QGIS
+  plugin that adds itself to the Vector or Raster menu, call
+  `app.registerMenuContribution?.({ id, menu, items })` with `menu` set to
+  `"addData"`, `"processing"`, or `"controls"`. The host nests your items under
+  a submenu named after your plugin at the end of that menu; you cannot insert
+  loose items or reorder built-in entries.
+- **A top-level toolbar menu.** `app.registerToolbarMenu?.({ id, label, items })`
+  adds a menu to the banner after Help. Users can turn it off with the
+  **Show menu in toolbar** switch in your plugin's Plugins → Installed entry,
+  which folds the menu into that entry instead, so keep its top level short.
+
+```js
+activate(app) {
+  this.disposeMenu = app.registerMenuContribution?.({
+    id: "my-plugin-processing", // ids are global: prefix with your plugin id
+    menu: "processing",
+    items: [{ id: "run", label: "Run analysis", onSelect: () => runAnalysis(app) }],
+  });
+},
+deactivate() {
+  this.disposeMenu?.();
+},
+```
+
+Call these APIs with optional chaining (`?.`) so the plugin still loads on
+GeoLibre versions that predate them. See "Toolbar menus" and "Adding items to
+built-in menus" in the
+[GeoLibre plugin API docs](https://github.com/opengeos/GeoLibre/blob/main/docs/plugin-api.md)
+for the full item shape (actions, submenus, separators, icons, and translated
+label getters).
+
 ## 2. Add the plugin folder
 
 Create `plugins/<id>/` with `plugin.json`, the built `entry` JS, and any

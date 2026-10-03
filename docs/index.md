@@ -17,6 +17,9 @@ plugins and install them straight from the app — no manual setup.
 Open **Settings → Manage Plugins** in GeoLibre. The dialog lists every plugin in
 this registry under **All**, **Installed**, **Not installed**, and
 **Upgradeable**, with one-click install, update, and uninstall.
+Installed plugins appear under **Plugins → Installed**, sorted alphabetically;
+a plugin that adds its own top-level menu has a **Show menu in toolbar** switch
+there to move that menu out of the banner.
 
 <div class="grid cards" markdown>
 
