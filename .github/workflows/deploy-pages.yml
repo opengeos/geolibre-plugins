@@ -36,6 +36,11 @@ jobs:
         with:
           node-version: "24"
 
+      # Never publish an entry that fails validation, even when this runs from
+      # workflow_dispatch or a push that skipped the Test Plugins checks.
+      - name: Validate plugin registry
+        run: node scripts/validate_plugins.mjs
+
       - name: Generate plugin-registry.json
         run: node scripts/build_registry.mjs
 

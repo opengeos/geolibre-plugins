@@ -20,8 +20,9 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v7
         with:
-          # Pull requests diff against their base to find changed plugins.
-          fetch-depth: ${{ github.event_name == 'pull_request' && 0 || 1 }}
+          # Pull requests diff against their base to find changed plugins. The
+          # values are strings because a bare 0 is falsy in `&& ||` expressions.
+          fetch-depth: ${{ github.event_name == 'pull_request' && '0' || '1' }}
 
       - name: Set up Node.js
         uses: actions/setup-node@v7

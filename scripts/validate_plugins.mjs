@@ -178,7 +178,11 @@ function parseArgs(argv) {
       process.exit(2);
     }
   }
-  if (args.changedSince === undefined || args.changedSince === "") {
+  if (
+    args.changedSince === undefined ||
+    args.changedSince === "" ||
+    args.changedSince?.startsWith("-")
+  ) {
     console.error("--changed-since needs a git ref.");
     process.exit(2);
   }
@@ -211,7 +215,7 @@ function changedFilesSince(ref) {
  * Decide whether a registry entry's bundle should be imported.
  *
  * @param {string} file The entry's `registry/<id>.json` path.
- * @param {string | null} pluginDir The entry's `plugins/<dir>` folder, if local.
+ * @param {string} pluginDir The entry's `plugins/<dir>` folder.
  * @param {string[] | null} changedFiles Changed paths, or null for "all".
  * @returns {boolean}
  */
@@ -220,16 +224,14 @@ function isSelected(file, pluginDir, changedFiles) {
     return true;
   }
   return changedFiles.some(
-    (changed) =>
-      changed === file ||
-      (pluginDir !== null && changed.startsWith(`${pluginDir}/`)),
+    (changed) => changed === file || changed.startsWith(`${pluginDir}/`),
   );
 }
 
 /**
  * Report folders under `plugins/` that no registry entry points at.
  *
- * @param {Set<string>} referencedDirs `plugins/<dir>` folders in use.
+ * @param {Map<string, string>} referencedDirs `plugins/<dir>` folders in use.
  */
 async function checkOrphanPluginDirs(referencedDirs) {
   let dirents;
@@ -272,7 +274,8 @@ async function main() {
 
   const seenIds = new Set();
   const seenManifestUrls = new Set();
-  const referencedDirs = new Set();
+  // `plugins/<dir>` -> the registry file that points at it.
+  const referencedDirs = new Map();
   let imported = 0;
 
   for (const { file, entry } of loaded.entries) {
@@ -342,11 +345,24 @@ async function main() {
     if (!manifestPath) {
       continue;
     }
-    const [top, dir] = path.relative(root, manifestPath).split(path.sep);
-    const pluginDir = top === "plugins" && dir ? `plugins/${dir}` : null;
-    if (pluginDir) {
-      referencedDirs.add(pluginDir);
+    // Local plugins live in their own `plugins/<dir>/` folder, which is also
+    // how --changed-since maps changed files back to a registry entry.
+    const [top, dir, ...rest] = path
+      .relative(root, manifestPath)
+      .split(path.sep);
+    if (top !== "plugins" || !dir || rest.length === 0) {
+      addError(
+        `${label} manifestUrl must point inside a plugins/<dir>/ folder: ${entry.manifestUrl}`,
+      );
+      continue;
     }
+    const pluginDir = `plugins/${dir}`;
+    if (referencedDirs.has(pluginDir)) {
+      addError(
+        `${label} shares ${pluginDir}/ with ${referencedDirs.get(pluginDir)}; each plugin needs its own folder.`,
+      );
+    }
+    referencedDirs.set(pluginDir, file);
 
     if (!(await fileExists(manifestPath, `${label} manifest`))) {
       continue;
