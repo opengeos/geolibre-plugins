@@ -96,4 +96,4 @@ jobs:
       - name: Check published bundles against the registry
         env:
           PAGE_URL: ${{ steps.deployment.outputs.page_url }}
-        run: node scripts/check_deployed.mjs "$PAGE_URL"
+        run: node scripts/check_deployed.mjs "$PAGE_URL" --expected plugin-registry.json

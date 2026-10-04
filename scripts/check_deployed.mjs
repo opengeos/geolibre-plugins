@@ -5,18 +5,37 @@
 // entry and style the way GeoLibre does and compare the hash. A mismatch means
 // GeoLibre would refuse the plugin, for example because a CDN rewrote a file.
 //
-//   node scripts/check_deployed.mjs [site-url]
+//   node scripts/check_deployed.mjs [site-url] [--expected <registry.json>]
 //
-// `site-url` is the deployed site's root (default https://plugins.geolibre.app/);
-// the registry is read from its plugin-registry.json. A failure here comes after
+// `site-url` is the deployed site's root (default https://plugins.geolibre.app/).
+// With `--expected`, the hashes come from the registry this deployment built,
+// and the published registry must list exactly those hashes too: otherwise an
+// edge still serving the previous registry and its matching bundles would
+// pass without checking this deployment. Without it, the published registry
+// is checked against itself, which is useful for a spot check. A failure here comes after
 // the site is live, so it alerts rather than prevents: fix forward and redeploy.
 //
 // Edge caches can serve the previous bundle for a few minutes after a deploy,
 // so a mismatch is retried before the check fails.
 
+import fs from "node:fs";
+
 import { computeBundleHash, decodeSource } from "./registry.mjs";
 
-const siteUrl = process.argv[2] || "https://plugins.geolibre.app/";
+const args = process.argv.slice(2);
+const expectedIndex = args.indexOf("--expected");
+const expectedPath = expectedIndex === -1 ? null : args[expectedIndex + 1];
+if (expectedIndex !== -1) {
+  if (!expectedPath) {
+    console.error("--expected needs a path to a plugin-registry.json.");
+    process.exit(2);
+  }
+  args.splice(expectedIndex, 2);
+}
+const expectedRegistry = expectedPath
+  ? JSON.parse(fs.readFileSync(expectedPath, "utf8"))
+  : null;
+const siteUrl = args[0] || "https://plugins.geolibre.app/";
 const registryUrl = new URL(
   "plugin-registry.json",
   siteUrl.endsWith("/") ? siteUrl : `${siteUrl}/`,
@@ -71,21 +90,31 @@ async function hashPublishedBundle(manifestUrl) {
  * @returns {Promise<string[]>} One message per mismatch or fetch failure.
  */
 async function checkOnce() {
-  let registry;
+  let published;
   try {
-    registry = await (await fetchFresh(registryUrl)).json();
+    published = await (await fetchFresh(registryUrl)).json();
   } catch (error) {
     // Right after a deploy the registry itself can be briefly unavailable;
     // report it so the attempt is retried instead of crashing.
     return [`registry: ${error.message}`];
   }
   const problems = [];
+  const expected = (expectedRegistry ?? published).plugins ?? [];
+  const publishedById = new Map(
+    (published.plugins ?? []).map((entry) => [entry.id, entry]),
+  );
   let checked = 0;
-  for (const entry of registry.plugins ?? []) {
+  for (const entry of expected) {
     if (typeof entry.bundleSha256 !== "string") {
       continue;
     }
     checked += 1;
+    if (publishedById.get(entry.id)?.bundleSha256 !== entry.bundleSha256) {
+      problems.push(
+        `${entry.id}: the published registry does not list this deployment's hash ${entry.bundleSha256} yet`,
+      );
+      continue;
+    }
     const manifestUrl = new URL(entry.manifestUrl, registryUrl);
     try {
       const actual = await hashPublishedBundle(manifestUrl);
@@ -99,6 +128,11 @@ async function checkOnce() {
     }
   }
   console.log(`Checked ${checked} published bundles.`);
+  if (checked === 0) {
+    problems.push(
+      "no registry entry has a bundleSha256, so nothing was checked",
+    );
+  }
   return problems;
 }
 
