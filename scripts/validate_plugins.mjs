@@ -297,6 +297,27 @@ function changedFilesSince(ref) {
 }
 
 /**
+ * Read a JSON file as it was at a git ref.
+ *
+ * @param {string} ref Git ref.
+ * @param {string} file Repo-relative path.
+ * @returns {object | null} The parsed file, or null if it didn't exist there.
+ */
+function readJsonAtRef(ref, file) {
+  try {
+    return JSON.parse(
+      execFileSync("git", ["show", `${ref}:${file}`], {
+        cwd: root,
+        encoding: "utf8",
+        stdio: ["ignore", "pipe", "ignore"],
+      }),
+    );
+  } catch {
+    return null;
+  }
+}
+
+/**
  * Decide whether a registry entry's bundle should be imported.
  *
  * @param {string} file The entry's `registry/<id>.json` path.
@@ -332,7 +353,21 @@ async function validateSourceEntry(
   label,
   pluginDir,
   changedFiles,
+  baseRef,
 ) {
+  // Published versions never change, and the deploy refuses a different zip
+  // for a version it already published. Catch that here, in the pull request,
+  // by comparing with the entry on the base branch.
+  const base = baseRef ? readJsonAtRef(baseRef, file) : null;
+  if (
+    base?.source?.sha256 &&
+    base.version === entry.version &&
+    base.source.sha256 !== entry.source.sha256
+  ) {
+    addError(
+      `${label} changes source.sha256 but keeps version ${entry.version}; published versions never change, so bump the version.`,
+    );
+  }
   if (entry.manifestUrl !== `plugins/${entry.id}/plugin.json`) {
     addError(
       `${label} has a source, so manifestUrl must be plugins/${entry.id}/plugin.json.`,
@@ -480,7 +515,14 @@ async function main() {
     referencedDirs.set(pluginDir, file);
 
     if (hasSource(entry)) {
-      await validateSourceEntry(entry, file, label, pluginDir, changedFiles);
+      await validateSourceEntry(
+        entry,
+        file,
+        label,
+        pluginDir,
+        changedFiles,
+        changedSince,
+      );
       if (isSelected(file, pluginDir, changedFiles)) {
         imported += 1;
       }

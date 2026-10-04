@@ -84,6 +84,10 @@ async function fetchVerifiedZip(source) {
     if (!response.ok) {
       throw new Error(`${source.url} returned HTTP ${response.status}`);
     }
+    // fetch follows redirects; don't accept one that left HTTPS.
+    if (!response.url.startsWith("https://")) {
+      throw new Error(`${source.url} redirected to a non-HTTPS URL`);
+    }
     bytes = await readCapped(response, MAX_ZIP_BYTES, source.url);
   }
   const actual = createHash("sha256").update(bytes).digest("hex");

@@ -70,7 +70,8 @@ function wrangler(args) {
     stdio: ["ignore", "pipe", "pipe"],
     // A stalled call fails the deploy instead of hanging it; the next run
     // retries, and the marker-last order keeps a partial upload harmless.
-    timeout: 120_000,
+    // Uploads of files up to 50 MB get longer than reads.
+    timeout: args[2] === "put" ? 600_000 : 120_000,
   });
 }
 
@@ -188,11 +189,13 @@ if (sources.length === 0) {
   console.log("No registry entries are hosted from a release zip.");
   process.exit(0);
 }
-if (!dryRun && !process.env.CLOUDFLARE_API_TOKEN) {
-  console.error(
-    `${sources.length} plugin(s) are hosted from release zips, but CLOUDFLARE_API_TOKEN is not set.`,
-  );
-  process.exit(1);
+for (const name of ["CLOUDFLARE_API_TOKEN", "CLOUDFLARE_ACCOUNT_ID"]) {
+  if (!dryRun && !process.env[name]) {
+    console.error(
+      `${sources.length} plugin(s) are hosted from release zips, but ${name} is not set.`,
+    );
+    process.exit(1);
+  }
 }
 
 // Step 1: version folders. Every one is in place before any plugin switches.
