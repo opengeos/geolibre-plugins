@@ -257,16 +257,21 @@ async function inspectZip(entry, record) {
     if (size > MAX_SCAN_BYTES) {
       fileRecord.skipped = "too large to scan";
     } else {
-      const bytes = await fs.readFile(filePath);
-      if (bytes.subarray(0, SNIFF_BYTES).includes(0)) {
-        fileRecord.binary = true;
+      try {
+        const bytes = await fs.readFile(filePath);
+        if (bytes.subarray(0, SNIFF_BYTES).includes(0)) {
+          fileRecord.binary = true;
+        }
+        const scan = scanText(bytes.toString("utf8"));
+        if (Object.keys(scan.hits).length > 0) {
+          fileRecord.hits = scan.hits;
+        }
+        fileRecord.longestLine = scan.longestLine;
+        scan.hosts.forEach((host) => hosts.add(host));
+      } catch (error) {
+        // One unreadable file shouldn't leave the rest of the zip unscanned.
+        fileRecord.skipped = `could not scan: ${safe(error.message)}`;
       }
-      const scan = scanText(bytes.toString("utf8"));
-      if (Object.keys(scan.hits).length > 0) {
-        fileRecord.hits = scan.hits;
-      }
-      fileRecord.longestLine = scan.longestLine;
-      scan.hosts.forEach((host) => hosts.add(host));
     }
     record.files.push(fileRecord);
   }
@@ -332,7 +337,7 @@ function renderReport(records) {
     for (const file of record.files) {
       const notes = [];
       if (file.binary) notes.push("binary");
-      if (file.skipped) notes.push(file.skipped);
+      if (file.skipped) notes.push(cell(file.skipped));
       if (file.longestLine > 1000)
         notes.push(`minified (longest line ${file.longestLine})`);
       if (file.hits)
