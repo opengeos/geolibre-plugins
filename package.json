@@ -7,6 +7,8 @@
   "scripts": {
     "build:registry": "node scripts/build_registry.mjs",
     "validate": "node scripts/validate_plugins.mjs",
+    "test": "node --test 'worker/test/*.test.mjs' 'scripts/test/*.test.mjs'",
+    "test:scripts": "node --test 'scripts/test/*.test.mjs'",
     "test:worker": "node --test 'worker/test/*.test.mjs'"
   },
   "devDependencies": {

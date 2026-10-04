@@ -5,7 +5,8 @@ on:
   push:
     branches: [main]
   # Pull requests only import the plugins they touch, so re-import every plugin
-  # nightly to catch anything that breaks without a change here.
+  # nightly to catch anything that breaks without a change here, and check the
+  # live site (the live-site job).
   schedule:
     - cron: "17 6 * * *"
   workflow_dispatch:
@@ -52,8 +53,9 @@ jobs:
             node scripts/validate_plugins.mjs
           fi
 
-      - name: Test the mirror Worker
-        run: npm run test:worker
+      # The mirror Worker, and the scripts that unpack untrusted release zips.
+      - name: Run the unit tests
+        run: npm test
 
       - name: Generate plugin-registry.json
         run: node scripts/build_registry.mjs
@@ -82,3 +84,30 @@ jobs:
           fi
           cp -r schemas site/
           cp CNAME .nojekyll site/
+
+  # Between deploys nothing else watches the live site, so an R2, Worker or
+  # Pages problem would go unnoticed until a user reported it. A failed
+  # scheduled run emails whoever last changed the schedule.
+  live-site:
+    if: github.event_name == 'schedule' || github.event_name == 'workflow_dispatch'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v7
+        with:
+          node-version: "24"
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci --ignore-scripts
+
+      - name: Check every published plugin against its registry hash
+        run: node scripts/check_deployed.mjs https://plugins.geolibre.app/
+
+      - name: Check the usage counts are current and rolled up
+        run: node scripts/check_stats.mjs https://plugins.geolibre.app/

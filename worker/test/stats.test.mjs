@@ -219,7 +219,9 @@ describe("recordUsage, rollUp and statsResponse", () => {
     await recordUsage(env, request("198.51.100.3"), "movecost", MONDAY);
 
     // Before the roll-up, last week is counted from its remaining hashes.
-    assert.equal((await stats()).plugins.movecost.usersLastWeek, 2);
+    const before = await stats();
+    assert.equal(before.plugins.movecost.usersLastWeek, 2);
+    assert.equal(before.pendingRollUp, 2);
 
     await rollUp(env, MONDAY);
     assert.deepEqual(env.STATS.rows("SELECT week FROM weekly_visitors"), [
@@ -230,6 +232,7 @@ describe("recordUsage, rollUp and statsResponse", () => {
       [{ week: "2026-W40", plugin: "movecost", users: 2 }],
     );
     const body = await stats();
+    assert.equal(body.pendingRollUp, 0);
     assert.equal(body.plugins.movecost.usersLastWeek, 2);
     assert.equal(body.plugins.movecost.usersThisWeek, 1);
     assert.equal(body.plugins.movecost.launches, 3);

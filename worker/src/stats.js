@@ -180,7 +180,7 @@ export async function statsResponse(env, now = new Date()) {
   }
   const thisWeek = isoWeek(now);
   const lastWeek = isoWeek(new Date(now.getTime() - 7 * 86400000));
-  const [current, previous, previousLive, launches, since] =
+  const [current, previous, previousLive, launches, since, pending] =
     await env.STATS.batch([
       env.STATS.prepare(
         "SELECT plugin, COUNT(*) AS users FROM weekly_visitors WHERE week = ? GROUP BY plugin",
@@ -197,6 +197,9 @@ export async function statsResponse(env, now = new Date()) {
         "SELECT plugin, SUM(launches) AS launches FROM daily_launches GROUP BY plugin",
       ),
       env.STATS.prepare("SELECT MIN(day) AS day FROM daily_launches"),
+      env.STATS.prepare(
+        "SELECT COUNT(*) AS rows FROM weekly_visitors WHERE week < ?",
+      ).bind(thisWeek),
     ]);
   const plugins = {};
   const entry = (plugin) =>
@@ -213,6 +216,9 @@ export async function statsResponse(env, now = new Date()) {
     since: since.results[0]?.day ?? null,
     thisWeek,
     lastWeek,
+    // Visitor hashes of finished weeks still stored: 0 once the daily roll-up
+    // has run, so a monitor can tell the hashes really are deleted.
+    pendingRollUp: pending.results[0]?.rows ?? 0,
     // Keyed by the plugins/<dir>/ folder of each plugin's manifestUrl.
     plugins,
   };

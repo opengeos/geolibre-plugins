@@ -230,8 +230,8 @@ launch count, and served at `plugins/stats.json`. A daily cron rolls finished
 weeks up into counts and deletes their hashes. See
 [`worker/src/stats.js`](worker/src/stats.js) and
 [Registry format](https://plugins.geolibre.app/registry/#usage-statistics) for
-what is and isn't kept. `npm run test:worker` runs the Worker's unit tests
-(D1 emulated with Node's SQLite), and PR CI runs them too.
+what is and isn't kept. The Worker's unit tests emulate D1 with Node's SQLite;
+see [Tests and monitoring](#tests-and-monitoring).
 
 > One-time setup (already done for plugins.geolibre.app): create the database
 > and set the salt secret. The deploy workflow below applies the schema.
@@ -251,6 +251,21 @@ the live site still serves every plugin. It needs the repository secret
 D1 Edit and Workers R2 Storage Read on the account, and Workers Routes Edit on
 the `geolibre.app` zone (alongside `CLOUDFLARE_ACCOUNT_ID`). To deploy by hand
 instead: `npx wrangler deploy --config worker/wrangler.toml`.
+
+### Tests and monitoring
+
+`npm test` runs the unit tests: the mirror Worker (`worker/test/`) and the
+scripts that download and unpack untrusted release zips (`scripts/test/`).
+They need no network; test zips are put in the download cache directly. PR CI
+runs them on every pull request (`npm run test:worker` and
+`npm run test:scripts` run one set).
+
+Every night the **Test Plugins** workflow also checks the live site:
+`scripts/check_deployed.mjs` re-hashes every published bundle against the
+registry, and `scripts/check_stats.mjs` checks that `plugins/stats.json` is
+current and that the daily roll-up has deleted the visitor hashes of finished
+weeks. GitHub emails a failed scheduled run to whoever last changed its
+schedule.
 
 ### Blocking a plugin
 
