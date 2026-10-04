@@ -31,8 +31,15 @@ const registry = await buildRegistry(entries);
 
 // The registry must never offer a bundle the blocklist refuses: GeoLibre
 // would install it and then refuse to load it.
+const blocklist = await loadBlocklist();
+if (!Array.isArray(blocklist?.blocked)) {
+  console.error(
+    'blocklist.json must have a "blocked" array; run npm run validate for details.',
+  );
+  process.exit(1);
+}
 const blockedHashes = new Set(
-  (await loadBlocklist()).blocked
+  blocklist.blocked
     .filter((entry) => entry.bundleSha256)
     .map((entry) => `${entry.id} ${entry.bundleSha256}`),
 );
