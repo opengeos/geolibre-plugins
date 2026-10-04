@@ -109,9 +109,12 @@ const MAX_REDIRECTS = 5;
 /**
  * GET a URL, following redirects by hand so that every hop must be HTTPS.
  *
- * The URL can come from untrusted pull-request JSON (the preview workflow),
- * so nothing is sent to a non-HTTPS address, which could otherwise reach
- * internal or cloud-metadata hosts, either directly or through a redirect.
+ * The URL can come from untrusted pull-request JSON (the preview workflow).
+ * Every hop, the first and each redirect, must be https:// to a host name,
+ * not localhost or a literal IP address. That rules out plain-HTTP targets
+ * such as cloud metadata endpoints and the obvious internal addresses. It is
+ * not a full SSRF guard (a public name can still resolve to a private
+ * address); the zip's SHA-256 is what guarantees its content.
  *
  * @param {string} url The starting URL.
  * @returns {Promise<Response>} The final, successful response.
@@ -130,6 +133,19 @@ async function fetchHttpsOnly(url) {
         hop === 0
           ? `${url} must use https://`
           : `${url} redirected to a non-HTTPS URL`,
+      );
+    }
+    const host = parsed.hostname;
+    if (
+      host === "localhost" ||
+      host.endsWith(".localhost") ||
+      /^\d+(\.\d+){3}$/.test(host) ||
+      host.startsWith("[")
+    ) {
+      throw new Error(
+        hop === 0
+          ? `${url} must name a host, not localhost or an IP address`
+          : `${url} redirected to localhost or an IP address`,
       );
     }
     const response = await fetch(parsed, {
