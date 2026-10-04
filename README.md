@@ -176,7 +176,9 @@ and leave `plugins/<id>/` out of this repository:
 
 The zip uses the same layout as a GeoLibre zip install: `plugin.json` at the
 root or inside one top-level folder, with `entry` and `style` beside it. CI
-downloads it, checks the hash, and validates it like a committed plugin. On
+downloads it, checks the hash, and validates it like a committed plugin. The
+automated pull-request review also unpacks it and reviews the plugin's code
+for security issues, and reports the zip's size and what it unpacks to. On
 merge it is copied to `plugins.geolibre.app/plugins/<id>/<version>/`, which
 never changes once published, so a new release needs a new `version` and a new
 `source`. Users keep installing from the same `plugins/<id>/plugin.json` URL.
