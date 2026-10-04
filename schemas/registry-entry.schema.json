@@ -40,6 +40,25 @@
       "pattern": "^https?://\\S+$",
       "$comment": "must be an http:// or https:// URL"
     },
+    "repository": {
+      "description": "The plugin's source repository, linked from its catalog page.",
+      "type": "string",
+      "pattern": "^https://\\S+$",
+      "$comment": "must be an https:// URL"
+    },
+    "issues": {
+      "description": "Where to report problems with the plugin, linked from its catalog page.",
+      "type": "string",
+      "pattern": "^https://\\S+$",
+      "$comment": "must be an https:// URL"
+    },
+    "license": {
+      "description": "The plugin's license, as an SPDX identifier or expression such as MIT or Apache-2.0 OR MIT.",
+      "type": "string",
+      "maxLength": 100,
+      "pattern": "^[A-Za-z0-9.+-]+(?: (?:AND|OR|WITH) [A-Za-z0-9.+-]+)*$",
+      "$comment": "must be an SPDX license identifier or expression, e.g. MIT or Apache-2.0 OR MIT"
+    },
     "manifestUrl": {
       "description": "plugins/<dir>/plugin.json, or an absolute HTTPS URL for a plugin hosted elsewhere.",
       "type": "string",
@@ -97,6 +116,31 @@
           }
         }
       ]
+    },
+    "screenshots": {
+      "description": "Up to four screenshots shown on the plugin's catalog page. Each path is a PNG, JPEG or WebP file inside the release zip (relative to plugin.json), so it needs a source.",
+      "type": "array",
+      "minItems": 1,
+      "maxItems": 4,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["path", "caption"],
+        "properties": {
+          "path": {
+            "type": "string",
+            "maxLength": 200,
+            "pattern": "^(?!.*(?:^|/)\\.\\.?(?:/|$))[A-Za-z0-9._@+-]+(?:/[A-Za-z0-9._@+-]+)*\\.(?:png|jpe?g|webp)$",
+            "$comment": "must be a relative path to a .png, .jpg, .jpeg or .webp file in the release zip, without . or .. segments"
+          },
+          "caption": {
+            "description": "What the screenshot shows; also its alternative text.",
+            "type": "string",
+            "$ref": "#/$defs/trimmedString",
+            "maxLength": 200
+          }
+        }
+      }
     }
   },
   "$defs": {

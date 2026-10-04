@@ -60,9 +60,13 @@ The generated `plugin-registry.json` wraps every entry in a `plugins` array:
 | `description` | no | Short summary shown on the card. |
 | `author` | no | Shown on the card. |
 | `homepage` | no | Must be `http(s)`; other schemes are dropped. |
+| `repository` | no | HTTPS URL of the plugin's source code, linked from its catalog page. |
+| `issues` | no | HTTPS URL for reporting problems with the plugin, linked from its catalog page. |
+| `license` | no | SPDX license identifier or expression, such as `MIT` or `Apache-2.0 OR MIT`, shown on the catalog page. |
 | `categories` | no | One to four tags shown on the card, from the list below. |
 | `minGeoLibreVersion` | no | Semantic version. Gates installation against the running app version. |
 | `source` | no | `{ "url", "sha256" }` of the plugin's release zip, for a plugin whose code isn't committed here. `manifestUrl` must then be `plugins/<id>/plugin.json` (a plugin moved from a committed folder keeps that folder's URL). See [Develop a plugin](develop.md#or-host-it-from-a-release-zip). |
+| `screenshots` | no | Up to four `{ "path", "caption" }` images shown on the plugin's catalog page; see below. Needs a `source`. |
 | `publishableSettings` | no | Project-state keys that survive "Strip credentials" and shared project exports: `true` keeps the whole plugin state, an array of up to 64 key names keeps only those. Absent keeps nothing. |
 
 Unknown fields are rejected, so a typo such as `minGeolibreVersion` fails
@@ -74,6 +78,15 @@ downloads (SHA-256 of the entry, SHA-256 of the style or of an empty string,
 then SHA-256 of the two digests). The build computes it from the committed
 files, so never write it in `registry/<id>.json`. After each deploy, CI
 downloads every published bundle and fails if any hash differs.
+
+Each screenshot's `path` names a PNG, JPEG or WebP file of at most 1 MiB
+inside the release zip, relative to its `plugin.json` (for example
+`screenshots/main.png`), and `caption` says what it shows; it is also the
+image's alternative text. CI checks that each file is in the zip and is the
+image its extension says. The mirror serves it from the version's folder, and
+the generated `plugin-registry.json` adds its `url`, relative to the registry
+like `manifestUrl`. GeoLibre ignores `repository`, `issues`, `license` and
+`screenshots`; they are for the catalog.
 
 `categories` values come from a fixed list: `Analysis`, `Archaeology`,
 `Basemaps`, `Climate`, `Data`, `Ecology`, `Example`, `Hydrology`, `Imagery`,

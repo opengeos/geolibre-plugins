@@ -451,12 +451,57 @@ async function validateSourceEntry(
     addError(`${label} source: ${error.message}`);
     return;
   }
+  checkScreenshots(entry, unpacked, label);
   await validateLocalPlugin(
     entry,
     path.join(unpacked.dir, "plugin.json"),
     `${label} (release zip)`,
     true,
   );
+}
+
+// Screenshots are shown on the catalog, so keep each one small.
+const MAX_SCREENSHOT_BYTES = 1024 * 1024;
+// The leading bytes of each allowed image format, so a file is what its
+// extension says (the mirror serves it with that format's Content-Type).
+const IMAGE_SIGNATURES = {
+  png: (bytes) =>
+    bytes.subarray(0, 8).equals(Buffer.from("89504e470d0a1a0a", "hex")),
+  jpg: (bytes) => bytes.subarray(0, 3).equals(Buffer.from("ffd8ff", "hex")),
+  jpeg: (bytes) => bytes.subarray(0, 3).equals(Buffer.from("ffd8ff", "hex")),
+  webp: (bytes) =>
+    bytes.subarray(0, 4).toString("latin1") === "RIFF" &&
+    bytes.subarray(8, 12).toString("latin1") === "WEBP",
+};
+
+/**
+ * Check that each screenshot an entry lists is an image in its release zip.
+ *
+ * @param {object} entry The registry entry, with a `source`.
+ * @param {{ dir: string, files: string[] }} unpacked The unpacked zip.
+ * @param {string} label Prefix for error messages.
+ */
+function checkScreenshots(entry, unpacked, label) {
+  for (const { path: shot } of entry.screenshots ?? []) {
+    if (!unpacked.files.includes(shot)) {
+      addError(
+        `${label} screenshot ${shot} is not in the release zip (paths are relative to its plugin.json).`,
+      );
+      continue;
+    }
+    const bytes = readFileSync(path.join(unpacked.dir, shot));
+    if (bytes.length > MAX_SCREENSHOT_BYTES) {
+      addError(
+        `${label} screenshot ${shot} is ${bytes.length} bytes; the limit is ${MAX_SCREENSHOT_BYTES}.`,
+      );
+    }
+    const extension = shot.split(".").pop().toLowerCase();
+    if (!IMAGE_SIGNATURES[extension]?.(bytes)) {
+      addError(
+        `${label} screenshot ${shot} is not a valid .${extension} image.`,
+      );
+    }
+  }
 }
 
 /**
@@ -617,6 +662,11 @@ async function main() {
     }
     referencedDirs.set(pluginDir, file);
 
+    if (entry.screenshots && !hasSource(entry)) {
+      addError(
+        `${label} lists screenshots, which are served from its release zip, so it needs a source.`,
+      );
+    }
     if (hasSource(entry)) {
       await validateSourceEntry(
         entry,

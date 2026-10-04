@@ -46,6 +46,11 @@ from its own `registry/<id>.json` file, which holds just that entry:
   `Archaeology`, `Basemaps`, `Climate`, `Data`, `Ecology`, `Example`,
   `Hydrology`, `Imagery`, `Oceans`, `Raster`, `Terrain`, `Utilities`, `Vector`,
   `Visualization`. Open an issue to propose a new one.
+- For the catalog page only (GeoLibre ignores them): `repository` and `issues`
+  (HTTPS URLs), `license` (an SPDX identifier such as `MIT`), and up to four
+  `screenshots`, each `{ "path": "screenshots/main.png", "caption": "..." }`
+  naming a PNG, JPEG or WebP file of at most 1 MiB in the release zip. See
+  [Registry format](https://plugins.geolibre.app/registry/).
 
 [`schemas/registry-entry.schema.json`](schemas/registry-entry.schema.json) and
 [`schemas/plugin-manifest.schema.json`](schemas/plugin-manifest.schema.json)

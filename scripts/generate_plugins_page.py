@@ -36,23 +36,25 @@ def load_entries() -> list[dict]:
 
     Returns:
         A list of plugin entry dictionaries, sorted by display name. Entries
-        gain the generated ``bundleSha256`` when ``plugin-registry.json`` has
-        been built.
+        gain the generated ``bundleSha256``, and their screenshots a ``url``,
+        when ``plugin-registry.json`` has been built.
     """
     entries = [
         json.loads(path.read_text(encoding="utf-8"))
         for path in REGISTRY_DIR.glob("*.json")
     ]
     if BUILT_REGISTRY.exists():
-        hashes = {
-            plugin["id"]: plugin.get("bundleSha256")
+        built = {
+            plugin["id"]: plugin
             for plugin in json.loads(BUILT_REGISTRY.read_text(encoding="utf-8"))[
                 "plugins"
             ]
         }
         for entry in entries:
-            if hashes.get(entry.get("id")):
-                entry["bundleSha256"] = hashes[entry["id"]]
+            plugin = built.get(entry.get("id"), {})
+            for field in ("bundleSha256", "screenshots"):
+                if plugin.get(field):
+                    entry[field] = plugin[field]
     return sorted(entries, key=lambda e: str(e.get("name", "")).lower())
 
 
@@ -283,6 +285,41 @@ def render_page(entries: list[dict]) -> str:
     )
 
 
+SCREENSHOT_URL = re.compile(
+    r"plugins/[a-z0-9]+(?:[._-][a-z0-9]+)*/[0-9A-Za-z.+-]+/"
+    r"[A-Za-z0-9._@+-]+(?:/[A-Za-z0-9._@+-]+)*\.(?:png|jpe?g|webp)"
+)
+
+
+def render_screenshots(entry: dict) -> list[str]:
+    """Render an entry's screenshots as captioned images.
+
+    Args:
+        entry: A plugin entry dictionary, with screenshot URLs from the built
+            registry.
+
+    Returns:
+        Markdown lines for a "Screenshots" section, or an empty list when the
+        entry has none (or the registry hasn't been built).
+    """
+    lines = []
+    for shot in entry.get("screenshots") or []:
+        url = str(shot.get("url") or "")
+        # Built by build_registry.mjs from schema-checked paths; anything else
+        # is skipped rather than written into the page.
+        if not SCREENSHOT_URL.fullmatch(url) or ".." in url.split("/"):
+            continue
+        # Plain HTML, which Markdown leaves alone, so escape for HTML only
+        # (quotes too, for the alt attribute).
+        caption = html.escape(" ".join(str(shot.get("caption", "")).split()))
+        lines += [
+            f'<figure><img src="{SITE_URL}/{url}" alt="{caption}" loading="lazy">'
+            f"<figcaption>{caption}</figcaption></figure>",
+            "",
+        ]
+    return ["## Screenshots", "", *lines] if lines else []
+
+
 def render_plugin_page(entry: dict) -> str:
     """Render one plugin's own page.
 
@@ -322,10 +359,17 @@ def render_plugin_page(entry: dict) -> str:
         rows.append(("Version", text(entry["version"])))
     if entry.get("author"):
         rows.append(("Author", text(entry["author"])))
+    if entry.get("license"):
+        rows.append(("License", text(entry["license"])))
     if entry.get("minGeoLibreVersion"):
         rows.append(("Requires", f"GeoLibre {text(entry['minGeoLibreVersion'])}+"))
     if tags(entry.get("categories") or []):
         rows.append(("Categories", tags(entry["categories"])))
+    for label, field in (("Source code", "repository"), ("Report an issue", "issues")):
+        url = entry.get(field)
+        url_link = link(text(url), url) if url else None
+        if url_link:
+            rows.append((label, url_link))
     if entry.get("manifestUrl"):
         manifest = absolute_manifest_url(str(entry["manifestUrl"]))
         manifest_link = link(text(manifest), manifest)
@@ -350,6 +394,7 @@ def render_plugin_page(entry: dict) -> str:
         "",
         details,
         "",
+        *render_screenshots(entry),
         "## Install",
         "",
         "- **GeoLibre on the web:** use **Open in GeoLibre** above. GeoLibre shows "

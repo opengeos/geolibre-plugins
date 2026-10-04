@@ -10,7 +10,11 @@ import { fileURLToPath } from "node:url";
 import fs from "node:fs/promises";
 import path from "node:path";
 
-import { hasSource, unpackSourceBundle } from "./source-bundles.mjs";
+import {
+  hasSource,
+  sourceFolder,
+  unpackSourceBundle,
+} from "./source-bundles.mjs";
 
 export const root = path.resolve(
   path.dirname(fileURLToPath(import.meta.url)),
@@ -151,10 +155,20 @@ export async function buildRegistry(entries) {
     if (hasSource(entry)) {
       // Hosted from a release zip and served from R2: hash the unpacked zip.
       const { dir } = await unpackSourceBundle(entry);
-      plugins.push({
+      const plugin = {
         ...entry,
         bundleSha256: await hashBundleAt(path.join(dir, "plugin.json")),
-      });
+      };
+      if (entry.screenshots) {
+        // Served from the version's immutable mirror folder; relative to the
+        // registry, like manifestUrl.
+        const folder = `plugins/${sourceFolder(entry)}/${entry.version}`;
+        plugin.screenshots = entry.screenshots.map((shot) => ({
+          ...shot,
+          url: `${folder}/${shot.path}`,
+        }));
+      }
+      plugins.push(plugin);
       continue;
     }
     const isLocal =
