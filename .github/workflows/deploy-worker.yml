@@ -35,6 +35,8 @@ env:
 
 jobs:
   deploy:
+    # A manual run from another branch would deploy unreviewed code.
+    if: github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
     env:
       CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_WORKERS_TOKEN }}
@@ -58,6 +60,12 @@ jobs:
       - name: Test the Worker
         run: node --test 'worker/test/*.test.mjs'
 
+      # Before the deploy, so a failure here can't roll back a good Worker.
+      - name: Build the expected registry
+        run: |
+          npm ci --ignore-scripts
+          node scripts/build_registry.mjs
+
       - name: Apply the D1 schema
         run: npx --yes "$WRANGLER" d1 execute geolibre-plugins-stats --remote --yes --file worker/schema.sql --config worker/wrangler.toml
 
@@ -66,10 +74,7 @@ jobs:
 
       - name: Check the live site still serves every plugin
         id: check
-        run: |
-          npm ci --ignore-scripts
-          node scripts/build_registry.mjs
-          node scripts/check_deployed.mjs https://plugins.geolibre.app/ --expected plugin-registry.json
+        run: node scripts/check_deployed.mjs https://plugins.geolibre.app/ --expected plugin-registry.json
 
       # The check retries with cache-busted URLs, so a failure here is real:
       # put the previous Worker version back rather than leave it live.
