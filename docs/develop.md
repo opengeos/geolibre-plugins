@@ -98,7 +98,8 @@ plugins/
 
 Commit the bundle exactly as your build emits it; nothing reformats it. Build
 it minified: every line of a committed bundle is part of the diff a reviewer
-has to read, and a release zip avoids that diff altogether.
+has to read. A release zip avoids that diff, but its bundle is also served
+exactly as built, so build that minified too to keep downloads small.
 
 ## 3. Register it
 

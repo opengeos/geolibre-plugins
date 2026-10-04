@@ -133,7 +133,8 @@ Create `plugins/<id>/` containing `plugin.json`, the built `entry` JS, and any
 
 Commit the bundle as your build emits it; nothing reformats it. Build it
 minified, since every line of a committed bundle is part of the diff a
-reviewer has to page through.
+reviewer has to page through. The same goes for a release zip's bundle: it is
+served exactly as built, so minifying it is what keeps downloads small.
 
 ### 3. Register it
 
