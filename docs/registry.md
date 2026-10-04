@@ -157,7 +157,7 @@ counts measure how many people use a plugin, not how many installed it. They
 come from those fetches alone; the app sends nothing extra.
 
 - **Users** are distinct visitors per ISO week. A visitor is a hash of the
-  plugin and the IP address, keyed with a secret that only the Worker holds and
+  plugin and the IP address (for IPv6, its /64 network), keyed with a secret that only the Worker holds and
   that changes every week. Without that secret a hash can't be turned back
   into an IP, and hashes can't be matched across weeks or across plugins.
   They're deleted once the week ends and only the count is kept. No IP address

@@ -58,6 +58,28 @@ export function countedFolder(request, url, key) {
   return STABLE_MANIFEST.exec(key)?.[1] ?? null;
 }
 
+/**
+ * The part of a client address that identifies a visitor: the whole IPv4
+ * address, or the /64 network of an IPv6 one (devices rotate the rest for
+ * privacy, which would otherwise count one person several times).
+ *
+ * @param {string} ip
+ * @returns {string}
+ */
+export function visitorAddress(ip) {
+  if (!ip.includes(":")) return ip;
+  const [head, tail = ""] = ip.toLowerCase().split("::");
+  const left = head ? head.split(":") : [];
+  const right = tail ? tail.split(":") : [];
+  const groups = ip.includes("::")
+    ? [...left, ...Array(8 - left.length - right.length).fill("0"), ...right]
+    : left;
+  return groups
+    .slice(0, 4)
+    .map((group) => group.replace(/^0+(?=.)/, ""))
+    .join(":");
+}
+
 async function visitorHash(secret, week, folder, request) {
   const encoder = new TextEncoder();
   const key = await crypto.subtle.importKey(
@@ -67,7 +89,7 @@ async function visitorHash(secret, week, folder, request) {
     false,
     ["sign"],
   );
-  const ip = request.headers.get("CF-Connecting-IP") ?? "";
+  const ip = visitorAddress(request.headers.get("CF-Connecting-IP") ?? "");
   // The plugin is part of the input, so one person's hashes for different
   // plugins don't match: the table can't show which plugins someone uses.
   const signature = await crypto.subtle.sign(
