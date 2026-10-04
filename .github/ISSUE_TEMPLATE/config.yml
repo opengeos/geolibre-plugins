@@ -1,0 +1,8 @@
+blank_issues_enabled: true
+contact_links:
+  - name: Report a security problem
+    url: https://github.com/opengeos/geolibre-plugins/security/advisories/new
+    about: A malicious plugin, a plugin that leaks data, or a vulnerability in the registry. Reported privately.
+  - name: GeoLibre app issues
+    url: https://github.com/opengeos/GeoLibre/issues
+    about: Problems with GeoLibre itself, including its plugin manager.

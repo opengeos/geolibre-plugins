@@ -80,6 +80,10 @@ is curated: open a pull request and a maintainer reviews it before it ships.
 [`CODEOWNERS`](.github/CODEOWNERS) requests a maintainer's review on every pull
 request automatically.
 
+To report a malicious plugin or a vulnerability in the registry, see
+[`SECURITY.md`](SECURITY.md): report it privately, not in a public issue. For a
+plugin that is broken or misdescribed, use the **Report a plugin** issue form.
+
 > **Start from the template:** the
 > [geolibre-plugin-template](https://github.com/opengeos/geolibre-plugin-template)
 > is the recommended starting point for plugin development. It includes a

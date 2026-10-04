@@ -1,0 +1,61 @@
+name: Report a plugin
+description: A plugin in the registry is broken, misbehaves, or is misdescribed.
+title: "[plugin] <plugin id>: "
+labels: ["plugin report"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        For a plugin that is **malicious, leaks data, or loads remote code**, don't open a public issue: [report it privately](https://github.com/opengeos/geolibre-plugins/security/advisories/new) instead (see [SECURITY.md](https://github.com/opengeos/geolibre-plugins/blob/main/SECURITY.md)).
+
+        A bug in a plugin's own code is usually best reported in the plugin's repository too; its catalog page on [plugins.geolibre.app](https://plugins.geolibre.app/plugins/) links to it.
+  - type: input
+    id: plugin
+    attributes:
+      label: Plugin id
+      description: As shown in Settings → Manage Plugins, or in the catalog page's URL.
+      placeholder: geolibre-contour
+    validations:
+      required: true
+  - type: input
+    id: plugin-version
+    attributes:
+      label: Plugin version
+      placeholder: 1.2.0
+  - type: dropdown
+    id: problem
+    attributes:
+      label: Kind of problem
+      options:
+        - It doesn't install
+        - It installs but fails or crashes
+        - It breaks other parts of GeoLibre
+        - Its description or metadata is wrong
+        - Something else
+    validations:
+      required: true
+  - type: input
+    id: geolibre-version
+    attributes:
+      label: GeoLibre version
+      placeholder: 3.2.0
+    validations:
+      required: true
+  - type: dropdown
+    id: platform
+    attributes:
+      label: Platform
+      options:
+        - Web (web.geolibre.app or self-hosted)
+        - Desktop (Windows)
+        - Desktop (macOS)
+        - Desktop (Linux)
+    validations:
+      required: true
+  - type: textarea
+    id: details
+    attributes:
+      label: What happened
+      description: What you did, what you expected, and what happened instead. Paste any error from the browser console (or the desktop log).
+    validations:
+      required: true
