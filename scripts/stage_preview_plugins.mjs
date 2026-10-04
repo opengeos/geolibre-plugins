@@ -31,7 +31,8 @@ const staged = [];
 let failed = 0;
 for (const file of files) {
   // Only plain registry/<id>.json names, so a crafted path can't escape.
-  if (!REGISTRY_FILE.test(file)) {
+  const fileId = REGISTRY_FILE.exec(file)?.[1];
+  if (!fileId) {
     continue;
   }
   let entry;
@@ -41,7 +42,9 @@ for (const file of files) {
     // Deleted in the PR, or not valid JSON (validation reports that).
     continue;
   }
-  if (!hasSource(entry) || typeof entry.id !== "string" || !ID.test(entry.id)) {
+  // The file name, the entry's id and the zip's plugin.json must all name
+  // the same plugin, so the preview shows exactly what the PR changes.
+  if (!hasSource(entry) || entry.id !== fileId || !ID.test(entry.id)) {
     continue;
   }
   // One broken entry (bad hash, 404, oversized zip) shouldn't stop the
@@ -52,6 +55,21 @@ for (const file of files) {
   } catch (error) {
     console.error(
       `::error::${file}: could not stage its release zip: ${error.message}`,
+    );
+    failed += 1;
+    continue;
+  }
+  let manifestId;
+  try {
+    manifestId = JSON.parse(
+      await fs.readFile(path.join(dir, "plugin.json"), "utf8"),
+    ).id;
+  } catch {
+    manifestId = undefined;
+  }
+  if (manifestId !== entry.id) {
+    console.error(
+      `::error::${file}: the release zip's plugin.json has id "${manifestId}", not "${entry.id}".`,
     );
     failed += 1;
     continue;
