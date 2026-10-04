@@ -285,6 +285,9 @@ def render_page(entries: list[dict]) -> str:
     )
 
 
+# A screenshot URL as build_registry.mjs writes it: plugins/<folder>/<version>/
+# plus a path matching screenshots[].path in schemas/registry-entry.schema.json
+# (keep the two in step).
 SCREENSHOT_URL = re.compile(
     r"plugins/[a-z0-9]+(?:[._-][a-z0-9]+)*/[0-9A-Za-z.+-]+/"
     r"[A-Za-z0-9._@+-]+(?:/[A-Za-z0-9._@+-]+)*\.(?:png|jpe?g|webp)"
