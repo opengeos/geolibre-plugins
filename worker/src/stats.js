@@ -48,7 +48,9 @@ export function countedFolder(request, url, key) {
   if (request.method !== "GET" || url.searchParams.has("__geolibre_check")) {
     return null;
   }
-  if (BOT.test(request.headers.get("User-Agent") ?? "")) return null;
+  // No User-Agent at all is a script, not a GeoLibre install.
+  const agent = request.headers.get("User-Agent") ?? "";
+  if (!agent || BOT.test(agent)) return null;
   return STABLE_MANIFEST.exec(key)?.[1] ?? null;
 }
 
@@ -86,16 +88,23 @@ export async function recordUsage(env, request, folder, now = new Date()) {
   if (!env.STATS || !env.STATS_SALT) return;
   const week = isoWeek(now);
   const day = now.toISOString().slice(0, 10);
-  const visitor = await visitorHash(env.STATS_SALT, week, request);
-  await env.STATS.batch([
-    env.STATS.prepare(
-      "INSERT OR IGNORE INTO weekly_visitors (week, plugin, visitor) VALUES (?, ?, ?)",
-    ).bind(week, folder, visitor),
+  const statements = [
     env.STATS.prepare(
       "INSERT INTO daily_launches (day, plugin, launches) VALUES (?, ?, 1) " +
         "ON CONFLICT (day, plugin) DO UPDATE SET launches = launches + 1",
     ).bind(day, folder),
-  ]);
+  ];
+  // Without the client IP every visitor with the same User-Agent would hash
+  // alike, so such a request counts as a launch but not as a user.
+  if (request.headers.get("CF-Connecting-IP")) {
+    const visitor = await visitorHash(env.STATS_SALT, week, request);
+    statements.push(
+      env.STATS.prepare(
+        "INSERT OR IGNORE INTO weekly_visitors (week, plugin, visitor) VALUES (?, ?, ?)",
+      ).bind(week, folder, visitor),
+    );
+  }
+  await env.STATS.batch(statements);
 }
 
 /**
@@ -135,25 +144,33 @@ export async function statsResponse(env, now = new Date()) {
   }
   const thisWeek = isoWeek(now);
   const lastWeek = isoWeek(new Date(now.getTime() - 7 * 86400000));
-  const [current, previous, launches, since] = await env.STATS.batch([
-    env.STATS.prepare(
-      "SELECT plugin, COUNT(*) AS users FROM weekly_visitors WHERE week = ? GROUP BY plugin",
-    ).bind(thisWeek),
-    env.STATS.prepare(
-      "SELECT plugin, users FROM weekly_users WHERE week = ?",
-    ).bind(lastWeek),
-    env.STATS.prepare(
-      "SELECT plugin, SUM(launches) AS launches FROM daily_launches GROUP BY plugin",
-    ),
-    env.STATS.prepare("SELECT MIN(day) AS day FROM daily_launches"),
-  ]);
+  const [current, previous, previousLive, launches, since] =
+    await env.STATS.batch([
+      env.STATS.prepare(
+        "SELECT plugin, COUNT(*) AS users FROM weekly_visitors WHERE week = ? GROUP BY plugin",
+      ).bind(thisWeek),
+      env.STATS.prepare(
+        "SELECT plugin, users FROM weekly_users WHERE week = ?",
+      ).bind(lastWeek),
+      // Until the daily roll-up has run for a finished week, its visitors are
+      // still here; count them directly so last week doesn't read 0.
+      env.STATS.prepare(
+        "SELECT plugin, COUNT(*) AS users FROM weekly_visitors WHERE week = ? GROUP BY plugin",
+      ).bind(lastWeek),
+      env.STATS.prepare(
+        "SELECT plugin, SUM(launches) AS launches FROM daily_launches GROUP BY plugin",
+      ),
+      env.STATS.prepare("SELECT MIN(day) AS day FROM daily_launches"),
+    ]);
   const plugins = {};
   const entry = (plugin) =>
     (plugins[plugin] ??= { usersThisWeek: 0, usersLastWeek: 0, launches: 0 });
   for (const row of current.results)
     entry(row.plugin).usersThisWeek = row.users;
-  for (const row of previous.results)
-    entry(row.plugin).usersLastWeek = row.users;
+  for (const row of [...previous.results, ...previousLive.results]) {
+    const usage = entry(row.plugin);
+    usage.usersLastWeek = Math.max(usage.usersLastWeek, row.users);
+  }
   for (const row of launches.results) entry(row.plugin).launches = row.launches;
   const body = {
     generated: now.toISOString(),

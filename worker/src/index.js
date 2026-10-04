@@ -121,7 +121,14 @@ export default {
 
     if (key === "plugins/stats.json" && request.method === "GET") {
       try {
-        return await statsResponse(env);
+        // Worker responses aren't edge-cached by default; keep one copy per
+        // hour so this public endpoint doesn't query D1 on every request.
+        const cacheKey = new Request(`${url.origin}/plugins/stats.json`);
+        const cached = await caches.default.match(cacheKey);
+        if (cached) return cached;
+        const response = await statsResponse(env);
+        ctx.waitUntil(caches.default.put(cacheKey, response.clone()));
+        return response;
       } catch (error) {
         console.error("Could not build plugins/stats.json", error);
         return new Response(JSON.stringify({ plugins: {} }), {
