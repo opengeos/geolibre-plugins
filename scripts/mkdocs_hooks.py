@@ -2,7 +2,8 @@
 
 from __future__ import annotations
 
-from pathlib import PurePosixPath
+import hashlib
+from pathlib import Path, PurePosixPath
 
 
 def on_page_markdown(markdown, page, config, files):
@@ -29,3 +30,53 @@ def on_page_markdown(markdown, page, config, files):
         repo = config["repo_url"].rstrip("/")
         page.edit_url = f"{repo}/edit/{branch}/registry/{src.stem}.json"
     return markdown
+
+
+def _with_content_hash(path: str, docs_dir: str) -> str:
+    """Append a short content hash to a local asset path.
+
+    Args:
+        path: An ``extra_css``/``extra_javascript`` path relative to docs_dir.
+        docs_dir: The MkDocs docs directory.
+
+    Returns:
+        ``path?v=<hash>`` for a local file, or the path unchanged for URLs and
+        missing files.
+    """
+    if "://" in path or path.startswith("//") or "?" in path:
+        return path
+    file = Path(docs_dir) / path
+    if not file.is_file():
+        return path
+    digest = hashlib.sha256(file.read_bytes()).hexdigest()[:10]
+    return f"{path}?v={digest}"
+
+
+def on_config(config):
+    """Version the site's own CSS and JS URLs by content.
+
+    Cloudflare gives these files a 4-hour browser cache, so without a changing
+    URL a returning visitor keeps the previous stylesheet or script for hours
+    after a deploy. A content hash in the query string changes the URL exactly
+    when the file changes.
+
+    Args:
+        config: The MkDocs config.
+
+    Returns:
+        The config, with hashed asset URLs.
+    """
+    docs_dir = config["docs_dir"]
+    config["extra_css"] = [
+        _with_content_hash(path, docs_dir) for path in config["extra_css"]
+    ]
+    # extra_javascript holds plain paths or script objects with a .path.
+    scripts = []
+    for script in config["extra_javascript"]:
+        if isinstance(script, str):
+            scripts.append(_with_content_hash(script, docs_dir))
+        else:
+            script.path = _with_content_hash(script.path, docs_dir)
+            scripts.append(script)
+    config["extra_javascript"] = scripts
+    return config
