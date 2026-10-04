@@ -82,7 +82,7 @@ jobs:
 
       - name: Add registry, plugin bundles, and Pages metadata to the site
         run: |
-          cp plugin-registry.json site/
+          cp plugin-registry.json blocklist.json site/
           # Publish the plugin bundles under /plugins/<id>/. mkdocs already built
           # the catalog page at site/plugins/index.html, so merge the bundles in
           # alongside it rather than replacing the directory.

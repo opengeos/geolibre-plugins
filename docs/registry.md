@@ -104,6 +104,37 @@ The manifest GeoLibre's external-plugin loader expects:
 `id`/`name`/`version` matching this manifest. `entry` and `style` are resolved
 relative to the manifest, so keep them inside the plugin's own folder.
 
+## `blocklist.json`
+
+Published at
+[`https://plugins.geolibre.app/blocklist.json`](https://plugins.geolibre.app/blocklist.json),
+next to the registry. It lists plugins, or single bundles of them, that
+GeoLibre refuses to load, so a malicious or broken plugin can be stopped on
+every install without waiting for an app release:
+
+```json
+{
+  "version": 1,
+  "blocked": [
+    {
+      "id": "my-plugin",
+      "bundleSha256": "3f5c…(64 hex characters)",
+      "reason": "Version 1.2.0 sends map data to an undisclosed server.",
+      "date": "2026-10-04"
+    }
+  ]
+}
+```
+
+An entry with a `bundleSha256` blocks only that bundle (one version); without
+one it blocks every version of the plugin. `reason` is shown to users whose
+plugin is refused. CI keeps the two files consistent: a plugin blocked
+outright must also be removed from `registry/`, and the registry may not serve
+a blocked bundle.
+
+GeoLibre support for the blocklist ships with a later app release; until
+then, removing a plugin from the registry only stops new installs.
+
 ## Schemas
 
 Both formats are defined as JSON Schemas, published alongside the registry:
@@ -112,6 +143,8 @@ Both formats are defined as JSON Schemas, published alongside the registry:
   for `registry/<id>.json`
 - [`plugin-manifest.schema.json`](https://plugins.geolibre.app/schemas/plugin-manifest.schema.json)
   for `plugin.json`
+- [`blocklist.schema.json`](https://plugins.geolibre.app/schemas/blocklist.schema.json)
+  for `blocklist.json`
 
 `npm run validate` checks every entry and manifest against them, and the
 repository's `.vscode/settings.json` applies them in VS Code as you edit.

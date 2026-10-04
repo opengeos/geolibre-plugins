@@ -219,6 +219,21 @@ verbatim.
 > a DNS `CNAME` record for `plugins.geolibre.app` pointing at
 > `opengeos.github.io`.
 
+### Blocking a plugin
+
+To stop a malicious or broken plugin on every install, add an entry to
+[`blocklist.json`](blocklist.json) (see
+[Registry format](https://plugins.geolibre.app/registry/#blocklistjson)):
+
+- To block one bad version, add its `id` and the `bundleSha256` from
+  `plugin-registry.json`, and point its registry entry at a fixed release (or
+  remove the entry).
+- To block every version, add only the `id` and delete
+  `registry/<id>.json`.
+
+Give a short `reason` (users see it) and the `date`. CI refuses a blocklist
+that the registry contradicts.
+
 ### Release-zip mirror
 
 Plugins with a `source` are served from the `geolibre-plugins` R2 bucket by the

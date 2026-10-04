@@ -11,6 +11,7 @@ import path from "node:path";
 
 import {
   buildRegistry,
+  loadBlocklist,
   loadRegistryEntries,
   registryPath,
   root,
@@ -26,10 +27,27 @@ if (errors.length > 0) {
   process.exit(1);
 }
 
-await fs.writeFile(
-  registryPath,
-  `${JSON.stringify(await buildRegistry(entries), null, 2)}\n`,
+const registry = await buildRegistry(entries);
+
+// The registry must never offer a bundle the blocklist refuses: GeoLibre
+// would install it and then refuse to load it.
+const blockedHashes = new Set(
+  (await loadBlocklist()).blocked
+    .filter((entry) => entry.bundleSha256)
+    .map((entry) => `${entry.id} ${entry.bundleSha256}`),
 );
+const served = registry.plugins.filter((plugin) =>
+  blockedHashes.has(`${plugin.id} ${plugin.bundleSha256}`),
+);
+if (served.length > 0) {
+  console.error("The registry serves bundles that blocklist.json blocks:");
+  for (const plugin of served) {
+    console.error(`- ${plugin.id} ${plugin.version} (${plugin.bundleSha256})`);
+  }
+  process.exit(1);
+}
+
+await fs.writeFile(registryPath, `${JSON.stringify(registry, null, 2)}\n`);
 console.log(
   `Wrote ${path.relative(root, registryPath)} with ${entries.length} plugins.`,
 );
