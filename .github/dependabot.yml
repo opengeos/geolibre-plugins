@@ -20,7 +20,7 @@ updates:
       python:
         patterns: ["*"]
 
-  # esbuild, used only by scripts/minify_bundles.mjs.
+  # The registry tooling's dev dependencies (ajv and friends).
   - package-ecosystem: npm
     directory: /
     schedule:

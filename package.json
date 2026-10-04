@@ -2,18 +2,15 @@
   "name": "geolibre-plugins",
   "private": true,
   "type": "module",
-  "description": "Tooling for the GeoLibre plugin registry. The registry is plain JSON assembled from registry/*.json; esbuild is only used by scripts/minify_bundles.mjs to whitespace-minify the committed plugin bundles.",
+  "description": "Tooling for the GeoLibre plugin registry. The registry is plain JSON assembled from registry/*.json.",
   "license": "MIT",
   "scripts": {
     "build:registry": "node scripts/build_registry.mjs",
-    "minify": "node scripts/minify_bundles.mjs --fix",
-    "minify:check": "node scripts/minify_bundles.mjs",
     "validate": "node scripts/validate_plugins.mjs",
     "test:worker": "node --test 'worker/test/*.test.mjs'"
   },
   "devDependencies": {
     "ajv": "8.20.0",
-    "esbuild": "0.28.2",
     "fflate": "0.8.3"
   }
 }
