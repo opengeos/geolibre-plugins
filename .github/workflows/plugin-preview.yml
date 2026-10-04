@@ -173,9 +173,10 @@ jobs:
             exit 0
           fi
           GH_TOKEN= npm ci --ignore-scripts
-          # shellcheck disable=SC2086 # one registry path per word
+          # One registry path per line; the names are plain [a-z0-9._-].
+          mapfile -t file_list <<< "$files"
           status=0
-          GH_TOKEN= node scripts/stage_preview_plugins.mjs plugins-pr staged $files \
+          GH_TOKEN= node scripts/stage_preview_plugins.mjs plugins-pr staged "${file_list[@]}" \
             > stage-ids.txt 2> stage.log || status=$?
           cat stage.log >&2
           ids=$(tr '\n' ' ' < stage-ids.txt)
@@ -333,6 +334,7 @@ jobs:
           count=$(gh api --paginate "repos/${{ github.repository }}/issues/$PR/comments" \
                     --jq "[.[] | select(.user.login == \"github-actions[bot]\") | select(.body | contains(\"Sticky Pull Request Commentpr-preview\")) | select(.body | contains(\"geolibre-plugins/pr-$PR/\"))] | length" \
                   | awk '{s += $1} END {print s + 0}')
+          echo "Earlier preview comments found: $count"
           echo "exists=$([ "$count" -gt 0 ] && echo true || echo false)" >> "$GITHUB_OUTPUT"
 
       # --------------------------------------------------------------- deploy

@@ -186,7 +186,8 @@ that has not been formatted will fail CI.
 Every pull request that adds or changes a plugin, either a `plugins/<id>/`
 folder or a `registry/<id>.json` entry with a `source` release zip, gets a
 live preview: CI builds GeoLibre with your plugin baked in and posts the URL as
-a comment.
+a comment. If a pull request changes both for the same plugin, the release zip
+is previewed, since that is what the registry will serve.
 
 ```text
 https://opengeos.org/pages-preview/geolibre-plugins/pr-<N>/
