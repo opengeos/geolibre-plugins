@@ -104,6 +104,54 @@ async function readCapped(response, limit, url) {
   return new Uint8Array(Buffer.concat(chunks));
 }
 
+const MAX_REDIRECTS = 5;
+
+/**
+ * GET a URL, following redirects by hand so that every hop must be HTTPS.
+ *
+ * The URL can come from untrusted pull-request JSON (the preview workflow),
+ * so nothing is sent to a non-HTTPS address, which could otherwise reach
+ * internal or cloud-metadata hosts, either directly or through a redirect.
+ *
+ * @param {string} url The starting URL.
+ * @returns {Promise<Response>} The final, successful response.
+ */
+async function fetchHttpsOnly(url) {
+  let current = url;
+  for (let hop = 0; hop <= MAX_REDIRECTS; hop += 1) {
+    let parsed;
+    try {
+      parsed = new URL(current);
+    } catch {
+      throw new Error(`${current} is not a valid URL`);
+    }
+    if (parsed.protocol !== "https:") {
+      throw new Error(
+        hop === 0
+          ? `${url} must use https://`
+          : `${url} redirected to a non-HTTPS URL`,
+      );
+    }
+    const response = await fetch(parsed, {
+      redirect: "manual",
+      signal: AbortSignal.timeout(DOWNLOAD_TIMEOUT_MS),
+    });
+    if (response.status >= 300 && response.status < 400) {
+      const location = response.headers.get("location");
+      if (!location) {
+        throw new Error(`${url} redirected without a Location header`);
+      }
+      current = new URL(location, parsed).href;
+      continue;
+    }
+    if (!response.ok) {
+      throw new Error(`${url} returned HTTP ${response.status}`);
+    }
+    return response;
+  }
+  throw new Error(`${url} redirected more than ${MAX_REDIRECTS} times`);
+}
+
 /**
  * Download a release zip, or reuse a cached copy, and check its SHA-256.
  *
@@ -116,28 +164,7 @@ async function fetchVerifiedZip(source) {
   try {
     bytes = new Uint8Array(await fs.readFile(cached));
   } catch {
-    // Check the scheme before sending anything: the URL can come from
-    // untrusted pull-request JSON (the preview workflow), and plain HTTP would
-    // let it reach internal or metadata addresses.
-    let parsed;
-    try {
-      parsed = new URL(source.url);
-    } catch {
-      throw new Error(`${source.url} is not a valid URL`);
-    }
-    if (parsed.protocol !== "https:") {
-      throw new Error(`${source.url} must use https://`);
-    }
-    const response = await fetch(parsed, {
-      signal: AbortSignal.timeout(DOWNLOAD_TIMEOUT_MS),
-    });
-    if (!response.ok) {
-      throw new Error(`${source.url} returned HTTP ${response.status}`);
-    }
-    // fetch follows redirects; don't accept one that left HTTPS.
-    if (!response.url.startsWith("https://")) {
-      throw new Error(`${source.url} redirected to a non-HTTPS URL`);
-    }
+    const response = await fetchHttpsOnly(source.url);
     bytes = await readCapped(response, MAX_ZIP_BYTES, source.url);
   }
   const actual = createHash("sha256").update(bytes).digest("hex");
