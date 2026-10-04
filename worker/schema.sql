@@ -2,7 +2,7 @@
 --
 --   npx wrangler d1 execute geolibre-plugins-stats --remote --file worker/schema.sql
 
--- Distinct visitors of the current week: an HMAC of IP and User-Agent with a
+-- Distinct visitors of the current week: an HMAC of the IP with a
 -- weekly salt. Rolled up into weekly_users and deleted once the week ends.
 CREATE TABLE IF NOT EXISTS weekly_visitors (
   week TEXT NOT NULL,

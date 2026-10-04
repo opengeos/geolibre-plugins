@@ -135,6 +135,7 @@ export default {
           status: 503,
           headers: {
             "Access-Control-Allow-Origin": "*",
+            "Cache-Control": "no-store",
             "Content-Type": "application/json; charset=utf-8",
           },
         });

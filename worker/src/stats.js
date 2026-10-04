@@ -5,7 +5,9 @@
 // plugin, without any change to the app. Two numbers are kept per plugin:
 //
 // - users per ISO week: distinct visitors, where a visitor is an HMAC of the
-//   client IP and User-Agent keyed with a secret salt that changes every week.
+//   client IP keyed with a secret salt that changes every week. (Leaving the
+//   User-Agent out means a script can't mint users by varying it; people
+//   behind one IP count as one user, so the figure is a lower bound.)
 //   The hashes can't be reversed or linked across weeks, and are deleted once
 //   the week is rolled up into a count. No IP address is stored.
 // - launches per day: every counted fetch.
@@ -64,12 +66,7 @@ async function visitorHash(secret, week, request) {
     ["sign"],
   );
   const ip = request.headers.get("CF-Connecting-IP") ?? "";
-  const agent = request.headers.get("User-Agent") ?? "";
-  const signature = await crypto.subtle.sign(
-    "HMAC",
-    key,
-    encoder.encode(`${ip}\n${agent}`),
-  );
+  const signature = await crypto.subtle.sign("HMAC", key, encoder.encode(ip));
   return Array.from(new Uint8Array(signature).slice(0, 16), (b) =>
     b.toString(16).padStart(2, "0"),
   ).join("");
