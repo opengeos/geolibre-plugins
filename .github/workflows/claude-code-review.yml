@@ -217,6 +217,9 @@ jobs:
         # A broken or unreachable zip is reported in .plugin-review/report.md
         # and becomes a review finding; it must not stop the review itself.
         continue-on-error: true
+        # A stall (huge zips, slow downloads) becomes a failed step, which the
+        # prompt turns into a "could not be inspected" finding.
+        timeout-minutes: 10
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           PR: ${{ steps.pr.outputs.number }}

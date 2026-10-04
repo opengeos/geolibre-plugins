@@ -78,7 +78,10 @@ const PATTERNS = [
   ["WebAssembly / workers", /\bWebAssembly\.|new\s+(?:Shared)?Worker\s*\(/g],
   ["crypto", /crypto\.subtle|\bCoinHive\b|\bcryptonight\b/gi],
 ];
-const URL_HOST = /\bhttps?:\/\/([a-z0-9.-]+\.[a-z]{2,})(?=[/:?#"'`\s)]|$)/gi;
+// Hosts of http(s), ws(s) and ftp URLs: domain names, IPv4 addresses,
+// localhost, and bracketed IPv6 addresses.
+const URL_HOST =
+  /\b(?:https?|wss?|ftp):\/\/([a-z0-9.-]+\.[a-z]{2,}|\d{1,3}(?:\.\d{1,3}){3}|localhost|\[[0-9a-f:.]+\])(?=[/:?#"'`\s)\]]|$)/gi;
 
 const [prRoot, dest, ...files] = process.argv.slice(2);
 if (!prRoot || !dest) {
