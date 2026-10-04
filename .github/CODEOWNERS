@@ -1,0 +1,9 @@
+# Plugins run with full app privileges, so every change to what ships through
+# the registry is routed to a maintainer for review. Plugin authors are not
+# listed per plugin: code owners need write access to this repository, and
+# most authors are external contributors.
+#
+# Review is requested automatically; it is only required if branch protection
+# on main turns on "Require review from Code Owners".
+
+* @giswqs

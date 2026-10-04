@@ -66,10 +66,10 @@ The generated `plugin-registry.json` wraps every entry in a `plugins` array:
 Unknown fields are rejected, so a typo such as `minGeolibreVersion` fails
 validation instead of being ignored.
 
-`categories` values come from a fixed list: `Analysis`, `Archaeology`, `Basemaps`, `Climate`, `Data`, `Ecology`, `Example`,
-`Hydrology`, `Imagery`, `Oceans`, `Raster`, `Terrain`, `Utilities`, `Vector`,
-`Visualization`.
-Open an issue to propose a new category.
+`categories` values come from a fixed list: `Analysis`, `Archaeology`,
+`Basemaps`, `Climate`, `Data`, `Ecology`, `Example`, `Hydrology`, `Imagery`,
+`Oceans`, `Raster`, `Terrain`, `Utilities`, `Vector`, `Visualization`. Open an
+issue to propose a new category.
 
 A relative `manifestUrl` resolves against the registry location, so a plugin
 hosted alongside the registry uses e.g. `plugins/my-plugin/plugin.json`. Entries whose

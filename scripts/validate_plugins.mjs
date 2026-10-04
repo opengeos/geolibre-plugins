@@ -80,12 +80,15 @@ function checkSchema(validate, data, label) {
   }
   for (const error of validate.errors) {
     const where = error.instancePath ? ` ${error.instancePath}` : "";
+    // `$comment` describes a `pattern` or `not` rule, so only use it for those.
     // A `not` rule keeps its hint on its own subschema; a `pattern` keeps it
     // on the schema that holds the pattern.
     const hint =
       error.keyword === "not"
         ? error.schema?.$comment
-        : error.parentSchema?.$comment;
+        : error.keyword === "pattern"
+          ? error.parentSchema?.$comment
+          : undefined;
     let message = error.message;
     if (typeof hint === "string") {
       message = hint;

@@ -39,10 +39,10 @@ from its own `registry/<id>.json` file, which holds just that entry:
   absolute HTTPS URL pointing at a plugin hosted elsewhere.
 - `homepage` must be `http(s)`; other schemes are dropped by the app.
 - `minGeoLibreVersion` gates installation against the running app version.
-- `categories` takes one to four values from a fixed list: `Analysis`, `Archaeology`, `Basemaps`, `Climate`, `Data`, `Ecology`, `Example`,
-`Hydrology`, `Imagery`, `Oceans`, `Raster`, `Terrain`, `Utilities`, `Vector`,
-`Visualization`. Open
-  an issue to propose a new one.
+- `categories` takes one to four values from a fixed list: `Analysis`,
+  `Archaeology`, `Basemaps`, `Climate`, `Data`, `Ecology`, `Example`,
+  `Hydrology`, `Imagery`, `Oceans`, `Raster`, `Terrain`, `Utilities`, `Vector`,
+  `Visualization`. Open an issue to propose a new one.
 
 [`schemas/registry-entry.schema.json`](schemas/registry-entry.schema.json) and
 [`schemas/plugin-manifest.schema.json`](schemas/plugin-manifest.schema.json)
@@ -74,6 +74,8 @@ copy-ready template.
 
 Plugins are **trusted code** that runs with full app privileges, so the registry
 is curated: open a pull request and a maintainer reviews it before it ships.
+[`CODEOWNERS`](.github/CODEOWNERS) requests a maintainer's review on every pull
+request automatically.
 
 > **Start from the template:** the
 > [geolibre-plugin-template](https://github.com/opengeos/geolibre-plugin-template)

@@ -43,8 +43,8 @@
     "manifestUrl": {
       "description": "plugins/<dir>/plugin.json, or an absolute HTTPS URL for a plugin hosted elsewhere.",
       "type": "string",
-      "pattern": "^(?:https://\\S+|plugins/[^/\\s]+/\\S+\\.json)$",
-      "$comment": "must be plugins/<dir>/<file>.json or an https:// URL"
+      "pattern": "^(?:https://\\S+|(?!.*\\.\\.)plugins/[^/\\s]+/\\S+\\.json)$",
+      "$comment": "must be plugins/<dir>/<file>.json (no .. segments) or an https:// URL"
     },
     "categories": {
       "description": "One to four categories from the fixed list.",
