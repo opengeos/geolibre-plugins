@@ -12,8 +12,10 @@
 // and the published registry must list exactly those hashes too: otherwise an
 // edge still serving the previous registry and its matching bundles would
 // pass without checking this deployment. Without it, the published registry
-// is checked against itself, which is useful for a spot check. A failure here comes after
-// the site is live, so it alerts rather than prevents: fix forward and redeploy.
+// is checked against itself, which is useful for a spot check.
+//
+// A failure here comes after the site is live, so it alerts rather than
+// prevents: fix forward and redeploy.
 //
 // Edge caches can serve the previous bundle for a few minutes after a deploy,
 // so a mismatch is retried before the check fails.
@@ -72,12 +74,21 @@ async function fetchFresh(url) {
  */
 async function hashPublishedBundle(manifestUrl) {
   const manifest = await (await fetchFresh(manifestUrl)).json();
-  const read = async (file) =>
-    decodeSource(
-      new Uint8Array(
-        await (await fetchFresh(new URL(file, manifestUrl))).arrayBuffer(),
-      ),
+  if (typeof manifest.entry !== "string") {
+    throw new Error(`${manifestUrl} has no "entry"`);
+  }
+  // Like GeoLibre's resolvePluginAssetUrl: entry and style must stay inside
+  // the manifest's folder, so a manifest can't send this check elsewhere.
+  const pluginDir = new URL(".", manifestUrl).href;
+  const read = async (file) => {
+    const url = new URL(file, manifestUrl);
+    if (!url.href.startsWith(pluginDir)) {
+      throw new Error(`${file} resolves outside ${pluginDir}`);
+    }
+    return decodeSource(
+      new Uint8Array(await (await fetchFresh(url)).arrayBuffer()),
     );
+  };
   const entrySource = await read(manifest.entry);
   const styleSource =
     typeof manifest.style === "string" ? await read(manifest.style) : null;
