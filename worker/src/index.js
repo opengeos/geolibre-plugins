@@ -122,8 +122,13 @@ export default {
     if (key === "plugins/stats.json" && request.method === "GET") {
       try {
         // Worker responses aren't edge-cached by default; keep one copy per
-        // hour so this public endpoint doesn't query D1 on every request.
-        const cacheKey = new Request(`${url.origin}/plugins/stats.json`);
+        // hour so this public endpoint doesn't query D1 on every request. The
+        // zone's cache settings can stretch the copy's TTL, so the key changes
+        // every UTC hour: an old copy is never served past its hour.
+        const hour = new Date().toISOString().slice(0, 13);
+        const cacheKey = new Request(
+          `${url.origin}/plugins/stats.json?hour=${hour}`,
+        );
         const cached = await caches.default.match(cacheKey);
         if (cached) return cached;
         const response = await statsResponse(env);

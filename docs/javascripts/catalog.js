@@ -98,7 +98,8 @@
   // fetched once per visit. Without data nothing is shown.
   let stats;
   function loadStats() {
-    stats ??= fetch("/plugins/stats.json")
+    // Revalidate: the zone's browser cache TTL can outlast the hourly counts.
+    stats ??= fetch("/plugins/stats.json", { cache: "no-cache" })
       .then((response) => (response.ok ? response.json() : null))
       .catch(() => null)
       .then((data) => {
