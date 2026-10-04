@@ -1,8 +1,0 @@
-{
-  "id": "geolibre-contour",
-  "name": "Contour Lines from DEM",
-  "version": "0.3.7",
-  "entry": "index.js",
-  "description": "Generate dynamic contour lines from loaded Cloud-Optimized GeoTIFF elevation rasters.",
-  "style": "style.css"
-}

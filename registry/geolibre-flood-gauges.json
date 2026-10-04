@@ -6,6 +6,10 @@
   "author": "chuofringer (flood.live)",
   "homepage": "https://github.com/chuofringer/geolibre-flood-gauges",
   "manifestUrl": "plugins/geolibre-flood-gauges/plugin.json",
+  "source": {
+    "url": "https://github.com/opengeos/geolibre-plugins/releases/download/bundles-2026-10/geolibre-flood-gauges-0.4.1.zip",
+    "sha256": "d5986f33029028b5b287a91afb2cb265d14acc3bfd96dcb3e1da687b04a0a55e"
+  },
   "categories": ["Hydrology", "Data"],
   "minGeoLibreVersion": "2.0.0"
 }

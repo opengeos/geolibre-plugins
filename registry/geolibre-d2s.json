@@ -6,6 +6,10 @@
   "author": "Qiusheng Wu",
   "homepage": "https://github.com/opengeos/geolibre-d2s",
   "manifestUrl": "plugins/geolibre-d2s/plugin.json",
+  "source": {
+    "url": "https://github.com/opengeos/geolibre-plugins/releases/download/bundles-2026-10/geolibre-d2s-0.2.0.zip",
+    "sha256": "b9a8faa9de8f1942541592889d9fbc9d54f70f693e7c69023642c51ddbe037b5"
+  },
   "categories": ["Data", "Imagery"],
   "minGeoLibreVersion": "0.9.0"
 }

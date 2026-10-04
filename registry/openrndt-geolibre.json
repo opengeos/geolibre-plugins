@@ -6,6 +6,10 @@
   "author": "onData",
   "homepage": "https://github.com/ondata/openrndt-geolibre",
   "manifestUrl": "plugins/openrndt-geolibre/plugin.json",
+  "source": {
+    "url": "https://github.com/opengeos/geolibre-plugins/releases/download/bundles-2026-10/openrndt-geolibre-0.1.9.zip",
+    "sha256": "bcbe170759a447f7d975be8f7259f91d38a1da4c1ff132cd382c78688e92c42d"
+  },
   "categories": ["Data"],
   "minGeoLibreVersion": "3.2.0"
 }

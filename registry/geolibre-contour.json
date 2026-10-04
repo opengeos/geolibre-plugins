@@ -6,6 +6,10 @@
   "author": "Cedric Bouffard",
   "homepage": "https://github.com/cedricbouffard/geolibre-contour",
   "manifestUrl": "plugins/geolibre-contour/plugin.json",
+  "source": {
+    "url": "https://github.com/opengeos/geolibre-plugins/releases/download/bundles-2026-10/geolibre-contour-0.3.7.zip",
+    "sha256": "7ed6c436aed34fe03f22011354a440a43fbe42aeef55a1ce6aa24568dbf4330d"
+  },
   "categories": ["Raster", "Visualization"],
   "minGeoLibreVersion": "0.9.0"
 }

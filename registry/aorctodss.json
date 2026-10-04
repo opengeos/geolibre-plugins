@@ -6,6 +6,10 @@
   "author": "Mohsen Tahmasebi Nasab",
   "homepage": "https://github.com/mohsennasab/aorc-to-dss",
   "manifestUrl": "plugins/aorctodss/plugin.json",
+  "source": {
+    "url": "https://github.com/opengeos/geolibre-plugins/releases/download/bundles-2026-10/aorctodss-0.2.0.zip",
+    "sha256": "c7b60a716a1d3935fa0abf17b06aad4ae049ae1de51499e920e82a3b3652eeb1"
+  },
   "categories": ["Climate", "Raster", "Data"],
   "minGeoLibreVersion": "2.4.0"
 }

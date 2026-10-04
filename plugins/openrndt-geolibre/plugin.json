@@ -1,8 +1,0 @@
-{
-  "id": "openrndt-geolibre",
-  "name": "RNDT catalogue",
-  "version": "0.1.9",
-  "entry": "dist/index.js",
-  "description": "Search the Italian national catalogue of spatial data (RNDT) and add its WMS/WFS services to the map.",
-  "style": "dist/style.css"
-}

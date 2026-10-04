@@ -6,6 +6,10 @@
   "author": "Enzo Cocca",
   "homepage": "https://github.com/enzococca/geolibre-movecost",
   "manifestUrl": "plugins/movecost/plugin.json",
+  "source": {
+    "url": "https://github.com/opengeos/geolibre-plugins/releases/download/bundles-2026-10/movecost-0.2.4.zip",
+    "sha256": "59a568480babaa2b3ff5fd9e3af9b1c89079fcc0c4e437699d6ad4d0e32521b4"
+  },
   "categories": ["Analysis", "Archaeology", "Terrain"],
   "minGeoLibreVersion": "2.9.0"
 }

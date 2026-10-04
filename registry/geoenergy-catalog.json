@@ -6,6 +6,10 @@
   "author": "Xinming Andy Zhang",
   "homepage": "https://github.com/Andyzxm/geolibre-energy-plugin",
   "manifestUrl": "plugins/geoenergy-catalog/plugin.json",
+  "source": {
+    "url": "https://github.com/opengeos/geolibre-plugins/releases/download/bundles-2026-10/geoenergy-catalog-1.0.0.zip",
+    "sha256": "9c3e734f0a1c08ccd43a00a37dcbe72631c91eee85a5d7f7cf4680da962d28aa"
+  },
   "categories": ["Data"],
   "minGeoLibreVersion": "3.0.0"
 }

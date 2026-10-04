@@ -79,6 +79,12 @@ label getters).
 
 ## 2. Add the plugin folder
 
+!!! tip "Prefer a release zip"
+    Every plugin in the registry is now served from a release zip
+    ([Or host it from a release zip](#or-host-it-from-a-release-zip) below),
+    which keeps built code out of this repository. Committing a folder still
+    works.
+
 Create `plugins/<id>/` with `plugin.json`, the built `entry` JS, and any
 `style` CSS. Keep `entry`/`style` paths relative and inside the folder:
 

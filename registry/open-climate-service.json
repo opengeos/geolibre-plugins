@@ -6,6 +6,10 @@
   "author": "DHIS2 for Climate & Health",
   "homepage": "https://github.com/dhis2/open-climate-service-geolibre-plugin",
   "manifestUrl": "plugins/open-climate-service/plugin.json",
+  "source": {
+    "url": "https://github.com/opengeos/geolibre-plugins/releases/download/bundles-2026-10/open-climate-service-0.2.1.zip",
+    "sha256": "f3e03d412392a8f832f2120390e7f241adfd1455cc6fff9c32c5671edab483b7"
+  },
   "categories": ["Climate", "Raster", "Data"],
   "minGeoLibreVersion": "2.4.0"
 }

@@ -6,6 +6,10 @@
   "author": "Husayn El Sharif",
   "homepage": "https://github.com/helsharif/geolibre-netcdf-loader-plugin",
   "manifestUrl": "plugins/geolibre-netcdf/plugin.json",
+  "source": {
+    "url": "https://github.com/opengeos/geolibre-plugins/releases/download/bundles-2026-10/geolibre-netcdf-0.5.9.zip",
+    "sha256": "18f3e37e2bc641a9c49ef445856fb1a22d688ebbd3ddbb4677c0dbc572c9612a"
+  },
   "categories": ["Climate", "Raster", "Data"],
   "minGeoLibreVersion": "1.9.0"
 }

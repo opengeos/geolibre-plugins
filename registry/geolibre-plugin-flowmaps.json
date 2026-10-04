@@ -6,6 +6,10 @@
   "author": "Kai Erlenbusch",
   "homepage": "https://github.com/kai-erlenbusch/geolibre-plugin-flowmaps",
   "manifestUrl": "plugins/geolibre-plugin-flowmaps/plugin.json",
+  "source": {
+    "url": "https://github.com/opengeos/geolibre-plugins/releases/download/bundles-2026-10/geolibre-plugin-flowmaps-0.1.0.zip",
+    "sha256": "9e58fc5915fc8f061db63b217e0a176181773671ca061e70576a272173e270a9"
+  },
   "categories": ["Visualization"],
   "minGeoLibreVersion": "0.9.0"
 }

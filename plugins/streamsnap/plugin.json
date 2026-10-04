@@ -1,8 +1,0 @@
-{
-  "id": "streamsnap",
-  "name": "StreamSnap",
-  "version": "0.1.1",
-  "description": "Match river monitoring sites to the correct stream segment, review each match, and snap sites onto the network.",
-  "entry": "dist/index.js",
-  "style": "dist/style.css"
-}

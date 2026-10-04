@@ -71,7 +71,11 @@ jobs:
           python scripts/generate_plugins_page.py
           mkdocs build --strict
           cp plugin-registry.json site/
-          mkdir -p site/plugins
-          cp -r plugins/. site/plugins/
+          # Committed plugin folders, if any; release-zip plugins are served
+          # from R2 instead.
+          if [ -d plugins ]; then
+            mkdir -p site/plugins
+            cp -r plugins/. site/plugins/
+          fi
           cp -r schemas site/
           cp CNAME .nojekyll site/

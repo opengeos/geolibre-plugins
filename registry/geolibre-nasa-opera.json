@@ -6,6 +6,10 @@
   "author": "Qiusheng Wu",
   "homepage": "https://github.com/opengeos/geolibre-nasa-opera",
   "manifestUrl": "plugins/geolibre-nasa-opera/plugin.json",
+  "source": {
+    "url": "https://github.com/opengeos/geolibre-plugins/releases/download/bundles-2026-10/geolibre-nasa-opera-0.4.0.zip",
+    "sha256": "c0aa72b5ca76585a452a85814cb061b3d8e3eb7ee8a502f9969c83b1a212b34f"
+  },
   "categories": ["Data", "Imagery"],
   "minGeoLibreVersion": "0.9.0"
 }

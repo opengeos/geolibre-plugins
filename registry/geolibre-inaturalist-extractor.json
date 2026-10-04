@@ -6,6 +6,10 @@
   "author": "Defani Arman (Alfitriansyah)",
   "homepage": "https://github.com/Defani/Geolibre-Inaturalist-Extraction-Plugins",
   "manifestUrl": "plugins/geolibre-inaturalist-extractor/plugin.json",
+  "source": {
+    "url": "https://github.com/opengeos/geolibre-plugins/releases/download/bundles-2026-10/geolibre-inaturalist-extractor-1.5.0.zip",
+    "sha256": "51392f57ec5897100ca2dfd5de7700beb5de5d69034fe40362d15fc91728dcb5"
+  },
   "categories": ["Data"],
   "minGeoLibreVersion": "3.0.0"
 }
