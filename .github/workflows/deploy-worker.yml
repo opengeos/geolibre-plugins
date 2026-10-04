@@ -13,6 +13,7 @@ name: Deploy mirror Worker
 #   Account  Workers R2 Storage    Read   (resolve the R2 binding)
 #   Zone     Workers Routes        Edit   (geolibre.app: the route)
 # The Worker's own secret STATS_SALT is kept across deploys and isn't touched.
+# If the post-deploy check fails, the previous Worker version is restored.
 
 on:
   push:
@@ -55,7 +56,7 @@ jobs:
           fi
 
       - name: Test the Worker
-        run: node --test worker/test/
+        run: node --test 'worker/test/*.test.mjs'
 
       - name: Apply the D1 schema
         run: npx --yes "$WRANGLER" d1 execute geolibre-plugins-stats --remote --yes --file worker/schema.sql --config worker/wrangler.toml
@@ -64,7 +65,14 @@ jobs:
         run: npx --yes "$WRANGLER" deploy --config worker/wrangler.toml
 
       - name: Check the live site still serves every plugin
+        id: check
         run: |
           npm ci --ignore-scripts
           node scripts/build_registry.mjs
           node scripts/check_deployed.mjs https://plugins.geolibre.app/ --expected plugin-registry.json
+
+      # The check retries with cache-busted URLs, so a failure here is real:
+      # put the previous Worker version back rather than leave it live.
+      - name: Roll back the Worker if the check failed
+        if: failure() && steps.check.outcome == 'failure'
+        run: npx --yes "$WRANGLER" rollback --config worker/wrangler.toml --yes --message "Post-deploy check failed in run ${{ github.run_id }}"

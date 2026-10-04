@@ -9,7 +9,7 @@
     "minify": "node scripts/minify_bundles.mjs --fix",
     "minify:check": "node scripts/minify_bundles.mjs",
     "validate": "node scripts/validate_plugins.mjs",
-    "test:worker": "node --test worker/test/"
+    "test:worker": "node --test 'worker/test/*.test.mjs'"
   },
   "devDependencies": {
     "ajv": "8.20.0",
