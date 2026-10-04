@@ -3,7 +3,8 @@
 // Generate `plugin-registry.json` from the per-plugin `registry/<id>.json`
 // files. The Pages and test workflows run this before publishing; run it
 // locally (`npm run build:registry`) before serving the repo to a local
-// GeoLibre build. It only assembles the file: `npm run validate` checks it.
+// GeoLibre build. It assembles the file and adds each local plugin's bundle
+// hash; `npm run validate` checks the entries themselves.
 
 import fs from "node:fs/promises";
 import path from "node:path";
@@ -26,7 +27,7 @@ if (errors.length > 0) {
 
 await fs.writeFile(
   registryPath,
-  `${JSON.stringify(buildRegistry(entries), null, 2)}\n`,
+  `${JSON.stringify(await buildRegistry(entries), null, 2)}\n`,
 );
 console.log(
   `Wrote ${path.relative(root, registryPath)} with ${entries.length} plugins.`,

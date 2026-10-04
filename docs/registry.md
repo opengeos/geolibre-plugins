@@ -67,6 +67,13 @@ The generated `plugin-registry.json` wraps every entry in a `plugins` array:
 Unknown fields are rejected, so a typo such as `minGeolibreVersion` fails
 validation instead of being ignored.
 
+The generated `plugin-registry.json` also gives each plugin hosted here a
+`bundleSha256`: the SHA-256 that GeoLibre computes over the entry and style it
+downloads (SHA-256 of the entry, SHA-256 of the style or of an empty string,
+then SHA-256 of the two digests). The build computes it from the committed
+files, so never write it in `registry/<id>.json`. After each deploy, CI
+downloads every published bundle and fails if any hash differs.
+
 `categories` values come from a fixed list: `Analysis`, `Archaeology`,
 `Basemaps`, `Climate`, `Data`, `Ecology`, `Example`, `Hydrology`, `Imagery`,
 `Oceans`, `Raster`, `Terrain`, `Utilities`, `Vector`, `Visualization`. Open an

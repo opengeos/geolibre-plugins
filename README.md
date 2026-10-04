@@ -39,6 +39,9 @@ from its own `registry/<id>.json` file, which holds just that entry:
   absolute HTTPS URL pointing at a plugin hosted elsewhere.
 - `homepage` must be `http(s)`; other schemes are dropped by the app.
 - `minGeoLibreVersion` gates installation against the running app version.
+- The generated registry adds a `bundleSha256` to each plugin hosted here, so
+  GeoLibre can check that the code it downloads is the code that was reviewed.
+  It is computed at build time; don't add it yourself.
 - `categories` takes one to four values from a fixed list: `Analysis`,
   `Archaeology`, `Basemaps`, `Climate`, `Data`, `Ecology`, `Example`,
   `Hydrology`, `Imagery`, `Oceans`, `Raster`, `Terrain`, `Utilities`, `Vector`,

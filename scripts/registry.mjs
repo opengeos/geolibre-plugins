@@ -5,6 +5,7 @@
 // `plugin-registry.json` is generated from these files at build time by
 // `scripts/build_registry.mjs` and is not committed.
 
+import { createHash } from "node:crypto";
 import { fileURLToPath } from "node:url";
 import fs from "node:fs/promises";
 import path from "node:path";
@@ -56,14 +57,82 @@ export async function loadRegistryEntries() {
 }
 
 /**
+ * Hash a plugin bundle the way GeoLibre does.
+ *
+ * Mirrors `computePluginBundleHash` in GeoLibre's
+ * `apps/geolibre-desktop/src/lib/plugin-integrity.ts`: SHA-256 of the entry
+ * and of the style (an empty string when there is none), then SHA-256 of the
+ * two digests together. The sources are text decoded the way `fetch`'s
+ * `Response.text()` decodes them, so callers should pass `decodeSource()`
+ * output.
+ *
+ * @param {string} entrySource The entry module's source.
+ * @param {string | null | undefined} styleSource The stylesheet, if any.
+ * @returns {string} Lowercase hex digest.
+ */
+export function computeBundleHash(entrySource, styleSource) {
+  const sha256 = (data) => createHash("sha256").update(data).digest();
+  const combined = Buffer.concat([
+    sha256(Buffer.from(entrySource, "utf8")),
+    sha256(Buffer.from(styleSource ?? "", "utf8")),
+  ]);
+  return sha256(combined).toString("hex");
+}
+
+/**
+ * Decode bundle bytes the way `Response.text()` does (UTF-8, BOM stripped,
+ * invalid sequences replaced), so the hash matches what the app computes.
+ *
+ * @param {Uint8Array} bytes Raw file bytes.
+ * @returns {string}
+ */
+export function decodeSource(bytes) {
+  return new TextDecoder().decode(bytes);
+}
+
+/**
+ * Hash a plugin hosted in this repository from its manifest on disk.
+ *
+ * @param {string} manifestUrl A relative `plugins/<dir>/plugin.json` URL.
+ * @returns {Promise<string>} The bundle hash.
+ */
+export async function hashLocalBundle(manifestUrl) {
+  const manifestPath = path.join(root, manifestUrl);
+  const manifest = JSON.parse(await fs.readFile(manifestPath, "utf8"));
+  const pluginDir = path.dirname(manifestPath);
+  const entrySource = decodeSource(
+    await fs.readFile(path.join(pluginDir, manifest.entry)),
+  );
+  const styleSource =
+    typeof manifest.style === "string"
+      ? decodeSource(await fs.readFile(path.join(pluginDir, manifest.style)))
+      : null;
+  return computeBundleHash(entrySource, styleSource);
+}
+
+/**
  * Assemble the published registry document from loaded entries.
  *
- * @param {{ entry: unknown }[]} entries Entries from `loadRegistryEntries()`.
- * @returns {{ version: number, plugins: unknown[] }}
+ * Each plugin hosted here gets a `bundleSha256`: the hash GeoLibre computes
+ * over the entry and style it downloads, so the app can check that what it
+ * fetched is what was reviewed. It is computed here and never written in
+ * `registry/<id>.json`.
+ *
+ * @param {{ entry: Record<string, unknown> }[]} entries Entries from
+ *   `loadRegistryEntries()`, already validated.
+ * @returns {Promise<{ version: number, plugins: Record<string, unknown>[] }>}
  */
-export function buildRegistry(entries) {
-  return {
-    version: REGISTRY_FORMAT_VERSION,
-    plugins: entries.map(({ entry }) => entry),
-  };
+export async function buildRegistry(entries) {
+  const plugins = [];
+  for (const { entry } of entries) {
+    const isLocal =
+      typeof entry.manifestUrl === "string" &&
+      entry.manifestUrl.startsWith("plugins/");
+    plugins.push(
+      isLocal
+        ? { ...entry, bundleSha256: await hashLocalBundle(entry.manifestUrl) }
+        : entry,
+    );
+  }
+  return { version: REGISTRY_FORMAT_VERSION, plugins };
 }
