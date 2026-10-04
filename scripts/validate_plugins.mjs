@@ -21,10 +21,14 @@ import path from "node:path";
 import Ajv2020 from "ajv/dist/2020.js";
 
 import { loadRegistryEntries, root } from "./registry.mjs";
+import { createHash } from "node:crypto";
+
 import {
   hasSource,
+  SOURCE_FOLDERS,
   sourceFolder,
   unpackSourceBundle,
+  zipFolder,
 } from "./source-bundles.mjs";
 
 const errors = [];
@@ -375,6 +379,20 @@ async function validateSourceEntry(
       `${label} changes source.sha256 but keeps version ${entry.version}; published versions never change, so bump the version.`,
     );
   }
+  // A release-zip plugin whose readable source is kept here (the sample in
+  // examples/sample/) must still zip to exactly the published release.
+  const sourceDir = SOURCE_FOLDERS.get(entry.id);
+  if (sourceDir) {
+    const rebuilt = createHash("sha256")
+      .update(await zipFolder(path.join(root, sourceDir)))
+      .digest("hex");
+    if (rebuilt !== entry.source.sha256) {
+      addError(
+        `${label}: ${sourceDir}/ no longer matches its release zip (${rebuilt} vs ${entry.source.sha256}). Rebuild it with node scripts/make_migration_zip.mjs ${sourceDir}, publish the zip, and bump the version.`,
+      );
+    }
+  }
+
   // plugins/<id>/, or a migrated plugin's original folder (LEGACY_FOLDERS).
   const expected = `plugins/${sourceFolder(entry)}/plugin.json`;
   if (entry.manifestUrl !== expected) {

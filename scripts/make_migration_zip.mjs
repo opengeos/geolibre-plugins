@@ -16,37 +16,8 @@ import { createHash } from "node:crypto";
 import fs from "node:fs/promises";
 import path from "node:path";
 
-import { zipSync } from "fflate";
-
 import { root } from "./registry.mjs";
-
-// Zip timestamps are stored as local date and time, so build the date from
-// local fields: it then encodes the same way in every time zone.
-const FIXED_DATE = new Date(1980, 0, 2);
-
-/**
- * List every file under a folder, relative to it, sorted.
- *
- * @param {string} dir Absolute folder path.
- * @param {string} [prefix] Path prefix for recursion.
- * @returns {Promise<string[]>}
- */
-async function listFiles(dir, prefix = "") {
-  const files = [];
-  for (const dirent of await fs.readdir(path.join(dir, prefix), {
-    withFileTypes: true,
-  })) {
-    const relative = path.posix.join(prefix, dirent.name);
-    if (dirent.isDirectory()) {
-      files.push(...(await listFiles(dir, relative)));
-    } else if (dirent.isFile()) {
-      files.push(relative);
-    } else {
-      throw new Error(`${relative} is not a regular file`);
-    }
-  }
-  return files.sort();
-}
+import { zipFolder } from "./source-bundles.mjs";
 
 const [folderArg, outArg] = process.argv.slice(2);
 if (!folderArg) {
@@ -60,14 +31,7 @@ const manifest = JSON.parse(
   await fs.readFile(path.join(folder, "plugin.json"), "utf8"),
 );
 
-const entries = {};
-for (const file of await listFiles(folder)) {
-  entries[file] = [
-    new Uint8Array(await fs.readFile(path.join(folder, file))),
-    { mtime: FIXED_DATE, level: 9 },
-  ];
-}
-const zip = zipSync(entries);
+const zip = await zipFolder(folder);
 
 const outDir = path.resolve(root, outArg ?? ".cache/migration");
 await fs.mkdir(outDir, { recursive: true });

@@ -12,7 +12,7 @@ import { fileURLToPath } from "node:url";
 import fs from "node:fs/promises";
 import path from "node:path";
 
-import { unzipSync } from "fflate";
+import { unzipSync, zipSync } from "fflate";
 
 // Not imported from registry.mjs, which imports this module.
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
@@ -284,3 +284,56 @@ export async function pruneSourceCache(entries) {
   }
   return removed;
 }
+
+// Zip timestamps are stored as local date and time, so build the date from
+// local fields: it then encodes the same way in every time zone.
+const FIXED_DATE = new Date(1980, 0, 2);
+
+/**
+ * List every file under a folder, relative to it, sorted.
+ *
+ * @param {string} dir Absolute folder path.
+ * @param {string} [prefix] Path prefix for recursion.
+ * @returns {Promise<string[]>}
+ */
+async function listFiles(dir, prefix = "") {
+  const files = [];
+  for (const dirent of await fs.readdir(path.join(dir, prefix), {
+    withFileTypes: true,
+  })) {
+    const relative = path.posix.join(prefix, dirent.name);
+    if (dirent.isDirectory()) {
+      files.push(...(await listFiles(dir, relative)));
+    } else if (dirent.isFile()) {
+      files.push(relative);
+    } else {
+      throw new Error(`${relative} is not a regular file`);
+    }
+  }
+  return files.sort();
+}
+
+/**
+ * Zip a plugin folder reproducibly: files sorted, a fixed date, and the bytes
+ * as they are, so the same folder always gives the same SHA-256.
+ *
+ * @param {string} folder Absolute path to a folder with a plugin.json.
+ * @returns {Promise<Uint8Array>} The zip bytes.
+ */
+export async function zipFolder(folder) {
+  const entries = {};
+  for (const file of await listFiles(folder)) {
+    entries[file] = [
+      new Uint8Array(await fs.readFile(path.join(folder, file))),
+      { mtime: FIXED_DATE, level: 9 },
+    ];
+  }
+  return zipSync(entries);
+}
+
+// Release-zip plugins whose readable source is kept in this repository. CI
+// rebuilds the zip from that folder and requires it to match source.sha256,
+// so the template and the served plugin can't drift apart.
+export const SOURCE_FOLDERS = new Map([
+  ["geolibre-sample-plugin", "examples/sample"],
+]);
