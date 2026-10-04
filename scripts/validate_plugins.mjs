@@ -356,7 +356,13 @@ async function checkReadableSource(entry, label, sourceDir) {
     addError(`${label} source: ${error.message}`);
     return;
   }
-  const local = await listFiles(path.join(root, sourceDir));
+  let local;
+  try {
+    local = await listFiles(path.join(root, sourceDir));
+  } catch (error) {
+    addError(`${label}: cannot read ${sourceDir}/: ${error.message}`);
+    return;
+  }
   const differing = [...new Set([...local, ...unpacked.files])].filter(
     (file) =>
       !local.includes(file) ||
