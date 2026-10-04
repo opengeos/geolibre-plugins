@@ -13,8 +13,9 @@ from __future__ import annotations
 
 import html
 import json
-import shutil
+import re
 from pathlib import Path
+from urllib.parse import quote
 
 SITE_URL = "https://plugins.geolibre.app"
 APP_URL = "https://geolibre.app"
@@ -68,16 +69,73 @@ def absolute_manifest_url(manifest_url: str) -> str:
     return f"{SITE_URL}/{manifest_url.lstrip('/')}"
 
 
+PLUGIN_ID = re.compile(r"[a-z0-9]+(?:[._-][a-z0-9]+)*")
+# Markdown punctuation that could start a link, image, emphasis, code span or
+# attribute list. Backslash-escaping these makes registry text literal.
+MARKDOWN_SPECIAL = re.compile(r"([\\`*_{}\[\]()#+\-.!|~])")
+
+
 def text(value: object) -> str:
-    """Escape registry text for Markdown, so it can't inject HTML.
+    """Escape registry text so it renders literally in Markdown.
+
+    Registry entries come from contributors' pull requests, so neither HTML
+    nor Markdown syntax in them (e.g. ``[x](javascript:...)``) may take effect.
 
     Args:
         value: A string from a registry entry.
 
     Returns:
-        The HTML-escaped string.
+        The text with HTML escaped and Markdown punctuation backslash-escaped.
     """
-    return html.escape(str(value), quote=False)
+    return MARKDOWN_SPECIAL.sub(r"\\\1", html.escape(str(value), quote=False))
+
+
+def safe_url(value: object) -> str | None:
+    """Return a registry URL fit for a Markdown link, or None.
+
+    Args:
+        value: A URL from a registry entry.
+
+    Returns:
+        The URL with spaces, parentheses and angle brackets percent-encoded,
+        or None unless it is an http(s) URL.
+    """
+    url = str(value or "").strip()
+    if not re.match(r"^https?://", url):
+        return None
+    return quote(url, safe=":/?#@!$&'*+,;=%~[]")
+
+
+def tags(categories: list[object]) -> str:
+    """Render categories as code-span tags.
+
+    Code spans show backslash escapes literally, so only plain category words
+    (the schema's fixed list) are rendered; anything else is dropped.
+
+    Args:
+        categories: The entry's categories.
+
+    Returns:
+        The tags, separated by spaces.
+    """
+    return " ".join(
+        f"`{c}`" for c in categories if re.fullmatch(r"[A-Za-z][A-Za-z ]*", str(c))
+    )
+
+
+def link(label: str, url: object, attrs: str = "") -> str | None:
+    """Render a Markdown link to a registry URL, or None if it isn't http(s).
+
+    Args:
+        label: The link text (already Markdown).
+        url: The URL from the registry.
+        attrs: An optional attribute list, e.g. ``{ target=_blank }``.
+
+    Returns:
+        The Markdown link, or None.
+    """
+    href = safe_url(url)
+    return f"[{label}]({href}){attrs}" if href else None
 
 
 def render_card(entry: dict) -> str:
@@ -103,19 +161,23 @@ def render_card(entry: dict) -> str:
         meta_bits.append(f"**Requires:** GeoLibre {text(entry['minGeoLibreVersion'])}+")
     meta_line = " · ".join(meta_bits)
 
-    categories = entry.get("categories") or []
-    tags_line = " ".join(f"`{c}`" for c in categories)
+    tags_line = tags(entry.get("categories") or [])
 
-    links = []
-    if entry.get("homepage"):
-        links.append(
-            f"[:octicons-mark-github-16: Homepage]({entry['homepage']}){{ target=_blank }}"
+    links = [
+        link(
+            ":octicons-mark-github-16: Homepage",
+            entry.get("homepage"),
+            "{ target=_blank }",
+        ),
+        link(
+            ":octicons-package-16: Manifest",
+            absolute_manifest_url(str(entry.get("manifestUrl", ""))),
+            "{ target=_blank }",
         )
-    if entry.get("manifestUrl"):
-        links.append(
-            f"[:octicons-package-16: Manifest]({absolute_manifest_url(entry['manifestUrl'])}){{ target=_blank }}"
-        )
-    links_line = " · ".join(links)
+        if entry.get("manifestUrl")
+        else None,
+    ]
+    links_line = " · ".join(item for item in links if item)
 
     title = f"[__{name}__](catalog/{entry['id']}.md)"
     lines = [f"-   :material-puzzle:{{ .lg .middle }} {title}", "", "    ---", ""]
@@ -143,9 +205,10 @@ def render_filters(entries: list[dict]) -> str:
         The HTML for the filter controls.
     """
     categories = sorted({c for e in entries for c in e.get("categories") or []})
+    # A raw HTML block: Markdown isn't processed here, so escape for HTML only.
     buttons = "\n".join(
-        f'    <button type="button" class="md-tag" data-category="{text(c)}" '
-        f'aria-pressed="false">{text(c)}</button>'
+        f'    <button type="button" class="md-tag" data-category="{html.escape(c)}" '
+        f'aria-pressed="false">{html.escape(c)}</button>'
         for c in categories
     )
     return (
@@ -205,22 +268,26 @@ def render_plugin_page(entry: dict) -> str:
     name = entry.get("name", plugin_id)
     description = entry.get("description", "").strip()
 
-    # JSON strings are valid YAML scalars, so registry text can't break the
-    # front matter.
-    front_matter = f"---\ntitle: {json.dumps(name)}\n"
+    # The theme writes title and description into <title> and a <meta>
+    # attribute without escaping (MkDocs templates don't autoescape), so escape
+    # them for HTML, quotes included. JSON strings are valid YAML scalars, so
+    # they can't break the front matter either.
+    front_matter = f"---\ntitle: {json.dumps(html.escape(name))}\n"
     if description:
-        front_matter += f"description: {json.dumps(description)}\n"
+        front_matter += f"description: {json.dumps(html.escape(description))}\n"
     front_matter += "---\n\n"
 
     buttons = [
         f"[:material-open-in-new: Open in GeoLibre]({APP_URL}/?plugin={plugin_id})"
         "{ .md-button .md-button--primary target=_blank }"
     ]
-    if entry.get("homepage"):
-        buttons.append(
-            f"[:octicons-mark-github-16: Homepage]({entry['homepage']})"
-            "{ .md-button target=_blank }"
-        )
+    homepage = link(
+        ":octicons-mark-github-16: Homepage",
+        entry.get("homepage"),
+        "{ .md-button target=_blank }",
+    )
+    if homepage:
+        buttons.append(homepage)
 
     rows = [("Plugin id", f"`{plugin_id}`")]
     if entry.get("version"):
@@ -229,17 +296,22 @@ def render_plugin_page(entry: dict) -> str:
         rows.append(("Author", text(entry["author"])))
     if entry.get("minGeoLibreVersion"):
         rows.append(("Requires", f"GeoLibre {text(entry['minGeoLibreVersion'])}+"))
-    if entry.get("categories"):
-        rows.append(("Categories", " ".join(f"`{c}`" for c in entry["categories"])))
+    if tags(entry.get("categories") or []):
+        rows.append(("Categories", tags(entry["categories"])))
     if entry.get("manifestUrl"):
-        manifest = absolute_manifest_url(entry["manifestUrl"])
-        rows.append(("Manifest", f"[{manifest}]({manifest})"))
-    if entry.get("source", {}).get("url"):
-        rows.append(
-            ("Release zip", f"[{entry['source']['url']}]({entry['source']['url']})")
-        )
-    if entry.get("bundleSha256"):
-        rows.append(("Bundle SHA-256", f"`{entry['bundleSha256']}`"))
+        manifest = absolute_manifest_url(str(entry["manifestUrl"]))
+        manifest_link = link(text(manifest), manifest)
+        if manifest_link:
+            rows.append(("Manifest", manifest_link))
+    source_url = (entry.get("source") or {}).get("url")
+    source_link = link(text(source_url), source_url) if source_url else None
+    if source_link:
+        rows.append(("Release zip", source_link))
+    bundle_hash = str(entry.get("bundleSha256") or "")
+    if re.fullmatch(r"[0-9a-f]{64}", bundle_hash):
+        rows.append(("Bundle SHA-256", f"`{bundle_hash}`"))
+    else:
+        bundle_hash = ""
     details = "\n".join(f"- **{label}:** {value}" for label, value in rows)
 
     body = [f"# {text(name)}", ""]
@@ -257,12 +329,14 @@ def render_plugin_page(entry: dict) -> str:
         "- **Any GeoLibre, including the desktop app:** open **Settings → Manage "
         f"Plugins**, find **{text(name)}** and click **Install**.",
         "",
-        "GeoLibre releases after 3.2.0 check the downloaded code against the "
-        "bundle SHA-256 above before running it.",
-        "",
-        "[:material-arrow-left: All plugins](../plugins.md)",
-        "",
     ]
+    if bundle_hash:
+        body += [
+            "GeoLibre releases after 3.2.0 check the downloaded code against the "
+            "bundle SHA-256 above before running it.",
+            "",
+        ]
+    body += ["[:material-arrow-left: All plugins](../plugins.md)", ""]
     return front_matter + "\n".join(body)
 
 
@@ -276,15 +350,25 @@ def main() -> None:
         None.
     """
     entries = load_entries()
-    OUTPUT.write_text(render_page(entries), encoding="utf-8")
-    # Rebuild the per-plugin pages from scratch, so a removed plugin's page
-    # disappears too.
-    shutil.rmtree(CATALOG_DIR, ignore_errors=True)
-    CATALOG_DIR.mkdir(parents=True)
+    # The id becomes a file name, a link and a URL parameter, so it must be a
+    # plain id (validate_plugins.mjs enforces the same pattern).
     for entry in entries:
-        (CATALOG_DIR / f"{entry['id']}.md").write_text(
-            render_plugin_page(entry), encoding="utf-8"
-        )
+        if not PLUGIN_ID.fullmatch(str(entry.get("id", ""))):
+            raise SystemExit(
+                f"Refusing to generate a page for plugin id {entry.get('id')!r}"
+            )
+    OUTPUT.write_text(render_page(entries), encoding="utf-8")
+    # Update the per-plugin pages in place (so `mkdocs serve` only sees real
+    # changes) and remove pages of plugins no longer in the registry.
+    CATALOG_DIR.mkdir(parents=True, exist_ok=True)
+    pages = {f"{entry['id']}.md": render_plugin_page(entry) for entry in entries}
+    for name, content in pages.items():
+        page = CATALOG_DIR / name
+        if not page.exists() or page.read_text(encoding="utf-8") != content:
+            page.write_text(content, encoding="utf-8")
+    for stale in CATALOG_DIR.glob("*.md"):
+        if stale.name not in pages:
+            stale.unlink()
     print(
         f"Wrote {OUTPUT.relative_to(ROOT)} and {len(entries)} pages in "
         f"{CATALOG_DIR.relative_to(ROOT)}/"
