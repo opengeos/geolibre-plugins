@@ -1,0 +1,70 @@
+name: Deploy mirror Worker
+
+# Deploys worker/ (the geolibre-plugins-mirror Worker that serves R2-mirrored
+# plugins and usage counts at plugins.geolibre.app/plugins/*) whenever it
+# changes on main, so a merged Worker change goes live without a manual
+# `wrangler deploy`. It runs the Worker tests first and applies worker/schema.sql
+# (CREATE TABLE IF NOT EXISTS, so re-running it is safe).
+#
+# SETUP (one time): repository secret CLOUDFLARE_WORKERS_TOKEN, a Cloudflare
+# API token for the account in CLOUDFLARE_ACCOUNT_ID with:
+#   Account  Workers Scripts       Edit   (deploy the script)
+#   Account  D1                    Edit   (apply the schema)
+#   Account  Workers R2 Storage    Read   (resolve the R2 binding)
+#   Zone     Workers Routes        Edit   (geolibre.app: the route)
+# The Worker's own secret STATS_SALT is kept across deploys and isn't touched.
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "worker/**"
+      - ".github/workflows/deploy-worker.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: deploy-worker
+  cancel-in-progress: false
+
+env:
+  WRANGLER: wrangler@4.147.0
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    env:
+      CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_WORKERS_TOKEN }}
+      CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+
+      - uses: actions/setup-node@v7
+        with:
+          node-version: "24"
+
+      - name: Check the deploy token is configured
+        run: |
+          if [ -z "$CLOUDFLARE_API_TOKEN" ] || [ -z "$CLOUDFLARE_ACCOUNT_ID" ]; then
+            echo "::error::Set the CLOUDFLARE_WORKERS_TOKEN and CLOUDFLARE_ACCOUNT_ID repository secrets (see this workflow's header)."
+            exit 1
+          fi
+
+      - name: Test the Worker
+        run: node --test worker/test/
+
+      - name: Apply the D1 schema
+        run: npx --yes "$WRANGLER" d1 execute geolibre-plugins-stats --remote --yes --file worker/schema.sql --config worker/wrangler.toml
+
+      - name: Deploy
+        run: npx --yes "$WRANGLER" deploy --config worker/wrangler.toml
+
+      - name: Check the live site still serves every plugin
+        run: |
+          npm ci --ignore-scripts
+          node scripts/build_registry.mjs
+          node scripts/check_deployed.mjs https://plugins.geolibre.app/ --expected plugin-registry.json

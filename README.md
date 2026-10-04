@@ -241,17 +241,27 @@ launch count, and served at `plugins/stats.json`. A daily cron rolls finished
 weeks up into counts and deletes their hashes. See
 [`worker/src/stats.js`](worker/src/stats.js) and
 [Registry format](https://plugins.geolibre.app/registry/#usage-statistics) for
-what is and isn't kept.
+what is and isn't kept. `npm run test:worker` runs the Worker's unit tests
+(D1 emulated with Node's SQLite), and PR CI runs them too.
 
-> One-time setup: create the database and its tables, set the salt secret, then
-> deploy the Worker:
+> One-time setup (already done for plugins.geolibre.app): create the database
+> and set the salt secret. The deploy workflow below applies the schema.
 >
 > ```bash
 > npx wrangler d1 create geolibre-plugins-stats   # put its id in worker/wrangler.toml
-> npx wrangler d1 execute geolibre-plugins-stats --remote --file worker/schema.sql
 > npx wrangler secret put STATS_SALT --config worker/wrangler.toml   # any long random string
-> npx wrangler deploy --config worker/wrangler.toml
 > ```
+
+### Deploying the Worker
+
+The [Deploy mirror Worker](.github/workflows/deploy-worker.yml) workflow
+deploys `worker/` whenever it changes on `main` (or when run by hand): it runs
+the Worker tests, applies `worker/schema.sql`, deploys, and then checks that
+the live site still serves every plugin. It needs the repository secret
+`CLOUDFLARE_WORKERS_TOKEN`, a Cloudflare API token with Workers Scripts Edit,
+D1 Edit and Workers R2 Storage Read on the account, and Workers Routes Edit on
+the `geolibre.app` zone (alongside `CLOUDFLARE_ACCOUNT_ID`). To deploy by hand
+instead: `npx wrangler deploy --config worker/wrangler.toml`.
 
 ### Blocking a plugin
 
@@ -300,8 +310,8 @@ To move a committed plugin to the mirror without changing what users run:
 The sample plugin's readable source lives in [`examples/sample/`](examples/sample),
 which isn't served; its served copy comes from the release zip.
 
-> One-time setup: deploy the Worker with
-> `npx wrangler deploy --config worker/wrangler.toml`, and add the repository
+> One-time setup: the Worker is deployed by the
+> [Deploy mirror Worker](#deploying-the-worker) workflow; add the repository
 > secrets `CLOUDFLARE_R2_TOKEN` (an API token with R2 write access to the
 > `geolibre-plugins` bucket) and `CLOUDFLARE_ACCOUNT_ID`. They're only needed
 > once an entry has a `source`.

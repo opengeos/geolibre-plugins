@@ -8,7 +8,8 @@
     "build:registry": "node scripts/build_registry.mjs",
     "minify": "node scripts/minify_bundles.mjs --fix",
     "minify:check": "node scripts/minify_bundles.mjs",
-    "validate": "node scripts/validate_plugins.mjs"
+    "validate": "node scripts/validate_plugins.mjs",
+    "test:worker": "node --test worker/test/"
   },
   "devDependencies": {
     "ajv": "8.20.0",

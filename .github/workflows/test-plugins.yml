@@ -52,6 +52,9 @@ jobs:
             node scripts/validate_plugins.mjs
           fi
 
+      - name: Test the mirror Worker
+        run: npm run test:worker
+
       - name: Generate plugin-registry.json
         run: node scripts/build_registry.mjs
 
