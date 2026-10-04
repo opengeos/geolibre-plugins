@@ -27,6 +27,18 @@ if (!prRoot || !dest) {
   process.exit(2);
 }
 
+/**
+ * Make untrusted text safe to print: strip control characters and `%`, so a
+ * value from the pull request can't start a new line and inject a workflow
+ * command (`::stop-commands::`, `::add-mask::`, ...) into this step's output.
+ *
+ * @param {unknown} value Text that may come from the pull request.
+ * @returns {string}
+ */
+function safe(value) {
+  return String(value).replace(/[\u0000-\u001f\u007f%]/g, " ");
+}
+
 const staged = [];
 let failed = 0; // reported, but never fails the step (see the end)
 for (const file of files) {
@@ -37,7 +49,12 @@ for (const file of files) {
   }
   let entry;
   try {
-    entry = JSON.parse(await fs.readFile(path.join(prRoot, file), "utf8"));
+    // Read only plain files from the pull request, never through a symlink.
+    const filePath = path.join(prRoot, file);
+    if (!(await fs.lstat(filePath)).isFile()) {
+      continue;
+    }
+    entry = JSON.parse(await fs.readFile(filePath, "utf8"));
   } catch {
     // Deleted in the PR, or not valid JSON (validation reports that).
     continue;
@@ -54,7 +71,7 @@ for (const file of files) {
     ({ dir } = await unpackSourceBundle(entry));
   } catch (error) {
     console.error(
-      `::error::${file}: could not stage its release zip: ${error.message}`,
+      `::error::${file}: could not stage its release zip: ${safe(error.message)}`,
     );
     failed += 1;
     continue;
@@ -69,7 +86,7 @@ for (const file of files) {
   }
   if (manifestId !== entry.id) {
     console.error(
-      `::error::${file}: the release zip's plugin.json has id "${manifestId}", not "${entry.id}".`,
+      `::error::${file}: the release zip's plugin.json has id "${safe(manifestId)}", not "${entry.id}".`,
     );
     failed += 1;
     continue;
@@ -79,7 +96,9 @@ for (const file of files) {
   await fs.mkdir(dest, { recursive: true });
   await fs.cp(dir, target, { recursive: true });
   staged.push(entry.id);
-  console.error(`staged ${entry.id} ${entry.version} from ${entry.source.url}`);
+  console.error(
+    `staged ${entry.id} ${safe(entry.version)} from ${safe(entry.source.url)}`,
+  );
 }
 console.log(staged.join("\n"));
 // Failures are reported as ::error:: annotations but don't fail the step:
