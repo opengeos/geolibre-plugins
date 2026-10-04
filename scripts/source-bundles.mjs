@@ -116,7 +116,19 @@ async function fetchVerifiedZip(source) {
   try {
     bytes = new Uint8Array(await fs.readFile(cached));
   } catch {
-    const response = await fetch(source.url, {
+    // Check the scheme before sending anything: the URL can come from
+    // untrusted pull-request JSON (the preview workflow), and plain HTTP would
+    // let it reach internal or metadata addresses.
+    let parsed;
+    try {
+      parsed = new URL(source.url);
+    } catch {
+      throw new Error(`${source.url} is not a valid URL`);
+    }
+    if (parsed.protocol !== "https:") {
+      throw new Error(`${source.url} must use https://`);
+    }
+    const response = await fetch(parsed, {
       signal: AbortSignal.timeout(DOWNLOAD_TIMEOUT_MS),
     });
     if (!response.ok) {
