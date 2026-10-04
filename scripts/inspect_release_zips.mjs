@@ -24,9 +24,9 @@ const REGISTRY_FILE = /^registry\/([a-z0-9]+(?:[._-][a-z0-9]+)*)\.json$/;
 
 // Larger files are listed but not scanned, to bound the job's run time.
 const MAX_SCAN_BYTES = 20 * 1024 * 1024;
-// A NUL byte in this many leading bytes marks a file as binary. Text is
-// recognised by content, not extension, so a script can't hide its code from
-// the scan by using an unusual extension.
+// A NUL byte in this many leading bytes notes a file as binary. Every file is
+// scanned whatever its extension or content, so a script can't hide its code
+// from the scan behind an unusual extension or a planted NUL byte.
 const SNIFF_BYTES = 8000;
 // Registry entries inspected per pull request; each zip can be up to 100 MB.
 const MAX_ENTRIES = 20;
@@ -260,14 +260,13 @@ async function inspectZip(entry, record) {
       const bytes = await fs.readFile(filePath);
       if (bytes.subarray(0, SNIFF_BYTES).includes(0)) {
         fileRecord.binary = true;
-      } else {
-        const scan = scanText(bytes.toString("utf8"));
-        if (Object.keys(scan.hits).length > 0) {
-          fileRecord.hits = scan.hits;
-        }
-        fileRecord.longestLine = scan.longestLine;
-        scan.hosts.forEach((host) => hosts.add(host));
       }
+      const scan = scanText(bytes.toString("utf8"));
+      if (Object.keys(scan.hits).length > 0) {
+        fileRecord.hits = scan.hits;
+      }
+      fileRecord.longestLine = scan.longestLine;
+      scan.hosts.forEach((host) => hosts.add(host));
     }
     record.files.push(fileRecord);
   }
@@ -330,7 +329,7 @@ function renderReport(records) {
     lines.push("", "| File | Size | Notes |", "| --- | --- | --- |");
     for (const file of record.files) {
       const notes = [];
-      if (file.binary) notes.push("binary (not scanned)");
+      if (file.binary) notes.push("binary");
       if (file.skipped) notes.push(file.skipped);
       if (file.longestLine > 1000)
         notes.push(`minified (longest line ${file.longestLine})`);
