@@ -176,7 +176,7 @@ There are **16** plugins in the registry. Install them from GeoLibre: open **Set
 
     Search the Italian national catalogue of spatial data \(RNDT\) and add its WMS/WFS services to the map\.
 
-    **Author:** onData · **Version:** 0\.1\.9 · **Requires:** GeoLibre 3\.2\.0+
+    **Author:** onData · **Version:** 0\.2\.0 · **Requires:** GeoLibre 3\.2\.0+
 
     `Data`
 

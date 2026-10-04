@@ -18,7 +18,9 @@ from pathlib import Path
 from urllib.parse import quote
 
 SITE_URL = "https://plugins.geolibre.app"
-APP_URL = "https://geolibre.app"
+# The GeoLibre web app (geolibre.app is the project website). Its
+# ?plugin=<id> deep link shows a registry plugin and asks to install it.
+APP_URL = "https://web.geolibre.app"
 ROOT = Path(__file__).resolve().parent.parent
 REGISTRY_DIR = ROOT / "registry"
 BUILT_REGISTRY = ROOT / "plugin-registry.json"

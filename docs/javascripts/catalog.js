@@ -3,7 +3,8 @@
 // so without JavaScript the page is a plain list of every plugin.
 //
 // Material's instant navigation swaps pages without a reload, so this runs on
-// each page change through `document$` rather than once on load.
+// each page change through `document$`, and also once the DOM is ready in case
+// that observable isn't available.
 
 (function () {
   function setUp() {
@@ -37,6 +38,9 @@
           selected.size === 0 ||
           [...selected].some((c) => card.categories.has(c));
         const visible = matchesText && matchesCategory;
+        // An inline style wins over any theme rule for the card's display,
+        // in every browser; the attribute keeps it hidden from assistive tech.
+        card.element.style.display = visible ? "" : "none";
         card.element.hidden = !visible;
         if (visible) shown += 1;
       }
@@ -46,7 +50,11 @@
           : `${shown} of ${cards.length} plugins`;
     }
 
-    search.addEventListener("input", apply);
+    // "input" covers typing and pasting; "search" covers the clear button some
+    // browsers draw in a search box; "keyup" is a fallback for the rest.
+    for (const event of ["input", "search", "keyup"]) {
+      search.addEventListener(event, apply);
+    }
     for (const button of buttons) {
       button.addEventListener("click", () => {
         const category = button.dataset.category;
@@ -62,7 +70,10 @@
 
   if (typeof document$ !== "undefined") {
     document$.subscribe(setUp);
-  } else {
+  }
+  if (document.readyState === "loading") {
     document.addEventListener("DOMContentLoaded", setUp);
+  } else {
+    setUp();
   }
 })();
