@@ -11,8 +11,11 @@ name: Plugin preview
 # README documents exactly this flow ("copy the plugin folder in at build/deploy
 # time"). A Vite plugin scans it at build start and the app loads whatever it
 # finds on startup, with no registry entry and no manifest URL. So this workflow
-# only has to copy the folder in before `npm run build` -- there is no registry
-# plumbing, and the PR's own plugin-registry.json is irrelevant here.
+# only has to put each plugin folder there before `npm run build`:
+#   - a committed plugins/<id>/ folder is copied as is;
+#   - a registry/<id>.json entry with a `source` release zip is downloaded,
+#     checked against its SHA-256 and unpacked by this repository's own
+#     scripts/stage_preview_plugins.mjs, run from the base branch.
 #
 # WHY pull_request_target
 # Fork PRs get no secrets on `pull_request`, and fork PRs are the main case we
@@ -20,8 +23,10 @@ name: Plugin preview
 # public/ verbatim without bundling or executing it, so the submitted plugin
 # never runs during the build -- only in the reviewer's browser, later, which is
 # the entire point of a preview. To keep it that way, this job:
-#   - copies ONLY plugins/<id>/ data directories out of the PR checkout,
-#   - never runs a script, install, or build step from that checkout,
+#   - copies ONLY plugins/<id>/ data directories out of the PR checkout, and
+#     reads only its registry/<id>.json files as JSON,
+#   - never runs a script, install, or build step from that checkout (the
+#     zip staging script and its npm install come from the base branch),
 #   - rejects plugin ids that are not plain [A-Za-z0-9._-] names,
 #   - rejects symlinks, which would otherwise publish runner files to the site.
 # npm ci and the build run against opengeos/GeoLibre's own committed lockfile.
@@ -135,7 +140,7 @@ jobs:
             selected+=("$id")
           done
           if [ ${#selected[@]} -eq 0 ]; then
-            echo "No plugin directories changed; skipping preview."
+            echo "No committed plugin folders changed."
             echo "found=false" >> "$GITHUB_OUTPUT"
           else
             echo "Selected: ${selected[*]}"
@@ -143,8 +148,56 @@ jobs:
             echo "ids=${selected[*]}" >> "$GITHUB_OUTPUT"
           fi
 
+      # Release-zip plugins: the PR changes registry/<id>.json, not a folder.
+      # This runs the base branch's own staging script (the workspace root is
+      # the base checkout), with the base branch's lockfile, and no secrets.
+      - name: Set up Node.js for staging release-zip plugins
+        if: github.event.action != 'closed'
+        uses: actions/setup-node@v7
+        with:
+          node-version: "24"
+
+      - name: Stage release-zip plugins
+        if: github.event.action != 'closed'
+        id: sources
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          PR: ${{ steps.pr.outputs.number }}
+        run: |
+          set -euo pipefail
+          files=$(gh api --paginate "repos/${{ github.repository }}/pulls/$PR/files" \
+                    --jq '.[] | select(.status != "removed") | .filename' \
+                  | grep -E '^registry/[a-z0-9._-]+\.json$' || true)
+          if [ -z "$files" ]; then
+            echo "ids=" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          GH_TOKEN= npm ci --ignore-scripts
+          # shellcheck disable=SC2086 # one registry path per word
+          ids=$(GH_TOKEN= node scripts/stage_preview_plugins.mjs plugins-pr staged $files | tr '\n' ' ')
+          echo "Release-zip plugins: ${ids:-none}"
+          echo "ids=$ids" >> "$GITHUB_OUTPUT"
+
+      - name: Plan the preview
+        if: github.event.action != 'closed'
+        id: plan
+        env:
+          COMMITTED: ${{ steps.select.outputs.ids }}
+          SOURCES: ${{ steps.sources.outputs.ids }}
+        run: |
+          set -euo pipefail
+          ids=$(echo $COMMITTED $SOURCES | tr ' ' '\n' | sort -u | tr '\n' ' ' | xargs)
+          if [ -z "$ids" ]; then
+            echo "No plugins changed; skipping preview."
+            echo "found=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "Previewing: $ids"
+            echo "found=true" >> "$GITHUB_OUTPUT"
+            echo "ids=$ids" >> "$GITHUB_OUTPUT"
+          fi
+
       - name: Check out GeoLibre
-        if: github.event.action != 'closed' && steps.select.outputs.found == 'true'
+        if: github.event.action != 'closed' && steps.plan.outputs.found == 'true'
         uses: actions/checkout@v7
         with:
           repository: opengeos/GeoLibre
@@ -152,21 +205,26 @@ jobs:
           persist-credentials: false
 
       - name: Bake the plugins into the build
-        if: github.event.action != 'closed' && steps.select.outputs.found == 'true'
+        if: github.event.action != 'closed' && steps.plan.outputs.found == 'true'
         env:
-          IDS: ${{ steps.select.outputs.ids }}
+          IDS: ${{ steps.plan.outputs.ids }}
         run: |
           set -euo pipefail
           dest=geolibre/apps/geolibre-desktop/public/plugins
           mkdir -p "$dest"
           for id in $IDS; do
-            cp -r "plugins-pr/plugins/$id" "$dest/$id"
+            # A committed folder wins; otherwise the staged release zip.
+            if [ -d "plugins-pr/plugins/$id" ]; then
+              cp -r "plugins-pr/plugins/$id" "$dest/$id"
+            else
+              cp -r "staged/$id" "$dest/$id"
+            fi
             echo "baked in: $id"
           done
           ls -la "$dest"
 
       - name: Set up Node.js
-        if: github.event.action != 'closed' && steps.select.outputs.found == 'true'
+        if: github.event.action != 'closed' && steps.plan.outputs.found == 'true'
         uses: actions/setup-node@v7
         with:
           node-version: lts/*
@@ -174,12 +232,12 @@ jobs:
           cache-dependency-path: geolibre/package-lock.json
 
       - name: Install dependencies
-        if: github.event.action != 'closed' && steps.select.outputs.found == 'true'
+        if: github.event.action != 'closed' && steps.plan.outputs.found == 'true'
         working-directory: geolibre
         run: npm ci
 
       - name: Build the web app
-        if: github.event.action != 'closed' && steps.select.outputs.found == 'true'
+        if: github.event.action != 'closed' && steps.plan.outputs.found == 'true'
         working-directory: geolibre
         env:
           # Relative base: the preview is served from a subdirectory, not root.
@@ -199,7 +257,7 @@ jobs:
       # site 404s on plugin.json. Strip every .gitignore from the output, not
       # just that one, since a submitted plugin can ship its own.
       - name: Strip .gitignore files that would exclude the build from the deploy
-        if: github.event.action != 'closed' && steps.select.outputs.found == 'true'
+        if: github.event.action != 'closed' && steps.plan.outputs.found == 'true'
         run: |
           set -euo pipefail
           find geolibre/apps/geolibre-desktop/dist -name .gitignore -print -delete
@@ -208,9 +266,9 @@ jobs:
       # .gitignore bug above proved a green build says nothing about that. Fail
       # here rather than shipping a preview that 404s on its own plugin.
       - name: Verify the plugins reached the build output
-        if: github.event.action != 'closed' && steps.select.outputs.found == 'true'
+        if: github.event.action != 'closed' && steps.plan.outputs.found == 'true'
         env:
-          IDS: ${{ steps.select.outputs.ids }}
+          IDS: ${{ steps.plan.outputs.ids }}
         run: |
           set -euo pipefail
           dist=geolibre/apps/geolibre-desktop/dist
@@ -224,7 +282,7 @@ jobs:
           done
 
       - name: Check the build fits GitHub Pages
-        if: github.event.action != 'closed' && steps.select.outputs.found == 'true'
+        if: github.event.action != 'closed' && steps.plan.outputs.found == 'true'
         run: |
           set -euo pipefail
           dist=geolibre/apps/geolibre-desktop/dist
@@ -240,7 +298,7 @@ jobs:
       # --------------------------------------------------------------- deploy
       # On `closed` this removes pr-preview/pr-<N>/ instead of deploying.
       - name: Publish preview
-        if: github.event.action == 'closed' || steps.select.outputs.found == 'true'
+        if: github.event.action == 'closed' || steps.plan.outputs.found == 'true'
         # Pinned to a SHA rather than the mutable v1 tag: unlike the first-party
         # actions/* steps above, this is a third-party action and it receives
         # PREVIEW_DEPLOY_TOKEN, so a moved tag would hand that token to code

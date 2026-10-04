@@ -183,8 +183,10 @@ that has not been formatted will fail CI.
 
 ## 6. Open a pull request
 
-Every pull request that touches `plugins/<id>/` gets a live preview: CI builds
-GeoLibre with your plugin baked in and posts the URL as a comment.
+Every pull request that adds or changes a plugin, either a `plugins/<id>/`
+folder or a `registry/<id>.json` entry with a `source` release zip, gets a
+live preview: CI builds GeoLibre with your plugin baked in and posts the URL as
+a comment.
 
 ```text
 https://opengeos.org/pages-preview/geolibre-plugins/pr-<N>/
