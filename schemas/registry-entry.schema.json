@@ -1,0 +1,95 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://plugins.geolibre.app/schemas/registry-entry.schema.json",
+  "title": "GeoLibre plugin registry entry",
+  "description": "One plugin's entry in registry/<id>.json. plugin-registry.json is generated from these files.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["id", "name", "version", "manifestUrl"],
+  "properties": {
+    "id": {
+      "description": "Unique plugin id. Must match the file name, the manifest, and the exported plugin.",
+      "type": "string",
+      "pattern": "^[a-z0-9]+(?:[._-][a-z0-9]+)*$",
+      "maxLength": 64,
+      "$comment": "must be lowercase letters and digits, separated by single . _ or - characters"
+    },
+    "name": {
+      "description": "Display name shown in the marketplace.",
+      "type": "string",
+      "$ref": "#/$defs/trimmedString",
+      "maxLength": 80
+    },
+    "version": {
+      "description": "Plugin version. Must match the manifest.",
+      "$ref": "#/$defs/semver"
+    },
+    "description": {
+      "description": "Short summary shown on the plugin card.",
+      "type": "string",
+      "$ref": "#/$defs/trimmedString",
+      "maxLength": 500
+    },
+    "author": {
+      "type": "string",
+      "$ref": "#/$defs/trimmedString",
+      "maxLength": 120
+    },
+    "homepage": {
+      "type": "string",
+      "pattern": "^https?://\\S+$",
+      "$comment": "must be an http:// or https:// URL"
+    },
+    "manifestUrl": {
+      "description": "plugins/<dir>/plugin.json, or an absolute HTTPS URL for a plugin hosted elsewhere.",
+      "type": "string",
+      "pattern": "^(?:https://\\S+|plugins/[^/\\s]+/\\S+\\.json)$",
+      "$comment": "must be plugins/<dir>/<file>.json or an https:// URL"
+    },
+    "categories": {
+      "description": "One to four categories from the fixed list.",
+      "type": "array",
+      "minItems": 1,
+      "maxItems": 4,
+      "uniqueItems": true,
+      "items": {
+        "$ref": "#/$defs/category"
+      }
+    },
+    "minGeoLibreVersion": {
+      "description": "Lowest GeoLibre version the plugin supports.",
+      "$ref": "#/$defs/semver"
+    }
+  },
+  "$defs": {
+    "trimmedString": {
+      "type": "string",
+      "pattern": "^\\S(?:[\\s\\S]*\\S)?$",
+      "$comment": "must not be empty or start or end with whitespace"
+    },
+    "semver": {
+      "type": "string",
+      "pattern": "^(?:0|[1-9]\\d*)\\.(?:0|[1-9]\\d*)\\.(?:0|[1-9]\\d*)(?:-[0-9A-Za-z.-]+)?(?:\\+[0-9A-Za-z.-]+)?$",
+      "$comment": "must be a semantic version such as 1.2.3"
+    },
+    "category": {
+      "enum": [
+        "Analysis",
+        "Archaeology",
+        "Basemaps",
+        "Climate",
+        "Data",
+        "Ecology",
+        "Example",
+        "Hydrology",
+        "Imagery",
+        "Oceans",
+        "Raster",
+        "Terrain",
+        "Utilities",
+        "Vector",
+        "Visualization"
+      ]
+    }
+  }
+}

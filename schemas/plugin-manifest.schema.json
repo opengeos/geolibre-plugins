@@ -1,0 +1,62 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://plugins.geolibre.app/schemas/plugin-manifest.schema.json",
+  "title": "GeoLibre external plugin manifest",
+  "description": "plugins/<dir>/plugin.json. Mirrors the checks GeoLibre's external plugin loader applies.",
+  "type": "object",
+  "required": ["id", "name", "version", "entry"],
+  "properties": {
+    "id": {
+      "$ref": "#/$defs/trimmedString"
+    },
+    "name": {
+      "$ref": "#/$defs/trimmedString"
+    },
+    "version": {
+      "$ref": "#/$defs/trimmedString"
+    },
+    "entry": {
+      "description": "Self-contained ES module, relative to this manifest.",
+      "type": "string",
+      "$ref": "#/$defs/trimmedString",
+      "pattern": "\\.m?js$",
+      "$comment": "must be a .js or .mjs file"
+    },
+    "style": {
+      "description": "Optional global stylesheet, relative to this manifest.",
+      "type": "string",
+      "pattern": "\\.css$",
+      "$comment": "must be a .css file"
+    },
+    "description": {
+      "type": "string"
+    },
+    "author": {
+      "type": "string"
+    },
+    "homepage": {
+      "type": "string",
+      "pattern": "^https?://\\S+$",
+      "$comment": "must be an http:// or https:// URL"
+    },
+    "engines": {
+      "description": "Map renderers the plugin supports.",
+      "type": "array",
+      "uniqueItems": true,
+      "items": {
+        "enum": ["maplibre", "cesium", "mapbox", "arcgis"]
+      }
+    }
+  },
+  "not": {
+    "$comment": "must not set activeByDefault (external plugins are never active by default)",
+    "required": ["activeByDefault"]
+  },
+  "$defs": {
+    "trimmedString": {
+      "type": "string",
+      "pattern": "^\\S(?:[\\s\\S]*\\S)?$",
+      "$comment": "must not be empty or start or end with whitespace"
+    }
+  }
+}

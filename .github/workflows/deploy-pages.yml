@@ -35,6 +35,10 @@ jobs:
         uses: actions/setup-node@v7
         with:
           node-version: "24"
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
 
       # Never publish an entry that fails validation, even when this runs from
       # workflow_dispatch or a push that skipped the Test Plugins checks.
@@ -67,6 +71,8 @@ jobs:
             mkdir -p site/plugins
             cp -r plugins/. site/plugins/
           fi
+          # Serve the schemas at the URLs in their $id.
+          cp -r schemas site/
           cp CNAME .nojekyll site/
 
       - name: Configure Pages

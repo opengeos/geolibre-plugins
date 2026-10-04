@@ -1,0 +1,12 @@
+{
+  "json.schemas": [
+    {
+      "fileMatch": ["/registry/*.json"],
+      "url": "./schemas/registry-entry.schema.json"
+    },
+    {
+      "fileMatch": ["/plugins/*/plugin.json"],
+      "url": "./schemas/plugin-manifest.schema.json"
+    }
+  ]
+}
