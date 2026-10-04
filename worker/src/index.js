@@ -62,7 +62,16 @@ export default {
       return fetch(request);
     }
 
-    const object = await env.PLUGINS.get(key, { onlyIf: request.headers });
+    // Only revalidation headers: with these, an object without a body always
+    // means "not modified" (304). If-Match and friends would need a 412.
+    const conditional = new Headers();
+    for (const name of ["If-None-Match", "If-Modified-Since"]) {
+      const value = request.headers.get(name);
+      if (value !== null) {
+        conditional.set(name, value);
+      }
+    }
+    const object = await env.PLUGINS.get(key, { onlyIf: conditional });
     if (object === null) {
       return fetch(request);
     }

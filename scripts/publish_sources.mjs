@@ -201,6 +201,16 @@ for (const entry of sources) {
   );
   // validate_plugins.mjs has already checked that the zip's plugin.json
   // version equals entry.version, so the folder name matches its contents.
+  // The schema already limits id and version to these forms; checking again
+  // here keeps a bad value from ever becoming an R2 key.
+  if (
+    !/^[a-z0-9]+(?:[._-][a-z0-9]+)*$/.test(entry.id) ||
+    !/^\d+\.\d+\.\d+(?:[-+][0-9A-Za-z.+-]*)?$/.test(entry.version)
+  ) {
+    throw new Error(
+      `${entry.id} ${entry.version}: unexpected id or version format`,
+    );
+  }
   const prefix = `plugins/${entry.id}/${entry.version}/`;
   if (files.includes(MARKER)) {
     throw new Error(`${entry.id}: the release zip may not contain ${MARKER}`);

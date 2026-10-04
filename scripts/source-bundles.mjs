@@ -166,12 +166,40 @@ function isSafeRelativePath(name) {
 export async function unpackSourceBundle(entry) {
   const dir = path.join(cacheDir, entry.source.sha256);
   const zip = await fetchVerifiedZip(entry.source);
-  // Check sizes from the zip directory before inflating anything.
+  // Pass 1: read the zip's directory only (nothing is inflated) to find the
+  // folder that holds plugin.json.
+  const allNames = [];
+  unzipSync(zip, {
+    filter: (file) => {
+      if (!file.name.endsWith("/") && !isJunk(file.name)) {
+        allNames.push(file.name);
+      }
+      return false;
+    },
+  });
+  const manifestPath = findManifestPath(allNames);
+  if (manifestPath === null) {
+    throw new Error(`${entry.source.url} has no plugin.json`);
+  }
+  const prefix = manifestPath.slice(0, -"plugin.json".length);
+
+  // Pass 2: inflate only that folder, so unrelated files elsewhere in the zip
+  // don't count against the limits. fflate inflates each file into a buffer
+  // of its declared size, so capping the declared sizes bounds memory; the
+  // inflated lengths are checked again below in case the directory lied.
   let unpackedBytes = 0;
   let fileCount = 0;
+  const tooLarge = () =>
+    new Error(
+      `${entry.source.url} unpacks to more than ${MAX_UNPACKED_BYTES} bytes or ${MAX_FILES} files`,
+    );
   const archive = unzipSync(zip, {
     filter: (file) => {
-      if (isJunk(file.name)) {
+      if (
+        file.name.endsWith("/") ||
+        isJunk(file.name) ||
+        !file.name.startsWith(prefix)
+      ) {
         return false;
       }
       if (file.originalSize > MAX_FILE_BYTES) {
@@ -180,26 +208,23 @@ export async function unpackSourceBundle(entry) {
       unpackedBytes += file.originalSize;
       fileCount += 1;
       if (unpackedBytes > MAX_UNPACKED_BYTES || fileCount > MAX_FILES) {
-        throw new Error(
-          `${entry.source.url} unpacks to more than ${MAX_UNPACKED_BYTES} bytes or ${MAX_FILES} files`,
-        );
+        throw tooLarge();
       }
       return true;
     },
   });
-  const names = Object.keys(archive).filter((name) => !name.endsWith("/"));
-  const manifestPath = findManifestPath(names);
-  if (manifestPath === null) {
-    throw new Error(`${entry.source.url} has no plugin.json`);
+  const names = Object.keys(archive);
+  const inflatedBytes = names.reduce(
+    (sum, name) => sum + archive[name].byteLength,
+    0,
+  );
+  if (inflatedBytes > MAX_UNPACKED_BYTES) {
+    throw tooLarge();
   }
-  const prefix = manifestPath.slice(0, -"plugin.json".length);
 
   await fs.rm(dir, { recursive: true, force: true });
   const files = [];
   for (const name of names) {
-    if (!name.startsWith(prefix)) {
-      continue;
-    }
     const relative = name.slice(prefix.length);
     if (!isSafeRelativePath(relative)) {
       throw new Error(`${entry.source.url} contains an unsafe path: ${name}`);
