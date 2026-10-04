@@ -14,7 +14,10 @@
 //      manifest with old code.
 //
 // Run it before deploying the registry, so the registry never announces a
-// bundle hash the mirror doesn't serve yet.
+// bundle hash the mirror doesn't serve yet. The reverse is briefly possible:
+// until the new registry is live, the old one still lists the previous hash,
+// so an install in that window is held back until it is retried (see the
+// README's "Release-zip mirror" section).
 //
 //   node scripts/publish_sources.mjs            # needs CLOUDFLARE_API_TOKEN
 //   node scripts/publish_sources.mjs --dry-run  # print the plan only
@@ -148,10 +151,22 @@ async function putText(key, text) {
  * @param {string} version The plugin version.
  * @returns {string}
  */
-function stableManifest(manifest, version) {
-  const pointed = { ...manifest, entry: `${version}/${manifest.entry}` };
+function stableManifest(manifest, version, files) {
+  // Point at the file as uploaded: `./x.js` and `x.js` name the same object,
+  // but the Worker refuses keys with `.` segments, so normalize first and
+  // insist the result is one of the unpacked files.
+  const inVersion = (field) => {
+    const normalized = path.posix.normalize(manifest[field]);
+    if (!files.includes(normalized)) {
+      throw new Error(
+        `plugin.json ${field} "${manifest[field]}" is not in the release zip`,
+      );
+    }
+    return `${version}/${normalized}`;
+  };
+  const pointed = { ...manifest, entry: inVersion("entry") };
   if (typeof manifest.style === "string") {
-    pointed.style = `${version}/${manifest.style}`;
+    pointed.style = inVersion("style");
   }
   return `${JSON.stringify(pointed, null, 2)}\n`;
 }
@@ -179,7 +194,12 @@ for (const entry of sources) {
   const manifest = JSON.parse(
     await fs.readFile(path.join(dir, "plugin.json"), "utf8"),
   );
+  // validate_plugins.mjs has already checked that the zip's plugin.json
+  // version equals entry.version, so the folder name matches its contents.
   const prefix = `plugins/${entry.id}/${entry.version}/`;
+  if (files.includes(MARKER)) {
+    throw new Error(`${entry.id}: the release zip may not contain ${MARKER}`);
+  }
   console.log(`${entry.id} ${entry.version}:`);
 
   const marker = dryRun ? null : getObject(prefix + MARKER);
@@ -196,7 +216,7 @@ for (const entry of sources) {
     // Written last, so a failed upload is retried in full next time.
     await putText(prefix + MARKER, `${entry.source.sha256}\n`);
   }
-  stable.push({ entry, text: stableManifest(manifest, entry.version) });
+  stable.push({ entry, text: stableManifest(manifest, entry.version, files) });
 }
 
 // Step 2: switch each stable manifest to its version folder.
