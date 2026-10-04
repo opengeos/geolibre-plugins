@@ -32,7 +32,13 @@ const registry = await buildRegistry(entries);
 // The registry must never offer what the blocklist refuses (GeoLibre would
 // install it and then refuse to load it). validate_plugins.mjs checks the
 // whole-plugin rule too; repeating it here keeps a bare build safe.
-const blocklist = await loadBlocklist();
+let blocklist;
+try {
+  blocklist = await loadBlocklist();
+} catch (error) {
+  console.error(`blocklist.json cannot be read: ${error.message}`);
+  process.exit(1);
+}
 if (!Array.isArray(blocklist?.blocked)) {
   console.error(
     'blocklist.json must have a "blocked" array; run npm run validate for details.',
