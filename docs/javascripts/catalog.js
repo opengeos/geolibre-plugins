@@ -75,7 +75,12 @@
   function loadStats() {
     stats ??= fetch("/plugins/stats.json")
       .then((response) => (response.ok ? response.json() : null))
-      .catch(() => null);
+      .catch(() => null)
+      .then((data) => {
+        // Don't remember a failure: the next page tries again.
+        if (!data) stats = undefined;
+        return data;
+      });
     return stats;
   }
 

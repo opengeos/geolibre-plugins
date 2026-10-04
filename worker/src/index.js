@@ -48,6 +48,66 @@ function baseHeaders(key) {
   return headers;
 }
 
+/**
+ * Serve a request from R2, or pass it through to the Pages origin.
+ *
+ * @param {Request} request
+ * @param {{ PLUGINS: R2Bucket }} env
+ * @param {string} key The request path without its leading slash.
+ * @returns {Promise<Response>}
+ */
+async function serve(request, env, key) {
+  // Only plain reads of plugin files are served from R2. Anything else,
+  // including a path the URL parser could not normalize, goes to Pages.
+  if (
+    (request.method !== "GET" && request.method !== "HEAD") ||
+    !key.startsWith("plugins/") ||
+    key.split("/").some((part) => part === "" || part === "." || part === "..")
+  ) {
+    return fetch(request);
+  }
+
+  // Only revalidation headers: with these, an object without a body always
+  // means "not modified" (304). If-Match and friends would need a 412.
+  const conditional = new Headers();
+  for (const name of ["If-None-Match", "If-Modified-Since"]) {
+    const value = request.headers.get(name);
+    if (value !== null) {
+      conditional.set(name, value);
+    }
+  }
+  let object;
+  try {
+    object = await env.PLUGINS.get(key, { onlyIf: conditional });
+  } catch (error) {
+    // An R2 problem must not take down plugins that only live on Pages:
+    // fall through to the origin, which serves those and 404s the rest.
+    console.error(`R2 lookup failed for ${key}`, error);
+    return fetch(request);
+  }
+  if (object === null) {
+    return fetch(request);
+  }
+
+  const headers = baseHeaders(key);
+  // The upload stored a Content-Type; prefer it over the extension table.
+  const stored = new Headers();
+  object.writeHttpMetadata(stored);
+  if (stored.has("Content-Type")) {
+    headers.set("Content-Type", stored.get("Content-Type"));
+  }
+  headers.set("ETag", object.httpEtag);
+  headers.set("Content-Length", String(object.size));
+  // `get` with `onlyIf` returns the metadata without a body when the
+  // client's copy is current.
+  if (!("body" in object)) {
+    return new Response(null, { status: 304, headers });
+  }
+  return new Response(request.method === "HEAD" ? null : object.body, {
+    headers,
+  });
+}
+
 export default {
   /**
    * @param {Request} request
@@ -74,68 +134,20 @@ export default {
       }
     }
 
-    // Count a plugin launch after responding; a stats problem must never
-    // affect serving the plugin.
+    const response = await serve(request, env, key);
+
+    // Count a launch only for a plugin that was actually served (200, or a
+    // 304 revalidation), so made-up folders can't add entries; and only after
+    // responding, so a stats problem never affects serving the plugin.
     const folder = countedFolder(request, url, key);
-    if (folder) {
+    if (folder && (response.status === 200 || response.status === 304)) {
       ctx.waitUntil(
         recordUsage(env, request, folder).catch((error) =>
           console.error(`Could not count a use of ${folder}`, error),
         ),
       );
     }
-
-    // Only plain reads of plugin files are served from R2. Anything else,
-    // including a path the URL parser could not normalize, goes to Pages.
-    if (
-      (request.method !== "GET" && request.method !== "HEAD") ||
-      !key.startsWith("plugins/") ||
-      key
-        .split("/")
-        .some((part) => part === "" || part === "." || part === "..")
-    ) {
-      return fetch(request);
-    }
-
-    // Only revalidation headers: with these, an object without a body always
-    // means "not modified" (304). If-Match and friends would need a 412.
-    const conditional = new Headers();
-    for (const name of ["If-None-Match", "If-Modified-Since"]) {
-      const value = request.headers.get(name);
-      if (value !== null) {
-        conditional.set(name, value);
-      }
-    }
-    let object;
-    try {
-      object = await env.PLUGINS.get(key, { onlyIf: conditional });
-    } catch (error) {
-      // An R2 problem must not take down plugins that only live on Pages:
-      // fall through to the origin, which serves those and 404s the rest.
-      console.error(`R2 lookup failed for ${key}`, error);
-      return fetch(request);
-    }
-    if (object === null) {
-      return fetch(request);
-    }
-
-    const headers = baseHeaders(key);
-    // The upload stored a Content-Type; prefer it over the extension table.
-    const stored = new Headers();
-    object.writeHttpMetadata(stored);
-    if (stored.has("Content-Type")) {
-      headers.set("Content-Type", stored.get("Content-Type"));
-    }
-    headers.set("ETag", object.httpEtag);
-    headers.set("Content-Length", String(object.size));
-    // `get` with `onlyIf` returns the metadata without a body when the
-    // client's copy is current.
-    if (!("body" in object)) {
-      return new Response(null, { status: 304, headers });
-    }
-    return new Response(request.method === "HEAD" ? null : object.body, {
-      headers,
-    });
+    return response;
   },
 
   /**
