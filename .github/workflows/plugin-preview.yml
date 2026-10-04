@@ -301,6 +301,9 @@ jobs:
       # touched a plugin don't get a "preview removed" comment. "Exists" means
       # the action's own sticky comment (marker "pr-preview") still shows the
       # preview URL; its "removed" text has no URL, so a removal never repeats.
+      # Verified against the SHA-pinned rossjrw/pr-preview-action v1.8.1 used
+      # below (its marocchino/sticky-pull-request-comment step writes the
+      # marker); re-check this when bumping that pin.
       - name: Check for an earlier preview
         if: github.event.action != 'closed' && steps.plan.outputs.found != 'true'
         id: stale

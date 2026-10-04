@@ -159,6 +159,8 @@ async function fetchHttpsOnly(url) {
         throw new Error(`${url} redirected without a Location header`);
       }
       current = new URL(location, parsed).href;
+      // Release the redirect's own body before following it.
+      await response.body?.cancel();
       continue;
     }
     if (!response.ok) {
