@@ -154,6 +154,28 @@ support. Don't edit `plugin-registry.json`: it is generated from `registry/`
 when the site is deployed, so pull requests for different plugins never
 conflict.
 
+#### Or host it from a release zip
+
+Instead of committing the bundle, you can point the registry entry at a
+release zip you publish in your own repository: add a `source` with the zip's
+HTTPS URL and its SHA-256, keep `manifestUrl` as `plugins/<id>/plugin.json`,
+and leave `plugins/<id>/` out of this repository:
+
+```json
+"manifestUrl": "plugins/my-plugin/plugin.json",
+"source": {
+  "url": "https://github.com/owner/my-plugin/releases/download/v1.0.0/my-plugin-1.0.0.zip",
+  "sha256": "<output of sha256sum my-plugin-1.0.0.zip>"
+}
+```
+
+The zip uses the same layout as a GeoLibre zip install: `plugin.json` at the
+root or inside one top-level folder, with `entry` and `style` beside it. CI
+downloads it, checks the hash, and validates it like a committed plugin. On
+merge it is copied to `plugins.geolibre.app/plugins/<id>/<version>/`, which
+never changes once published, so a new release needs a new `version` and a new
+`source`. Users keep installing from the same `plugins/<id>/plugin.json` URL.
+
 ### 4. Test locally
 
 Point a local GeoLibre build at your branch's registry, then open
@@ -191,3 +213,23 @@ verbatim.
 > One-time setup: enable **Settings → Pages → Source: GitHub Actions**, and add
 > a DNS `CNAME` record for `plugins.geolibre.app` pointing at
 > `opengeos.github.io`.
+
+### Release-zip mirror
+
+Plugins with a `source` are served from the `geolibre-plugins` R2 bucket by the
+`geolibre-plugins-mirror` Worker ([`worker/`](worker/)), routed on
+`plugins.geolibre.app/plugins/*`. The Worker serves an object when the bucket
+has one and passes every other request through to Pages, so committed plugins
+are unaffected. The bucket has no public domain of its own; only the Worker
+reads it.
+
+Before the registry is deployed, `scripts/publish_sources.mjs` uploads each
+release to `plugins/<id>/<version>/` and then switches the stable
+`plugins/<id>/plugin.json` to it, so the live registry never lists a hash the
+mirror can't serve.
+
+> One-time setup: deploy the Worker with
+> `npx wrangler deploy --config worker/wrangler.toml`, and add the repository
+> secrets `CLOUDFLARE_R2_TOKEN` (an API token with R2 write access to the
+> `geolibre-plugins` bucket) and `CLOUDFLARE_ACCOUNT_ID`. They're only needed
+> once an entry has a `source`.

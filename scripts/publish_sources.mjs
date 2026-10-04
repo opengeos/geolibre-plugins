@@ -1,0 +1,195 @@
+#!/usr/bin/env node
+
+// Mirror plugins hosted from release zips to the R2 bucket that the
+// `geolibre-plugins-mirror` Worker serves at plugins.geolibre.app/plugins/*.
+//
+// For each registry entry with a `source`:
+//   1. Upload the unpacked zip to `plugins/<id>/<version>/`. A version folder
+//      is written once: a `.source-sha256` marker records which zip it came
+//      from, and a different zip for the same version is an error (bump the
+//      version instead).
+//   2. Then, for every plugin, point the stable `plugins/<id>/plugin.json` at
+//      that folder (its `entry` and `style` become `<version>/...`). Switching
+//      one file switches the whole plugin, so a client never mixes a new
+//      manifest with old code.
+//
+// Run it before deploying the registry, so the registry never announces a
+// bundle hash the mirror doesn't serve yet.
+//
+//   node scripts/publish_sources.mjs            # needs CLOUDFLARE_API_TOKEN
+//   node scripts/publish_sources.mjs --dry-run  # print the plan only
+//
+// The token needs R2 write access to the bucket; CLOUDFLARE_ACCOUNT_ID picks
+// the account.
+
+import { execFileSync } from "node:child_process";
+import fs from "node:fs/promises";
+import os from "node:os";
+import path from "node:path";
+
+import { loadRegistryEntries } from "./registry.mjs";
+import { hasSource, unpackSourceBundle } from "./source-bundles.mjs";
+
+const BUCKET = "geolibre-plugins";
+const WRANGLER = "wrangler@4.147.0";
+const MARKER = ".source-sha256";
+const dryRun = process.argv.includes("--dry-run");
+
+const CONTENT_TYPES = {
+  css: "text/css; charset=utf-8",
+  js: "text/javascript; charset=utf-8",
+  json: "application/json; charset=utf-8",
+  mjs: "text/javascript; charset=utf-8",
+};
+
+/**
+ * Run wrangler with the given arguments.
+ *
+ * @param {string[]} args Arguments after `wrangler`.
+ * @returns {string} Standard output.
+ */
+function wrangler(args) {
+  return execFileSync("npx", ["--yes", WRANGLER, ...args], {
+    encoding: "utf8",
+    stdio: ["ignore", "pipe", "pipe"],
+  });
+}
+
+/**
+ * Read an object's text from the bucket.
+ *
+ * @param {string} key Object key.
+ * @returns {string | null} The text, or null when the object doesn't exist.
+ */
+function getObject(key) {
+  try {
+    return wrangler([
+      "r2",
+      "object",
+      "get",
+      `${BUCKET}/${key}`,
+      "--pipe",
+      "--remote",
+    ]);
+  } catch (error) {
+    const message = `${error.stderr ?? ""}${error.message}`;
+    if (/not found|does not exist|NoSuchKey|404/i.test(message)) {
+      return null;
+    }
+    throw error;
+  }
+}
+
+/**
+ * Upload a file to the bucket.
+ *
+ * @param {string} key Object key.
+ * @param {string} file Local file path.
+ */
+function putObject(key, file) {
+  const extension = key.split(".").pop()?.toLowerCase() ?? "";
+  const args = [
+    "r2",
+    "object",
+    "put",
+    `${BUCKET}/${key}`,
+    "--file",
+    file,
+    "--remote",
+  ];
+  if (CONTENT_TYPES[extension]) {
+    args.push("--content-type", CONTENT_TYPES[extension]);
+  }
+  if (dryRun) {
+    console.log(`  would upload ${key}`);
+    return;
+  }
+  wrangler(args);
+  console.log(`  uploaded ${key}`);
+}
+
+/**
+ * Upload text to the bucket through a temporary file.
+ *
+ * @param {string} key Object key.
+ * @param {string} text Contents.
+ */
+async function putText(key, text) {
+  const file = path.join(os.tmpdir(), `geolibre-publish-${process.pid}.tmp`);
+  await fs.writeFile(file, text);
+  try {
+    putObject(key, file);
+  } finally {
+    await fs.rm(file, { force: true });
+  }
+}
+
+/**
+ * The stable manifest: the release's own manifest with `entry` and `style`
+ * pointing into its version folder.
+ *
+ * @param {Record<string, unknown>} manifest The release's plugin.json.
+ * @param {string} version The plugin version.
+ * @returns {string}
+ */
+function stableManifest(manifest, version) {
+  const pointed = { ...manifest, entry: `${version}/${manifest.entry}` };
+  if (typeof manifest.style === "string") {
+    pointed.style = `${version}/${manifest.style}`;
+  }
+  return `${JSON.stringify(pointed, null, 2)}\n`;
+}
+
+const { entries, errors } = await loadRegistryEntries();
+if (errors.length > 0) {
+  throw new Error(errors.join("\n"));
+}
+const sources = entries.map(({ entry }) => entry).filter(hasSource);
+if (sources.length === 0) {
+  console.log("No registry entries are hosted from a release zip.");
+  process.exit(0);
+}
+if (!dryRun && !process.env.CLOUDFLARE_API_TOKEN) {
+  console.error(
+    `${sources.length} plugin(s) are hosted from release zips, but CLOUDFLARE_API_TOKEN is not set.`,
+  );
+  process.exit(1);
+}
+
+// Step 1: version folders. Every one is in place before any plugin switches.
+const stable = [];
+for (const entry of sources) {
+  const { dir, files } = await unpackSourceBundle(entry);
+  const manifest = JSON.parse(
+    await fs.readFile(path.join(dir, "plugin.json"), "utf8"),
+  );
+  const prefix = `plugins/${entry.id}/${entry.version}/`;
+  console.log(`${entry.id} ${entry.version}:`);
+
+  const marker = dryRun ? null : getObject(prefix + MARKER);
+  if (marker !== null && marker.trim() === entry.source.sha256) {
+    console.log("  version folder already published");
+  } else if (marker !== null) {
+    throw new Error(
+      `${entry.id} ${entry.version} was already published from a different zip (${marker.trim()}). Published versions never change; bump the version.`,
+    );
+  } else {
+    for (const file of files) {
+      putObject(prefix + file, path.join(dir, file));
+    }
+    // Written last, so a failed upload is retried in full next time.
+    await putText(prefix + MARKER, `${entry.source.sha256}\n`);
+  }
+  stable.push({ entry, text: stableManifest(manifest, entry.version) });
+}
+
+// Step 2: switch each stable manifest to its version folder.
+for (const { entry, text } of stable) {
+  const key = `plugins/${entry.id}/plugin.json`;
+  if (!dryRun && getObject(key) === text) {
+    console.log(`${key} already points at ${entry.version}`);
+    continue;
+  }
+  await putText(key, text);
+}
+console.log(`Published ${sources.length} plugin(s) from release zips.`);

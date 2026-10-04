@@ -6,3 +6,9 @@ node_modules/
 
 # Generated from registry/*.json by scripts/build_registry.mjs
 /plugin-registry.json
+
+# Release zips downloaded and unpacked by scripts/source-bundles.mjs
+/.cache/
+
+# wrangler local state
+.wrangler/

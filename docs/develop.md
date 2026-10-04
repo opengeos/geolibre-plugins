@@ -120,6 +120,28 @@ absolute HTTPS URL if you host the plugin elsewhere. Set `minGeoLibreVersion`
 to the lowest GeoLibre version you support. Don't edit `plugin-registry.json`:
 it is generated from `registry/` when the site is deployed.
 
+### Or host it from a release zip
+
+Instead of committing the bundle, you can point the registry entry at a
+release zip you publish in your own repository: add a `source` with the zip's
+HTTPS URL and its SHA-256, keep `manifestUrl` as `plugins/<id>/plugin.json`,
+and leave `plugins/<id>/` out of this repository:
+
+```json
+"manifestUrl": "plugins/my-plugin/plugin.json",
+"source": {
+  "url": "https://github.com/owner/my-plugin/releases/download/v1.0.0/my-plugin-1.0.0.zip",
+  "sha256": "<output of sha256sum my-plugin-1.0.0.zip>"
+}
+```
+
+The zip uses the same layout as a GeoLibre zip install: `plugin.json` at the
+root or inside one top-level folder, with `entry` and `style` beside it. CI
+downloads it, checks the hash, and validates it like a committed plugin. On
+merge it is copied to `plugins.geolibre.app/plugins/<id>/<version>/`, which
+never changes once published, so a new release needs a new `version` and a new
+`source`. Users keep installing from the same `plugins/<id>/plugin.json` URL.
+
 ## 4. Test locally
 
 Point a local GeoLibre build at your branch's registry, then open

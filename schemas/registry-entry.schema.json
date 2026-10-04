@@ -46,6 +46,24 @@
       "pattern": "^(?:https://\\S+|(?!.*\\.\\.)plugins/[^/\\s]+/\\S+\\.json)$",
       "$comment": "must be plugins/<dir>/<file>.json (no .. segments) or an https:// URL"
     },
+    "source": {
+      "description": "The plugin's release zip, for a plugin whose code isn't committed here. CI downloads it, checks sha256, and serves it from plugins/<id>/. manifestUrl must then be plugins/<id>/plugin.json.",
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["url", "sha256"],
+      "properties": {
+        "url": {
+          "type": "string",
+          "pattern": "^https://\\S+$",
+          "$comment": "must be an https:// URL"
+        },
+        "sha256": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{64}$",
+          "$comment": "must be the zip's SHA-256 as 64 lowercase hex characters"
+        }
+      }
+    },
     "categories": {
       "description": "One to four categories from the fixed list.",
       "type": "array",

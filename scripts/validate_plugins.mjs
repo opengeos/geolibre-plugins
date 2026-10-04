@@ -21,6 +21,7 @@ import path from "node:path";
 import Ajv2020 from "ajv/dist/2020.js";
 
 import { loadRegistryEntries, root } from "./registry.mjs";
+import { hasSource, unpackSourceBundle } from "./source-bundles.mjs";
 
 const errors = [];
 
@@ -313,6 +314,57 @@ function isSelected(file, pluginDir, changedFiles) {
 }
 
 /**
+ * Check an entry hosted from a release zip.
+ *
+ * Its files are served from R2 at `plugins/<id>/`, so that path must not also
+ * exist here. Downloading the zip is the expensive part, so like importing a
+ * committed bundle it only happens when the entry changed (or for a full run).
+ *
+ * @param {object} entry The registry entry, with a `source`.
+ * @param {string} file Its `registry/<id>.json` path.
+ * @param {string} label Prefix for error messages.
+ * @param {string} pluginDir The `plugins/<dir>` folder its manifestUrl names.
+ * @param {string[] | null} changedFiles Changed paths, or null for "all".
+ */
+async function validateSourceEntry(
+  entry,
+  file,
+  label,
+  pluginDir,
+  changedFiles,
+) {
+  if (entry.manifestUrl !== `plugins/${entry.id}/plugin.json`) {
+    addError(
+      `${label} has a source, so manifestUrl must be plugins/${entry.id}/plugin.json.`,
+    );
+  }
+  try {
+    await fs.stat(path.join(root, pluginDir));
+    addError(
+      `${label} has a source, so its code is served from the release zip; remove ${pluginDir}/ from this repository.`,
+    );
+  } catch {
+    // Expected: nothing is committed for a source entry.
+  }
+  if (!isSelected(file, pluginDir, changedFiles)) {
+    return;
+  }
+  let unpacked;
+  try {
+    unpacked = await unpackSourceBundle(entry);
+  } catch (error) {
+    addError(`${label} source: ${error.message}`);
+    return;
+  }
+  await validateLocalPlugin(
+    entry,
+    path.join(unpacked.dir, "plugin.json"),
+    `${label} (release zip)`,
+    true,
+  );
+}
+
+/**
  * Report folders under `plugins/` that no registry entry points at.
  *
  * @param {Map<string, string>} referencedDirs `plugins/<dir>` folders in use.
@@ -426,6 +478,14 @@ async function main() {
       );
     }
     referencedDirs.set(pluginDir, file);
+
+    if (hasSource(entry)) {
+      await validateSourceEntry(entry, file, label, pluginDir, changedFiles);
+      if (isSelected(file, pluginDir, changedFiles)) {
+        imported += 1;
+      }
+      continue;
+    }
 
     if (!(await fileExists(manifestPath, `${label} manifest`))) {
       continue;

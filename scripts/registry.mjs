@@ -10,6 +10,8 @@ import { fileURLToPath } from "node:url";
 import fs from "node:fs/promises";
 import path from "node:path";
 
+import { hasSource, unpackSourceBundle } from "./source-bundles.mjs";
+
 export const root = path.resolve(
   path.dirname(fileURLToPath(import.meta.url)),
   "..",
@@ -97,7 +99,16 @@ export function decodeSource(bytes) {
  * @returns {Promise<string>} The bundle hash.
  */
 export async function hashLocalBundle(manifestUrl) {
-  const manifestPath = path.join(root, manifestUrl);
+  return hashBundleAt(path.join(root, manifestUrl));
+}
+
+/**
+ * Hash the plugin whose `plugin.json` is at `manifestPath`.
+ *
+ * @param {string} manifestPath Absolute path to a `plugin.json`.
+ * @returns {Promise<string>} The bundle hash.
+ */
+export async function hashBundleAt(manifestPath) {
   const manifest = JSON.parse(await fs.readFile(manifestPath, "utf8"));
   const pluginDir = path.dirname(manifestPath);
   const entrySource = decodeSource(
@@ -113,7 +124,8 @@ export async function hashLocalBundle(manifestUrl) {
 /**
  * Assemble the published registry document from loaded entries.
  *
- * Each plugin hosted here gets a `bundleSha256`: the hash GeoLibre computes
+ * Each plugin hosted here, whether committed or unpacked from its release
+ * zip, gets a `bundleSha256`: the hash GeoLibre computes
  * over the entry and style it downloads, so the app can check that what it
  * fetched is what was reviewed. It is computed here and never written in
  * `registry/<id>.json`.
@@ -125,6 +137,15 @@ export async function hashLocalBundle(manifestUrl) {
 export async function buildRegistry(entries) {
   const plugins = [];
   for (const { entry } of entries) {
+    if (hasSource(entry)) {
+      // Hosted from a release zip and served from R2: hash the unpacked zip.
+      const { dir } = await unpackSourceBundle(entry);
+      plugins.push({
+        ...entry,
+        bundleSha256: await hashBundleAt(path.join(dir, "plugin.json")),
+      });
+      continue;
+    }
     const isLocal =
       typeof entry.manifestUrl === "string" &&
       entry.manifestUrl.startsWith("plugins/");

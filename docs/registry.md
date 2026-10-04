@@ -62,6 +62,7 @@ The generated `plugin-registry.json` wraps every entry in a `plugins` array:
 | `homepage` | no | Must be `http(s)`; other schemes are dropped. |
 | `categories` | no | One to four tags shown on the card, from the list below. |
 | `minGeoLibreVersion` | no | Semantic version. Gates installation against the running app version. |
+| `source` | no | `{ "url", "sha256" }` of the plugin's release zip, for a plugin whose code isn't committed here. `manifestUrl` must then be `plugins/<id>/plugin.json`. See [Develop a plugin](develop.md#or-host-it-from-a-release-zip). |
 | `publishableSettings` | no | Project-state keys that survive "Strip credentials" and shared project exports: `true` keeps the whole plugin state, an array of up to 64 key names keeps only those. Absent keeps nothing. |
 
 Unknown fields are rejected, so a typo such as `minGeolibreVersion` fails

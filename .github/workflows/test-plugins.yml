@@ -46,6 +46,9 @@ jobs:
       - name: Generate plugin-registry.json
         run: node scripts/build_registry.mjs
 
+      - name: Plan the R2 mirror upload
+        run: node scripts/publish_sources.mjs --dry-run
+
       - name: Set up Python
         uses: actions/setup-python@v7
         with:
