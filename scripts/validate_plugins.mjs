@@ -478,7 +478,17 @@ async function checkBlocklist(registryIds) {
     return;
   }
   const seen = new Set();
+  const wholeBlocks = new Set(
+    blocklist.blocked
+      .filter((entry) => !entry.bundleSha256)
+      .map((entry) => entry.id),
+  );
   for (const [index, entry] of blocklist.blocked.entries()) {
+    if (entry.bundleSha256 && wholeBlocks.has(entry.id)) {
+      addError(
+        `blocklist.json blocked[${index}] blocks one bundle of ${entry.id}, which is already blocked outright; remove it.`,
+      );
+    }
     const key = `${entry.id} ${entry.bundleSha256 ?? "*"}`;
     if (seen.has(key)) {
       addError(`blocklist.json blocked[${index}] duplicates an earlier entry.`);
