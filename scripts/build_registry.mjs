@@ -15,6 +15,7 @@ import {
   registryPath,
   root,
 } from "./registry.mjs";
+import { pruneSourceCache } from "./source-bundles.mjs";
 
 const { entries, errors } = await loadRegistryEntries();
 if (errors.length > 0) {
@@ -32,3 +33,5 @@ await fs.writeFile(
 console.log(
   `Wrote ${path.relative(root, registryPath)} with ${entries.length} plugins.`,
 );
+// Drop cached release zips the registry no longer uses (see deploy-pages.yml).
+await pruneSourceCache(entries.map(({ entry }) => entry));

@@ -236,3 +236,30 @@ export async function unpackSourceBundle(entry) {
   }
   return { dir, files: files.sort() };
 }
+
+/**
+ * Delete cached zips and unpacked folders that no registry entry references
+ * any more, so the CI cache only holds current releases.
+ *
+ * @param {unknown[]} entries Registry entries.
+ * @returns {Promise<number>} How many cache items were removed.
+ */
+export async function pruneSourceCache(entries) {
+  const keep = new Set(
+    entries.filter(hasSource).map((entry) => entry.source.sha256),
+  );
+  let names;
+  try {
+    names = await fs.readdir(cacheDir);
+  } catch {
+    return 0;
+  }
+  let removed = 0;
+  for (const name of names) {
+    if (!keep.has(name.replace(/\.zip$/, ""))) {
+      await fs.rm(path.join(cacheDir, name), { recursive: true, force: true });
+      removed += 1;
+    }
+  }
+  return removed;
+}
