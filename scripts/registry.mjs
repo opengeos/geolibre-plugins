@@ -18,6 +18,17 @@ export const root = path.resolve(
 );
 export const registryDir = path.join(root, "registry");
 export const registryPath = path.join(root, "plugin-registry.json");
+export const blocklistPath = path.join(root, "blocklist.json");
+
+/**
+ * Read `blocklist.json`: plugins, or single bundles of them, that GeoLibre
+ * refuses to load. Published as is at the site root.
+ *
+ * @returns {Promise<{ version: number, blocked: { id: string, bundleSha256?: string, reason: string, date: string }[] }>}
+ */
+export async function loadBlocklist() {
+  return JSON.parse(await fs.readFile(blocklistPath, "utf8"));
+}
 
 // Format version of the generated `plugin-registry.json`.
 export const REGISTRY_FORMAT_VERSION = 1;

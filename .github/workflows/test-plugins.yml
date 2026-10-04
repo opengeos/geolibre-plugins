@@ -70,7 +70,7 @@ jobs:
         run: |
           python scripts/generate_plugins_page.py
           mkdocs build --strict
-          cp plugin-registry.json site/
+          cp plugin-registry.json blocklist.json site/
           # Committed plugin folders, if any; release-zip plugins are served
           # from R2 instead.
           if [ -d plugins ]; then

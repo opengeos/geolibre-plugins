@@ -1,0 +1,53 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://plugins.geolibre.app/schemas/blocklist.schema.json",
+  "title": "GeoLibre plugin blocklist",
+  "description": "Plugins, or single versions of them, that GeoLibre refuses to load. Published at plugins.geolibre.app/blocklist.json.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["version", "blocked"],
+  "properties": {
+    "version": {
+      "const": 1
+    },
+    "blocked": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/entry"
+      }
+    }
+  },
+  "$defs": {
+    "entry": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "reason", "date"],
+      "properties": {
+        "id": {
+          "description": "The plugin id.",
+          "type": "string",
+          "pattern": "^[a-z0-9]+(?:[._-][a-z0-9]+)*$",
+          "$comment": "must be lowercase letters and digits, separated by single . _ or - characters"
+        },
+        "bundleSha256": {
+          "description": "Block only the bundle with this bundleSha256 (one bad version). Omit to block every version of the plugin.",
+          "type": "string",
+          "pattern": "^[0-9a-f]{64}$",
+          "$comment": "must be 64 lowercase hex characters"
+        },
+        "reason": {
+          "description": "Shown to users whose plugin is refused.",
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 300
+        },
+        "date": {
+          "description": "When it was blocked, YYYY-MM-DD.",
+          "type": "string",
+          "pattern": "^\\d{4}-(?:0[1-9]|1[0-2])-(?:0[1-9]|[12]\\d|3[01])$",
+          "$comment": "must be a date like 2026-10-04"
+        }
+      }
+    }
+  }
+}

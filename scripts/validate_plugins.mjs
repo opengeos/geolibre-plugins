@@ -20,7 +20,7 @@ import path from "node:path";
 
 import Ajv2020 from "ajv/dist/2020.js";
 
-import { loadRegistryEntries, root } from "./registry.mjs";
+import { loadBlocklist, loadRegistryEntries, root } from "./registry.mjs";
 
 import {
   hasSource,
@@ -46,11 +46,15 @@ const validateEntrySchema = ajv.compile(
 const validateManifestSchema = ajv.compile(
   loadSchema("plugin-manifest.schema.json"),
 );
+const validateBlocklistSchema = ajv.compile(
+  loadSchema("blocklist.schema.json"),
+);
 
 // Changes to any of these re-validate every plugin, since they can change how
 // every plugin is checked.
 const TOOLING_PATHS = [
   "scripts/",
+  "blocklist.json",
   "schemas/",
   "package.json",
   "package-lock.json",
@@ -456,6 +460,49 @@ async function validateSourceEntry(
 }
 
 /**
+ * Check `blocklist.json`: its schema, no duplicate entries, and no fully
+ * blocked plugin still listed in the registry (a blocked bundle hash still
+ * being served is checked by build_registry.mjs, which knows every hash).
+ *
+ * @param {Set<string>} registryIds Ids listed in the registry.
+ */
+async function checkBlocklist(registryIds) {
+  let blocklist;
+  try {
+    blocklist = await loadBlocklist();
+  } catch (error) {
+    addError(`blocklist.json cannot be read: ${error.message}`);
+    return;
+  }
+  if (!checkSchema(validateBlocklistSchema, blocklist, "blocklist.json")) {
+    return;
+  }
+  const seen = new Set();
+  const wholeBlocks = new Set(
+    blocklist.blocked
+      .filter((entry) => !entry.bundleSha256)
+      .map((entry) => entry.id),
+  );
+  for (const [index, entry] of blocklist.blocked.entries()) {
+    if (entry.bundleSha256 && wholeBlocks.has(entry.id)) {
+      addError(
+        `blocklist.json blocked[${index}] blocks one bundle of ${entry.id}, which is already blocked outright; remove it.`,
+      );
+    }
+    const key = `${entry.id} ${entry.bundleSha256 ?? "*"}`;
+    if (seen.has(key)) {
+      addError(`blocklist.json blocked[${index}] duplicates an earlier entry.`);
+    }
+    seen.add(key);
+    if (entry.bundleSha256 === undefined && registryIds.has(entry.id)) {
+      addError(
+        `blocklist.json blocks every version of ${entry.id}, so remove registry/${entry.id}.json too.`,
+      );
+    }
+  }
+}
+
+/**
  * Report folders under `plugins/` that no registry entry points at.
  *
  * @param {Map<string, string>} referencedDirs `plugins/<dir>` folders in use.
@@ -596,6 +643,7 @@ async function main() {
   }
 
   await checkOrphanPluginDirs(referencedDirs);
+  await checkBlocklist(seenIds);
 
   if (errors.length > 0) {
     console.error("Plugin validation failed:");
