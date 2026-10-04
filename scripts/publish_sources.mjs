@@ -149,6 +149,8 @@ async function putText(key, text) {
  *
  * @param {Record<string, unknown>} manifest The release's plugin.json.
  * @param {string} version The plugin version.
+ * @param {string[]} files The unpacked files, relative to the zip's
+ *   plugin.json folder.
  * @returns {string}
  */
 function stableManifest(manifest, version, files) {
@@ -156,6 +158,9 @@ function stableManifest(manifest, version, files) {
   // but the Worker refuses keys with `.` segments, so normalize first and
   // insist the result is one of the unpacked files.
   const inVersion = (field) => {
+    if (typeof manifest[field] !== "string") {
+      throw new Error(`plugin.json ${field} must be a string`);
+    }
     const normalized = path.posix.normalize(manifest[field]);
     if (!files.includes(normalized)) {
       throw new Error(

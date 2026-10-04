@@ -137,17 +137,18 @@ function isJunk(name) {
 }
 
 /**
- * Whether a path inside the zip is a plain relative path.
+ * Whether a path inside the zip is a plain relative path made of URL-safe
+ * characters.
  *
  * @param {string} name A zip entry name, relative to the manifest folder.
  * @returns {boolean}
  */
 function isSafeRelativePath(name) {
+  // Plain URL-safe names only: the Worker maps the request path to the R2 key
+  // without percent-decoding, so a name like "my file.js" could never be served.
   return (
-    !name.startsWith("/") &&
-    !name.includes("\\") &&
-    !/^[a-z][a-z\d+.-]*:/i.test(name) &&
-    name.split("/").every((part) => part && part !== "." && part !== "..")
+    /^[A-Za-z0-9._@+-]+(?:\/[A-Za-z0-9._@+-]+)*$/.test(name) &&
+    name.split("/").every((part) => part !== "." && part !== "..")
   );
 }
 

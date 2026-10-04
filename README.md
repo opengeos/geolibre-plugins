@@ -221,7 +221,9 @@ Plugins with a `source` are served from the `geolibre-plugins` R2 bucket by the
 `plugins.geolibre.app/plugins/*`. The Worker serves an object when the bucket
 has one and passes every other request through to Pages, so committed plugins
 are unaffected. The bucket has no public domain of its own; only the Worker
-reads it.
+reads it. An object in the bucket takes precedence over Pages, so moving a
+plugin back to a committed folder also means deleting its `plugins/<id>/`
+objects from the bucket.
 
 Before the registry is deployed, `scripts/publish_sources.mjs` uploads each
 release to `plugins/<id>/<version>/` and then switches the stable
