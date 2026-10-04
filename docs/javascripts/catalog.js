@@ -122,15 +122,10 @@
   }
 
   function usersText(usage) {
-    // The last complete week is the steadier number; early on, fall back to
-    // the week so far.
-    if (usage.usersLastWeek > 0) {
-      return `${usage.usersLastWeek.toLocaleString()} ${usage.usersLastWeek === 1 ? "user" : "users"} last week`;
-    }
-    if (usage.usersThisWeek > 0) {
-      return `${usage.usersThisWeek.toLocaleString()} ${usage.usersThisWeek === 1 ? "user" : "users"} this week`;
-    }
-    return null;
+    const count = usersOf(usage);
+    if (count === 0) return null;
+    const period = usage.usersLastWeek > 0 ? "last week" : "this week";
+    return `${count.toLocaleString()} ${count === 1 ? "user" : "users"} ${period}`;
   }
 
   async function showUsage() {

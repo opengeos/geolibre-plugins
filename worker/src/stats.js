@@ -77,9 +77,11 @@ export function visitorAddress(ip) {
   const [head, tail = ""] = ip.toLowerCase().split("::");
   const left = head ? head.split(":") : [];
   const right = tail ? tail.split(":") : [];
-  const groups = ip.includes("::")
-    ? [...left, ...Array(8 - left.length - right.length).fill("0"), ...right]
-    : left;
+  const fill = 8 - left.length - right.length;
+  const groups =
+    ip.includes("::") && fill >= 1
+      ? [...left, ...Array(fill).fill("0"), ...right]
+      : left;
   if (groups.length !== 8) return ip;
   return groups
     .slice(0, 4)
