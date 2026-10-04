@@ -232,6 +232,27 @@ python scripts/generate_plugins_page.py
 mkdocs serve
 ```
 
+### Usage statistics
+
+The mirror Worker also counts plugin use: each fetch of a plugin's stable
+`plugins/<dir>/plugin.json` (GeoLibre fetches it at every start) is recorded in
+the `geolibre-plugins-stats` D1 database as a weekly visitor hash plus a daily
+launch count, and served at `plugins/stats.json`. A daily cron rolls finished
+weeks up into counts and deletes their hashes. See
+[`worker/src/stats.js`](worker/src/stats.js) and
+[Registry format](https://plugins.geolibre.app/registry/#usage-statistics) for
+what is and isn't kept.
+
+> One-time setup: create the database and its tables, set the salt secret, then
+> deploy the Worker:
+>
+> ```bash
+> npx wrangler d1 create geolibre-plugins-stats   # put its id in worker/wrangler.toml
+> npx wrangler d1 execute geolibre-plugins-stats --remote --file worker/schema.sql
+> npx wrangler secret put STATS_SALT --config worker/wrangler.toml   # any long random string
+> npx wrangler deploy --config worker/wrangler.toml
+> ```
+
 ### Blocking a plugin
 
 To stop a malicious or broken plugin on every install, add an entry to

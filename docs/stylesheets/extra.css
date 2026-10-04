@@ -86,3 +86,9 @@
 .md-typeset .grid.cards > ul > li[hidden] {
   display: none;
 }
+
+/* Usage line on catalog cards (filled in by catalog.js from stats.json). */
+.md-typeset .plugin-usage {
+  font-size: 0.72rem;
+  color: var(--md-default-fg-color--light);
+}

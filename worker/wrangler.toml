@@ -14,3 +14,14 @@ routes = [
 [[r2_buckets]]
 binding = "PLUGINS"
 bucket_name = "geolibre-plugins"
+
+# Anonymous plugin usage counts (src/stats.js, schema.sql). The weekly salt
+# for visitor hashes comes from the STATS_SALT secret:
+#   npx wrangler secret put STATS_SALT --config worker/wrangler.toml
+[[d1_databases]]
+binding = "STATS"
+database_name = "geolibre-plugins-stats"
+database_id = "6227454a-7ca7-4146-9514-39883aaef58a"
+
+[triggers]
+crons = ["15 0 * * *"]

@@ -7,8 +7,13 @@
 // still committed to the repository have no R2 objects, so their requests
 // fall through to Pages unchanged.
 //
+// It also counts plugin usage anonymously and serves the counts at
+// plugins/stats.json (see stats.js).
+//
 // Range requests are not supported: a ranged GET gets the whole file with a
 // 200, which is valid HTTP and all GeoLibre's whole-file fetches need.
+
+import { countedFolder, recordUsage, rollUp, statsResponse } from "./stats.js";
 
 // Versioned files never change once uploaded, so they can be cached for good.
 // Anything else (the stable plugin.json) must pick up a new release quickly.
@@ -46,12 +51,39 @@ function baseHeaders(key) {
 export default {
   /**
    * @param {Request} request
-   * @param {{ PLUGINS: R2Bucket }} env
+   * @param {{ PLUGINS: R2Bucket, STATS?: D1Database, STATS_SALT?: string }} env
+   * @param {ExecutionContext} ctx
    * @returns {Promise<Response>}
    */
-  async fetch(request, env) {
+  async fetch(request, env, ctx) {
     const url = new URL(request.url);
     const key = url.pathname.replace(/^\/+/, "");
+
+    if (key === "plugins/stats.json" && request.method === "GET") {
+      try {
+        return await statsResponse(env);
+      } catch (error) {
+        console.error("Could not build plugins/stats.json", error);
+        return new Response(JSON.stringify({ plugins: {} }), {
+          status: 503,
+          headers: {
+            "Access-Control-Allow-Origin": "*",
+            "Content-Type": "application/json; charset=utf-8",
+          },
+        });
+      }
+    }
+
+    // Count a plugin launch after responding; a stats problem must never
+    // affect serving the plugin.
+    const folder = countedFolder(request, url, key);
+    if (folder) {
+      ctx.waitUntil(
+        recordUsage(env, request, folder).catch((error) =>
+          console.error(`Could not count a use of ${folder}`, error),
+        ),
+      );
+    }
 
     // Only plain reads of plugin files are served from R2. Anything else,
     // including a path the URL parser could not normalize, goes to Pages.
@@ -104,5 +136,15 @@ export default {
     return new Response(request.method === "HEAD" ? null : object.body, {
       headers,
     });
+  },
+
+  /**
+   * Daily: roll finished weeks' visitor hashes up into counts and delete them.
+   *
+   * @param {ScheduledController} controller
+   * @param {{ STATS?: D1Database }} env
+   */
+  async scheduled(controller, env) {
+    await rollUp(env);
   },
 };
