@@ -19,6 +19,23 @@ const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 
 export const cacheDir = path.join(root, ".cache", "sources");
 
+// A release-zip plugin is served from plugins/<id>/. The one exception is a
+// plugin that was committed under another folder before it moved to a
+// release zip: it keeps that folder so existing installs keep their URL.
+// Listing them here, rather than accepting any folder, stops an entry from
+// claiming and overwriting another plugin's folder in R2.
+const LEGACY_FOLDERS = new Map([["geolibre-sample-plugin", "sample"]]);
+
+/**
+ * The `plugins/<dir>` folder a release-zip entry must be served from.
+ *
+ * @param {{ id: string }} entry A registry entry with a `source`.
+ * @returns {string} The folder name.
+ */
+export function sourceFolder(entry) {
+  return LEGACY_FOLDERS.get(entry.id) ?? entry.id;
+}
+
 // Per-file cap, matching MAX_PLUGIN_ASSET_BYTES in GeoLibre.
 const MAX_FILE_BYTES = 50 * 1024 * 1024;
 const MAX_ZIP_BYTES = 100 * 1024 * 1024;

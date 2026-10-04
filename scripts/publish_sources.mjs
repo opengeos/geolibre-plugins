@@ -32,7 +32,11 @@ import os from "node:os";
 import path from "node:path";
 
 import { loadRegistryEntries } from "./registry.mjs";
-import { hasSource, unpackSourceBundle } from "./source-bundles.mjs";
+import {
+  hasSource,
+  sourceFolder,
+  unpackSourceBundle,
+} from "./source-bundles.mjs";
 
 const BUCKET = "geolibre-plugins";
 const WRANGLER = "wrangler@4.147.0";
@@ -212,13 +216,12 @@ for (const entry of sources) {
   // version equals entry.version, so the folder name matches its contents.
   // The schema already limits id and version to these forms; checking again
   // here keeps a bad value from ever becoming an R2 key.
-  // Files go in the folder manifestUrl names: plugins/<id>/ for new plugins,
-  // or the folder a migrated plugin was always served from.
-  const folder = /^plugins\/([a-z0-9]+(?:[._-][a-z0-9]+)*)\/plugin\.json$/.exec(
-    entry.manifestUrl,
-  )?.[1];
+  // plugins/<id>/, or a migrated plugin's original folder. Validation has
+  // checked that manifestUrl names exactly this folder.
+  const folder = sourceFolder(entry);
   if (
-    !folder ||
+    !/^[a-z0-9]+(?:[._-][a-z0-9]+)*$/.test(folder) ||
+    entry.manifestUrl !== `plugins/${folder}/plugin.json` ||
     !/^\d+\.\d+\.\d+(?:[-+][0-9A-Za-z.+-]*)?$/.test(entry.version)
   ) {
     throw new Error(

@@ -21,7 +21,11 @@ import path from "node:path";
 import Ajv2020 from "ajv/dist/2020.js";
 
 import { loadRegistryEntries, root } from "./registry.mjs";
-import { hasSource, unpackSourceBundle } from "./source-bundles.mjs";
+import {
+  hasSource,
+  sourceFolder,
+  unpackSourceBundle,
+} from "./source-bundles.mjs";
 
 const errors = [];
 
@@ -371,16 +375,10 @@ async function validateSourceEntry(
       `${label} changes source.sha256 but keeps version ${entry.version}; published versions never change, so bump the version.`,
     );
   }
-  // New plugins use plugins/<id>/; a migrated plugin keeps the folder its
-  // users already installed from (the sample plugin lives in plugins/sample/).
-  if (
-    !/^plugins\/[a-z0-9]+(?:[._-][a-z0-9]+)*\/plugin\.json$/.test(
-      entry.manifestUrl,
-    )
-  ) {
-    addError(
-      `${label} has a source, so manifestUrl must be plugins/<dir>/plugin.json (normally plugins/${entry.id}/plugin.json).`,
-    );
+  // plugins/<id>/, or a migrated plugin's original folder (LEGACY_FOLDERS).
+  const expected = `plugins/${sourceFolder(entry)}/plugin.json`;
+  if (entry.manifestUrl !== expected) {
+    addError(`${label} has a source, so manifestUrl must be ${expected}.`);
   }
   try {
     await fs.stat(path.join(root, pluginDir));

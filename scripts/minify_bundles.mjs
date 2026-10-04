@@ -23,10 +23,9 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
+// Only committed bundles under plugins/ are checked. The copy-ready sample in
+// examples/sample/ is meant to be read, so it stays outside.
 const pluginsDir = path.join(root, "plugins");
-
-// The copy-ready sample plugin lives in examples/sample/, outside plugins/,
-// so its hand-written, commented source is never minified.
 
 // esbuild's first pass over an already-pretty-printed bundle is not quite its
 // own fixed point (it re-flows a few long lines), so minifying twice can differ
