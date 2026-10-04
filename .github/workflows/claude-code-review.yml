@@ -225,9 +225,11 @@ jobs:
           base="$RUNNER_TEMP/review-base"
           rm -rf "$base"
           mv .review-base "$base"
-          files=$(gh api --paginate "repos/${{ github.repository }}/pulls/$PR/files" \
-                    --jq '.[] | select(.status != "removed") | .filename' \
-                  | grep -E '^registry/[a-z0-9._-]+\.json$' || true)
+          # Listed first so a failed API call fails the step (and the prompt
+          # reports it); only grep finding no registry file is tolerated.
+          listing=$(gh api --paginate "repos/${{ github.repository }}/pulls/$PR/files" \
+                      --jq '.[] | select(.status != "removed") | .filename')
+          files=$(printf '%s\n' "$listing" | grep -E '^registry/[a-z0-9._-]+\.json$' || true)
           if [ -z "$files" ]; then
             echo "No registry entries changed; no release zips to inspect."
             exit 0
@@ -285,7 +287,7 @@ jobs:
             - Obfuscated or packed code whose behaviour you cannot determine (a minified build is normal; deliberately encoded strings and hidden control flow are not).
             - HTML injection of untrusted data, crypto-mining or other heavy background work, and binaries (`.wasm`, executables) without an evident purpose.
             - A plugin.json id, name or version that differs from the registry entry, and behaviour inconsistent with the entry's description.
-            Bundles are usually minified, so start from the report's pattern hits and external hosts and use Grep to find the relevant code. If the report says a zip could not be inspected (download failure, hash mismatch, unsafe paths, size limits) or an entry was not inspected, raise that as a finding.
+            Bundles are usually minified, so start from the report's pattern hits and external hosts and use Grep to find the relevant code. The hits are literal-text heuristics that obfuscated code evades, so no hits is not evidence of safety: also read the plugin's main script, and look for indirection such as computed property names (`window["ev"+"al"]`), decoded strings, or aliased globals. If the report says a zip could not be inspected (download failure, hash mismatch, unsafe paths, size limits) or an entry was not inspected, raise that as a finding.
 
             The step that unpacks the release zips finished with outcome `${{ steps.zips.outcome }}`. If that is `failure`, the zips of this PR were not reviewed (the report may be missing or incomplete): when the diff changes any registry/<id>.json entry with a "source", raise a finding that its release zip could not be inspected and needs a manual review.
 
