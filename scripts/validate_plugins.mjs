@@ -346,6 +346,9 @@ function isSelected(file, pluginDir, changedFiles) {
  * @param {string} label Prefix for error messages.
  * @param {string} pluginDir The `plugins/<dir>` folder its manifestUrl names.
  * @param {string[] | null} changedFiles Changed paths, or null for "all".
+ * @param {string | null} baseRef The --changed-since ref. Without one (a
+ *   full run) the version-reuse check is skipped; the deploy's write-once
+ *   marker still refuses a reused version.
  */
 async function validateSourceEntry(
   entry,

@@ -61,17 +61,18 @@ const CONTENT_TYPES = {
 /**
  * Run wrangler with the given arguments.
  *
+ * A stalled call fails the deploy instead of hanging it; the next run
+ * retries, and the marker-last order keeps a partial upload harmless.
+ *
  * @param {string[]} args Arguments after `wrangler`.
+ * @param {number} [timeout] Milliseconds before the call is killed.
  * @returns {string} Standard output.
  */
-function wrangler(args) {
+function wrangler(args, timeout = 120_000) {
   return execFileSync("npx", ["--yes", WRANGLER, ...args], {
     encoding: "utf8",
     stdio: ["ignore", "pipe", "pipe"],
-    // A stalled call fails the deploy instead of hanging it; the next run
-    // retries, and the marker-last order keeps a partial upload harmless.
-    // Uploads of files up to 50 MB get longer than reads.
-    timeout: args[2] === "put" ? 600_000 : 120_000,
+    timeout,
   });
 }
 
@@ -127,7 +128,8 @@ function putObject(key, file) {
     console.log(`  would upload ${key}`);
     return;
   }
-  wrangler(args);
+  // Files can be up to 50 MB, so uploads get longer than reads.
+  wrangler(args, 600_000);
   console.log(`  uploaded ${key}`);
 }
 

@@ -6,6 +6,9 @@
 // rewrites `plugins/<id>/plugin.json` to point into that folder. Plugins
 // still committed to the repository have no R2 objects, so their requests
 // fall through to Pages unchanged.
+//
+// Range requests are not supported: a ranged GET gets the whole file with a
+// 200, which is valid HTTP and all GeoLibre's whole-file fetches need.
 
 // Versioned files never change once uploaded, so they can be cached for good.
 // Anything else (the stable plugin.json) must pick up a new release quickly.
@@ -92,6 +95,7 @@ export default {
       headers.set("Content-Type", stored.get("Content-Type"));
     }
     headers.set("ETag", object.httpEtag);
+    headers.set("Content-Length", String(object.size));
     // `get` with `onlyIf` returns the metadata without a body when the
     // client's copy is current.
     if (!("body" in object)) {
