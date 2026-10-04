@@ -68,6 +68,9 @@ function wrangler(args) {
   return execFileSync("npx", ["--yes", WRANGLER, ...args], {
     encoding: "utf8",
     stdio: ["ignore", "pipe", "pipe"],
+    // A stalled call fails the deploy instead of hanging it; the next run
+    // retries, and the marker-last order keeps a partial upload harmless.
+    timeout: 120_000,
   });
 }
 
