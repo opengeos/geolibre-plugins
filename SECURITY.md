@@ -37,9 +37,9 @@ a description of the behaviour), and how you found it.
 1. A maintainer confirms the report.
 2. If a plugin is malicious or dangerous, it is blocked first and investigated
    after: an entry in [`blocklist.json`](blocklist.json) stops it from loading
-   on every GeoLibre install that checks the blocklist, either one bad release
-   (by its `bundleSha256`) or every version. Its registry entry is removed or
-   pointed at a fixed release.
+   on every GeoLibre install that checks the blocklist (releases after 3.2.0),
+   either one bad release (by its `bundleSha256`) or every version. Its
+   registry entry is removed or pointed at a fixed release.
 3. For a vulnerability in the registry or its workflows, the fix is made in a
    private advisory and published when it is merged.
 4. You are credited in the advisory unless you prefer not to be.

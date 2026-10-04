@@ -1,6 +1,6 @@
 name: Report a plugin
 description: A plugin in the registry is broken, misbehaves, or is misdescribed.
-title: "[plugin] <plugin id>: "
+title: "[plugin] "
 labels: ["plugin report"]
 body:
   - type: markdown
