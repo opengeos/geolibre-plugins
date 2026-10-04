@@ -72,7 +72,10 @@ export function hasSource(entry) {
     entry !== null &&
     typeof entry === "object" &&
     typeof entry.source?.url === "string" &&
-    typeof entry.source?.sha256 === "string"
+    // Checked here, not only by the schema: the hash names cache paths, and
+    // the preview workflow calls this on untrusted pull-request JSON.
+    typeof entry.source?.sha256 === "string" &&
+    /^[0-9a-f]{64}$/.test(entry.source.sha256)
   );
 }
 

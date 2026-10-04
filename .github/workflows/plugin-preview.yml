@@ -213,11 +213,12 @@ jobs:
           dest=geolibre/apps/geolibre-desktop/public/plugins
           mkdir -p "$dest"
           for id in $IDS; do
-            # A committed folder wins; otherwise the staged release zip.
-            if [ -d "plugins-pr/plugins/$id" ]; then
-              cp -r "plugins-pr/plugins/$id" "$dest/$id"
-            else
+            # A staged release zip wins: it is what the registry entry the PR
+            # changes will serve. Otherwise the committed folder.
+            if [ -d "staged/$id" ]; then
               cp -r "staged/$id" "$dest/$id"
+            else
+              cp -r "plugins-pr/plugins/$id" "$dest/$id"
             fi
             echo "baked in: $id"
           done
@@ -295,10 +296,30 @@ jobs:
             exit 1
           fi
 
+      # A later push can drop every plugin change (a revert, say). Remove the
+      # preview built earlier, but only when one exists, so PRs that never
+      # touched a plugin don't get a "preview removed" comment.
+      - name: Check for an earlier preview
+        if: github.event.action != 'closed' && steps.plan.outputs.found != 'true'
+        id: stale
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          PR: ${{ steps.pr.outputs.number }}
+        run: |
+          set -euo pipefail
+          count=$(gh api --paginate "repos/${{ github.repository }}/issues/$PR/comments" \
+                    --jq "[.[] | select(.user.login == \"github-actions[bot]\") | select(.body | contains(\"geolibre-plugins/pr-$PR/\"))] | length" \
+                  | awk '{s += $1} END {print s + 0}')
+          echo "exists=$([ "$count" -gt 0 ] && echo true || echo false)" >> "$GITHUB_OUTPUT"
+
       # --------------------------------------------------------------- deploy
-      # On `closed` this removes pr-preview/pr-<N>/ instead of deploying.
+      # Removes the preview instead of deploying when the PR is closed, or when
+      # an open PR no longer changes any plugin but had a preview before.
       - name: Publish preview
-        if: github.event.action == 'closed' || steps.plan.outputs.found == 'true'
+        if: >-
+          github.event.action == 'closed' ||
+          steps.plan.outputs.found == 'true' ||
+          steps.stale.outputs.exists == 'true'
         # Pinned to a SHA rather than the mutable v1 tag: unlike the first-party
         # actions/* steps above, this is a third-party action and it receives
         # PREVIEW_DEPLOY_TOKEN, so a moved tag would hand that token to code
@@ -316,7 +337,7 @@ jobs:
           # another repository's pr-35.
           umbrella-dir: geolibre-plugins
           pr-number: ${{ steps.pr.outputs.number }}
-          action: ${{ github.event.action == 'closed' && 'remove' || 'deploy' }}
+          action: ${{ (github.event.action == 'closed' || steps.plan.outputs.found != 'true') && 'remove' || 'deploy' }}
           # Without this the sticky comment is posted as soon as the commit is
           # pushed to gh-pages, so the link 404s until Pages finishes building.
           wait-for-pages-deployment: true

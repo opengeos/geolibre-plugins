@@ -28,6 +28,7 @@ if (!prRoot || !dest) {
 }
 
 const staged = [];
+let failed = 0;
 for (const file of files) {
   // Only plain registry/<id>.json names, so a crafted path can't escape.
   if (!REGISTRY_FILE.test(file)) {
@@ -43,7 +44,18 @@ for (const file of files) {
   if (!hasSource(entry) || typeof entry.id !== "string" || !ID.test(entry.id)) {
     continue;
   }
-  const { dir } = await unpackSourceBundle(entry);
+  // One broken entry (bad hash, 404, oversized zip) shouldn't stop the
+  // preview for the others; report it and carry on.
+  let dir;
+  try {
+    ({ dir } = await unpackSourceBundle(entry));
+  } catch (error) {
+    console.error(
+      `::error::${file}: could not stage its release zip: ${error.message}`,
+    );
+    failed += 1;
+    continue;
+  }
   const target = path.join(dest, entry.id);
   await fs.rm(target, { recursive: true, force: true });
   await fs.mkdir(dest, { recursive: true });
@@ -52,3 +64,8 @@ for (const file of files) {
   console.error(`staged ${entry.id} ${entry.version} from ${entry.source.url}`);
 }
 console.log(staged.join("\n"));
+// Fail the step only when nothing could be staged, so a preview of the
+// plugins that did stage still gets built.
+if (failed > 0 && staged.length === 0) {
+  process.exit(1);
+}
