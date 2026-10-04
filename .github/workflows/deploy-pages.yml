@@ -38,7 +38,7 @@ jobs:
           cache: npm
 
       - name: Install dependencies
-        run: npm ci
+        run: npm ci --ignore-scripts
 
       # Never publish an entry that fails validation, even when this runs from
       # workflow_dispatch or a push that skipped the Test Plugins checks.
