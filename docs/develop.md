@@ -7,7 +7,7 @@ is curated: open a pull request and a maintainer reviews it before it ships.
     The [**geolibre-plugin-template**](https://github.com/opengeos/geolibre-plugin-template)
     is the recommended starting point. It includes a MapLibre control wrapper, a
     `plugin.json` manifest, a GeoLibre plugin entry point, and a build that
-    produces the bundle layout below. The [`plugins/sample/`](https://github.com/opengeos/geolibre-plugins/tree/main/plugins/sample)
+    produces the bundle layout below. The [`examples/sample/`](https://github.com/opengeos/geolibre-plugins/tree/main/examples/sample)
     plugin in this repo is a minimal in-repo example.
 
 ## 1. Build a plugin entry

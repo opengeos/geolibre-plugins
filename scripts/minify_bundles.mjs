@@ -25,10 +25,8 @@ import { fileURLToPath } from "node:url";
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const pluginsDir = path.join(root, "plugins");
 
-// Hand-written sources that are meant to be read, not shipped small.
-// `plugins/sample/index.js` is the copy-ready template that docs/develop.md and
-// the README point contributors at; its comments are the point of the file.
-const SKIP = new Set(["plugins/sample/index.js"]);
+// The copy-ready sample plugin lives in examples/sample/, outside plugins/,
+// so its hand-written, commented source is never minified.
 
 // esbuild's first pass over an already-pretty-printed bundle is not quite its
 // own fixed point (it re-flows a few long lines), so minifying twice can differ
@@ -99,11 +97,8 @@ async function main() {
   const unminified = [];
   let failed = 0;
   for (const absolute of bundles.sort()) {
-    // Normalize separators so SKIP entries work on Windows as well as POSIX.
+    // Normalize separators so messages read the same on Windows and POSIX.
     const relative = path.relative(root, absolute).split(path.sep).join("/");
-    if (SKIP.has(relative)) {
-      continue;
-    }
 
     const original = await fs.readFile(absolute, "utf8");
     let minified;

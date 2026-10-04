@@ -8,7 +8,7 @@ and hosts:
 - `plugin-registry.json` — the curated index the GeoLibre Manage Plugins dialog
   reads (`https://plugins.geolibre.app/plugin-registry.json`). It is generated
   at deploy time from one file per plugin in `registry/<id>.json`.
-- A `plugins/` directory with one folder per plugin (e.g. `plugins/sample/`),
+- A `plugins/` directory with one folder per plugin (e.g. `plugins/movecost/`),
   each containing its `plugin.json` manifest and built assets.
 
 GitHub Pages serves these files with permissive CORS, so the GeoLibre app
@@ -70,7 +70,7 @@ plugin loader expects):
 `entry` must be a self-contained ES module exporting a `GeoLibrePlugin` as the
 default or a named `plugin` export, with `id`/`name`/`version` matching the
 manifest. `entry` and `style` are resolved relative to the manifest, so keep
-them inside the plugin's own folder. See [`sample/`](./sample) for a minimal,
+them inside the plugin's own folder. See [`examples/sample/`](./examples/sample) for a minimal,
 copy-ready template.
 
 ## Contributing a plugin
@@ -85,7 +85,7 @@ request automatically.
 > is the recommended starting point for plugin development. It includes a
 > MapLibre control wrapper, a `plugin.json` manifest, a GeoLibre plugin entry
 > point, and a build that produces the bundle layout below. The
-> [`sample/`](./sample) plugin here is a minimal in-repo example.
+> [`examples/sample/`](./examples/sample) plugin here is a minimal in-repo example.
 
 ### 1. Build a plugin entry
 
@@ -113,7 +113,7 @@ export default plugin;
 External plugins must **not** set `activeByDefault`. The optional `style` CSS is
 injected globally, so scope your selectors (e.g. a plugin-specific class prefix);
 `hsl(var(--foreground))` and the other GeoLibre design tokens are available so a
-control can match the in-app light/dark theme. Copy [`sample/`](./sample) as a
+control can match the in-app light/dark theme. Copy [`examples/sample/`](./examples/sample) as a
 starting point.
 
 Installed plugins are listed under **Plugins → Installed** automatically. To add
@@ -233,6 +233,18 @@ Pages deploy finishing (a minute or two, plus the manifest's 60-second cache),
 the old registry's hash doesn't match the new code. An install in that window
 is held back; installing again or using **Update** once the new registry is
 live fixes it.
+
+To move a committed plugin to the mirror without changing what users run:
+
+1. `node scripts/make_migration_zip.mjs plugins/<dir>` builds a reproducible
+   zip of the committed files and prints its SHA-256.
+2. Upload it to the `bundles-2026-10` release (`gh release upload`).
+3. Add `source` to the plugin's registry entry, keep its `manifestUrl`, and
+   delete `plugins/<dir>/`. `bundleSha256` must not change, so existing
+   installs keep their integrity pins.
+
+The sample plugin's readable source lives in [`examples/sample/`](examples/sample),
+which isn't served; its served copy comes from the release zip.
 
 > One-time setup: deploy the Worker with
 > `npx wrangler deploy --config worker/wrangler.toml`, and add the repository

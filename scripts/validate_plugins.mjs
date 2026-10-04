@@ -371,9 +371,15 @@ async function validateSourceEntry(
       `${label} changes source.sha256 but keeps version ${entry.version}; published versions never change, so bump the version.`,
     );
   }
-  if (entry.manifestUrl !== `plugins/${entry.id}/plugin.json`) {
+  // New plugins use plugins/<id>/; a migrated plugin keeps the folder its
+  // users already installed from (the sample plugin lives in plugins/sample/).
+  if (
+    !/^plugins\/[a-z0-9]+(?:[._-][a-z0-9]+)*\/plugin\.json$/.test(
+      entry.manifestUrl,
+    )
+  ) {
     addError(
-      `${label} has a source, so manifestUrl must be plugins/${entry.id}/plugin.json.`,
+      `${label} has a source, so manifestUrl must be plugins/<dir>/plugin.json (normally plugins/${entry.id}/plugin.json).`,
     );
   }
   try {

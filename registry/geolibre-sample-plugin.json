@@ -6,6 +6,10 @@
   "author": "GeoLibre",
   "homepage": "https://github.com/opengeos/geolibre-plugins",
   "manifestUrl": "plugins/sample/plugin.json",
+  "source": {
+    "url": "https://github.com/opengeos/geolibre-plugins/releases/download/bundles-2026-10/geolibre-sample-plugin-1.2.0.zip",
+    "sha256": "88c457c860fdbb3edd81b387d6d0c126da149bb42174d929b836515e2b74026c"
+  },
   "categories": ["Example"],
   "minGeoLibreVersion": "0.9.0"
 }
