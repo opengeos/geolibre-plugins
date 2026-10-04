@@ -156,10 +156,12 @@ GeoLibre fetches each installed plugin's `plugin.json` when it starts, so the
 counts measure how many people use a plugin, not how many installed it. They
 come from those fetches alone; the app sends nothing extra.
 
-- **Users** are distinct visitors per ISO week. A visitor is a hash of the IP
-  address keyed with a secret that changes every week, so it
-  can't be reversed or followed from week to week. The hashes are deleted once
-  the week ends and only the count is kept. No IP address is stored.
+- **Users** are distinct visitors per ISO week. A visitor is a hash of the
+  plugin and the IP address, keyed with a secret that only the Worker holds and
+  that changes every week. Without that secret a hash can't be turned back
+  into an IP, and hashes can't be matched across weeks or across plugins.
+  They're deleted once the week ends and only the count is kept. No IP address
+  is stored.
 - **Launches** count every fetch since `since`.
 - Fetches by the registry's own deploy check, by obvious bots, and for
   plugins that don't exist aren't counted. Offline desktop use isn't seen at

@@ -5,11 +5,13 @@
 // plugin, without any change to the app. Two numbers are kept per plugin:
 //
 // - users per ISO week: distinct visitors, where a visitor is an HMAC of the
-//   client IP keyed with a secret salt that changes every week. (Leaving the
+//   plugin and client IP keyed with a secret salt that changes every week. (Leaving the
 //   User-Agent out means a script can't mint users by varying it; people
 //   behind one IP count as one user, so the figure is a lower bound.)
-//   The hashes can't be reversed or linked across weeks, and are deleted once
-//   the week is rolled up into a count. No IP address is stored.
+//   Without the secret (held only by this Worker) a hash can't be turned back
+//   into an IP; with it, an IPv4 address could be recovered by brute force,
+//   so hashes are kept only until the week is rolled up into a count. They
+//   can't be linked across weeks or across plugins. No IP address is stored.
 // - launches per day: every counted fetch.
 //
 // Fetches made by the registry's own deploy check (`__geolibre_check`) and by
@@ -56,7 +58,7 @@ export function countedFolder(request, url, key) {
   return STABLE_MANIFEST.exec(key)?.[1] ?? null;
 }
 
-async function visitorHash(secret, week, request) {
+async function visitorHash(secret, week, folder, request) {
   const encoder = new TextEncoder();
   const key = await crypto.subtle.importKey(
     "raw",
@@ -66,7 +68,13 @@ async function visitorHash(secret, week, request) {
     ["sign"],
   );
   const ip = request.headers.get("CF-Connecting-IP") ?? "";
-  const signature = await crypto.subtle.sign("HMAC", key, encoder.encode(ip));
+  // The plugin is part of the input, so one person's hashes for different
+  // plugins don't match: the table can't show which plugins someone uses.
+  const signature = await crypto.subtle.sign(
+    "HMAC",
+    key,
+    encoder.encode(`${folder}\n${ip}`),
+  );
   return Array.from(new Uint8Array(signature).slice(0, 16), (b) =>
     b.toString(16).padStart(2, "0"),
   ).join("");
@@ -94,7 +102,7 @@ export async function recordUsage(env, request, folder, now = new Date()) {
   // Without the client IP every visitor with the same User-Agent would hash
   // alike, so such a request counts as a launch but not as a user.
   if (request.headers.get("CF-Connecting-IP")) {
-    const visitor = await visitorHash(env.STATS_SALT, week, request);
+    const visitor = await visitorHash(env.STATS_SALT, week, folder, request);
     statements.push(
       env.STATS.prepare(
         "INSERT OR IGNORE INTO weekly_visitors (week, plugin, visitor) VALUES (?, ?, ?)",
