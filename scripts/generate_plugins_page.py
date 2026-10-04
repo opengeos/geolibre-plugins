@@ -1,36 +1,55 @@
 #!/usr/bin/env python3
-"""Generate the MkDocs plugin catalog page from the ``registry/*.json`` entries.
+"""Generate the MkDocs plugin catalog from the ``registry/*.json`` entries.
 
-The catalog (``docs/plugins.md``) is rendered as Material "grid cards", one per
-registry entry, so the published site stays in sync with the registry without
-hand-editing Markdown. Run this before ``mkdocs build`` (the Pages workflow does
-this automatically).
+Writes the catalog page (``docs/plugins.md``), rendered as Material "grid
+cards" with a search box and category filters (``docs/javascripts/catalog.js``),
+and one page per plugin under ``docs/catalog/<id>.md``, so the published site
+stays in sync with the registry without hand-editing Markdown. Run this after
+``scripts/build_registry.mjs`` (for each plugin's ``bundleSha256``) and before
+``mkdocs build``; the Pages and test workflows do both.
 """
 
 from __future__ import annotations
 
+import html
 import json
+import shutil
 from pathlib import Path
 
 SITE_URL = "https://plugins.geolibre.app"
+APP_URL = "https://geolibre.app"
 ROOT = Path(__file__).resolve().parent.parent
 REGISTRY_DIR = ROOT / "registry"
+BUILT_REGISTRY = ROOT / "plugin-registry.json"
 OUTPUT = ROOT / "docs" / "plugins.md"
+CATALOG_DIR = ROOT / "docs" / "catalog"
 
 
 def load_entries() -> list[dict]:
-    """Return the registry entries from the ``registry/<id>.json`` files.
+    """Return the registry entries, with each plugin's bundle hash when built.
 
     Args:
         None.
 
     Returns:
-        A list of plugin entry dictionaries, sorted by display name.
+        A list of plugin entry dictionaries, sorted by display name. Entries
+        gain the generated ``bundleSha256`` when ``plugin-registry.json`` has
+        been built.
     """
     entries = [
         json.loads(path.read_text(encoding="utf-8"))
         for path in REGISTRY_DIR.glob("*.json")
     ]
+    if BUILT_REGISTRY.exists():
+        hashes = {
+            plugin["id"]: plugin.get("bundleSha256")
+            for plugin in json.loads(BUILT_REGISTRY.read_text(encoding="utf-8"))[
+                "plugins"
+            ]
+        }
+        for entry in entries:
+            if hashes.get(entry.get("id")):
+                entry["bundleSha256"] = hashes[entry["id"]]
     return sorted(entries, key=lambda e: str(e.get("name", "")).lower())
 
 
@@ -49,6 +68,18 @@ def absolute_manifest_url(manifest_url: str) -> str:
     return f"{SITE_URL}/{manifest_url.lstrip('/')}"
 
 
+def text(value: object) -> str:
+    """Escape registry text for Markdown, so it can't inject HTML.
+
+    Args:
+        value: A string from a registry entry.
+
+    Returns:
+        The HTML-escaped string.
+    """
+    return html.escape(str(value), quote=False)
+
+
 def render_card(entry: dict) -> str:
     """Render a single registry entry as a Material grid card.
 
@@ -56,19 +87,20 @@ def render_card(entry: dict) -> str:
         entry: A plugin entry dictionary from the registry.
 
     Returns:
-        The Markdown for one card list item.
+        The Markdown for one card list item. Its title links to the plugin's
+        own page.
     """
-    name = entry.get("name", entry.get("id", "Unnamed plugin"))
+    name = text(entry.get("name", entry.get("id", "Unnamed plugin")))
     version = entry.get("version", "")
-    description = entry.get("description", "").strip()
+    description = text(entry.get("description", "").strip())
 
     meta_bits = []
     if entry.get("author"):
-        meta_bits.append(f"**Author:** {entry['author']}")
+        meta_bits.append(f"**Author:** {text(entry['author'])}")
     if version:
-        meta_bits.append(f"**Version:** {version}")
+        meta_bits.append(f"**Version:** {text(version)}")
     if entry.get("minGeoLibreVersion"):
-        meta_bits.append(f"**Requires:** GeoLibre {entry['minGeoLibreVersion']}+")
+        meta_bits.append(f"**Requires:** GeoLibre {text(entry['minGeoLibreVersion'])}+")
     meta_line = " · ".join(meta_bits)
 
     categories = entry.get("categories") or []
@@ -85,7 +117,8 @@ def render_card(entry: dict) -> str:
         )
     links_line = " · ".join(links)
 
-    lines = [f"-   :material-puzzle:{{ .lg .middle }} __{name}__", "", "    ---", ""]
+    title = f"[__{name}__](catalog/{entry['id']}.md)"
+    lines = [f"-   :material-puzzle:{{ .lg .middle }} {title}", "", "    ---", ""]
     if description:
         lines += [f"    {description}", ""]
     if meta_line:
@@ -95,6 +128,37 @@ def render_card(entry: dict) -> str:
     if links_line:
         lines += [f"    {links_line}", ""]
     return "\n".join(lines).rstrip()
+
+
+def render_filters(entries: list[dict]) -> str:
+    """Render the search box and category filters above the cards.
+
+    The controls start hidden and ``catalog.js`` reveals them, so the page
+    reads normally without JavaScript.
+
+    Args:
+        entries: The registry entries listed on the page.
+
+    Returns:
+        The HTML for the filter controls.
+    """
+    categories = sorted({c for e in entries for c in e.get("categories") or []})
+    buttons = "\n".join(
+        f'    <button type="button" class="md-tag" data-category="{text(c)}" '
+        f'aria-pressed="false">{text(c)}</button>'
+        for c in categories
+    )
+    return (
+        '<div class="plugin-filters" hidden>\n'
+        '  <input type="search" class="plugin-search md-input" '
+        'placeholder="Search plugins" aria-label="Search plugins">\n'
+        '  <div class="plugin-categories" role="group" '
+        'aria-label="Filter by category">\n'
+        f"{buttons}\n"
+        "  </div>\n"
+        '  <p class="plugin-count" aria-live="polite"></p>\n'
+        "</div>\n\n"
+    )
 
 
 def render_page(entries: list[dict]) -> str:
@@ -122,11 +186,88 @@ def render_page(entries: list[dict]) -> str:
     if not entries:
         return header + "_The registry is currently empty._\n"
     cards = "\n\n".join(render_card(e) for e in entries)
-    return f'{header}<div class="grid cards" markdown>\n\n{cards}\n\n</div>\n'
+    return (
+        f"{header}{render_filters(entries)}"
+        f'<div class="grid cards plugin-catalog" markdown>\n\n{cards}\n\n</div>\n'
+    )
+
+
+def render_plugin_page(entry: dict) -> str:
+    """Render one plugin's own page.
+
+    Args:
+        entry: A plugin entry dictionary from the registry.
+
+    Returns:
+        The complete Markdown document for ``docs/catalog/<id>.md``.
+    """
+    plugin_id = entry["id"]
+    name = entry.get("name", plugin_id)
+    description = entry.get("description", "").strip()
+
+    # JSON strings are valid YAML scalars, so registry text can't break the
+    # front matter.
+    front_matter = f"---\ntitle: {json.dumps(name)}\n"
+    if description:
+        front_matter += f"description: {json.dumps(description)}\n"
+    front_matter += "---\n\n"
+
+    buttons = [
+        f"[:material-open-in-new: Open in GeoLibre]({APP_URL}/?plugin={plugin_id})"
+        "{ .md-button .md-button--primary target=_blank }"
+    ]
+    if entry.get("homepage"):
+        buttons.append(
+            f"[:octicons-mark-github-16: Homepage]({entry['homepage']})"
+            "{ .md-button target=_blank }"
+        )
+
+    rows = [("Plugin id", f"`{plugin_id}`")]
+    if entry.get("version"):
+        rows.append(("Version", text(entry["version"])))
+    if entry.get("author"):
+        rows.append(("Author", text(entry["author"])))
+    if entry.get("minGeoLibreVersion"):
+        rows.append(("Requires", f"GeoLibre {text(entry['minGeoLibreVersion'])}+"))
+    if entry.get("categories"):
+        rows.append(("Categories", " ".join(f"`{c}`" for c in entry["categories"])))
+    if entry.get("manifestUrl"):
+        manifest = absolute_manifest_url(entry["manifestUrl"])
+        rows.append(("Manifest", f"[{manifest}]({manifest})"))
+    if entry.get("source", {}).get("url"):
+        rows.append(
+            ("Release zip", f"[{entry['source']['url']}]({entry['source']['url']})")
+        )
+    if entry.get("bundleSha256"):
+        rows.append(("Bundle SHA-256", f"`{entry['bundleSha256']}`"))
+    details = "\n".join(f"- **{label}:** {value}" for label, value in rows)
+
+    body = [f"# {text(name)}", ""]
+    if description:
+        body += [text(description), ""]
+    body += [
+        " ".join(buttons),
+        "",
+        details,
+        "",
+        "## Install",
+        "",
+        "- **GeoLibre on the web:** use **Open in GeoLibre** above. GeoLibre shows "
+        "the plugin's details and asks you to confirm before installing it.",
+        "- **Any GeoLibre, including the desktop app:** open **Settings → Manage "
+        f"Plugins**, find **{text(name)}** and click **Install**.",
+        "",
+        "GeoLibre releases after 3.2.0 check the downloaded code against the "
+        "bundle SHA-256 above before running it.",
+        "",
+        "[:material-arrow-left: All plugins](../plugins.md)",
+        "",
+    ]
+    return front_matter + "\n".join(body)
 
 
 def main() -> None:
-    """Generate ``docs/plugins.md`` from the registry.
+    """Generate ``docs/plugins.md`` and ``docs/catalog/<id>.md`` from the registry.
 
     Args:
         None.
@@ -134,8 +275,20 @@ def main() -> None:
     Returns:
         None.
     """
-    OUTPUT.write_text(render_page(load_entries()), encoding="utf-8")
-    print(f"Wrote {OUTPUT.relative_to(ROOT)}")
+    entries = load_entries()
+    OUTPUT.write_text(render_page(entries), encoding="utf-8")
+    # Rebuild the per-plugin pages from scratch, so a removed plugin's page
+    # disappears too.
+    shutil.rmtree(CATALOG_DIR, ignore_errors=True)
+    CATALOG_DIR.mkdir(parents=True)
+    for entry in entries:
+        (CATALOG_DIR / f"{entry['id']}.md").write_text(
+            render_plugin_page(entry), encoding="utf-8"
+        )
+    print(
+        f"Wrote {OUTPUT.relative_to(ROOT)} and {len(entries)} pages in "
+        f"{CATALOG_DIR.relative_to(ROOT)}/"
+    )
 
 
 if __name__ == "__main__":

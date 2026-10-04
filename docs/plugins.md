@@ -7,9 +7,26 @@ hide:
 
 There are **16** plugins in the registry. Install them from GeoLibre: open **Settings → Manage Plugins**, then **Install** from the **All** or **Not installed** tab. No manual URL entry needed.
 
-<div class="grid cards" markdown>
+<div class="plugin-filters" hidden>
+  <input type="search" class="plugin-search md-input" placeholder="Search plugins" aria-label="Search plugins">
+  <div class="plugin-categories" role="group" aria-label="Filter by category">
+    <button type="button" class="md-tag" data-category="Analysis" aria-pressed="false">Analysis</button>
+    <button type="button" class="md-tag" data-category="Archaeology" aria-pressed="false">Archaeology</button>
+    <button type="button" class="md-tag" data-category="Climate" aria-pressed="false">Climate</button>
+    <button type="button" class="md-tag" data-category="Data" aria-pressed="false">Data</button>
+    <button type="button" class="md-tag" data-category="Example" aria-pressed="false">Example</button>
+    <button type="button" class="md-tag" data-category="Hydrology" aria-pressed="false">Hydrology</button>
+    <button type="button" class="md-tag" data-category="Imagery" aria-pressed="false">Imagery</button>
+    <button type="button" class="md-tag" data-category="Raster" aria-pressed="false">Raster</button>
+    <button type="button" class="md-tag" data-category="Terrain" aria-pressed="false">Terrain</button>
+    <button type="button" class="md-tag" data-category="Visualization" aria-pressed="false">Visualization</button>
+  </div>
+  <p class="plugin-count" aria-live="polite"></p>
+</div>
 
--   :material-puzzle:{ .lg .middle } __AORCtoDSS__
+<div class="grid cards plugin-catalog" markdown>
+
+-   :material-puzzle:{ .lg .middle } [__AORCtoDSS__](catalog/aorctodss.md)
 
     ---
 
@@ -21,7 +38,7 @@ There are **16** plugins in the registry. Install them from GeoLibre: open **Set
 
     [:octicons-mark-github-16: Homepage](https://github.com/mohsennasab/aorc-to-dss){ target=_blank } · [:octicons-package-16: Manifest](https://plugins.geolibre.app/plugins/aorctodss/plugin.json){ target=_blank }
 
--   :material-puzzle:{ .lg .middle } __Contour Lines from DEM__
+-   :material-puzzle:{ .lg .middle } [__Contour Lines from DEM__](catalog/geolibre-contour.md)
 
     ---
 
@@ -33,7 +50,7 @@ There are **16** plugins in the registry. Install them from GeoLibre: open **Set
 
     [:octicons-mark-github-16: Homepage](https://github.com/cedricbouffard/geolibre-contour){ target=_blank } · [:octicons-package-16: Manifest](https://plugins.geolibre.app/plugins/geolibre-contour/plugin.json){ target=_blank }
 
--   :material-puzzle:{ .lg .middle } __Copernicus EMS Rapid Mapping__
+-   :material-puzzle:{ .lg .middle } [__Copernicus EMS Rapid Mapping__](catalog/copernicus-ems.md)
 
     ---
 
@@ -45,7 +62,7 @@ There are **16** plugins in the registry. Install them from GeoLibre: open **Set
 
     [:octicons-mark-github-16: Homepage](https://github.com/JPPereira93/geolibre-copernicus-ems){ target=_blank } · [:octicons-package-16: Manifest](https://plugins.geolibre.app/plugins/copernicus-ems/plugin.json){ target=_blank }
 
--   :material-puzzle:{ .lg .middle } __Data to Science (D2S)__
+-   :material-puzzle:{ .lg .middle } [__Data to Science (D2S)__](catalog/geolibre-d2s.md)
 
     ---
 
@@ -57,7 +74,7 @@ There are **16** plugins in the registry. Install them from GeoLibre: open **Set
 
     [:octicons-mark-github-16: Homepage](https://github.com/opengeos/geolibre-d2s){ target=_blank } · [:octicons-package-16: Manifest](https://plugins.geolibre.app/plugins/geolibre-d2s/plugin.json){ target=_blank }
 
--   :material-puzzle:{ .lg .middle } __Energy Data__
+-   :material-puzzle:{ .lg .middle } [__Energy Data__](catalog/geoenergy-catalog.md)
 
     ---
 
@@ -69,7 +86,7 @@ There are **16** plugins in the registry. Install them from GeoLibre: open **Set
 
     [:octicons-mark-github-16: Homepage](https://github.com/Andyzxm/geolibre-energy-plugin){ target=_blank } · [:octicons-package-16: Manifest](https://plugins.geolibre.app/plugins/geoenergy-catalog/plugin.json){ target=_blank }
 
--   :material-puzzle:{ .lg .middle } __Flowmaps.gl__
+-   :material-puzzle:{ .lg .middle } [__Flowmaps.gl__](catalog/geolibre-plugin-flowmaps.md)
 
     ---
 
@@ -81,7 +98,7 @@ There are **16** plugins in the registry. Install them from GeoLibre: open **Set
 
     [:octicons-mark-github-16: Homepage](https://github.com/kai-erlenbusch/geolibre-plugin-flowmaps){ target=_blank } · [:octicons-package-16: Manifest](https://plugins.geolibre.app/plugins/geolibre-plugin-flowmaps/plugin.json){ target=_blank }
 
--   :material-puzzle:{ .lg .middle } __HyperCoast__
+-   :material-puzzle:{ .lg .middle } [__HyperCoast__](catalog/geolibre-hypercoast.md)
 
     ---
 
@@ -93,7 +110,7 @@ There are **16** plugins in the registry. Install them from GeoLibre: open **Set
 
     [:octicons-mark-github-16: Homepage](https://github.com/opengeos/geolibre-hypercoast){ target=_blank } · [:octicons-package-16: Manifest](https://plugins.geolibre.app/plugins/geolibre-hypercoast/plugin.json){ target=_blank }
 
--   :material-puzzle:{ .lg .middle } __iNaturalist Extractor__
+-   :material-puzzle:{ .lg .middle } [__iNaturalist Extractor__](catalog/geolibre-inaturalist-extractor.md)
 
     ---
 
@@ -105,7 +122,7 @@ There are **16** plugins in the registry. Install them from GeoLibre: open **Set
 
     [:octicons-mark-github-16: Homepage](https://github.com/Defani/Geolibre-Inaturalist-Extraction-Plugins){ target=_blank } · [:octicons-package-16: Manifest](https://plugins.geolibre.app/plugins/geolibre-inaturalist-extractor/plugin.json){ target=_blank }
 
--   :material-puzzle:{ .lg .middle } __movecost — least-cost analysis__
+-   :material-puzzle:{ .lg .middle } [__movecost — least-cost analysis__](catalog/movecost.md)
 
     ---
 
@@ -117,7 +134,7 @@ There are **16** plugins in the registry. Install them from GeoLibre: open **Set
 
     [:octicons-mark-github-16: Homepage](https://github.com/enzococca/geolibre-movecost){ target=_blank } · [:octicons-package-16: Manifest](https://plugins.geolibre.app/plugins/movecost/plugin.json){ target=_blank }
 
--   :material-puzzle:{ .lg .middle } __NASA OPERA__
+-   :material-puzzle:{ .lg .middle } [__NASA OPERA__](catalog/geolibre-nasa-opera.md)
 
     ---
 
@@ -129,7 +146,7 @@ There are **16** plugins in the registry. Install them from GeoLibre: open **Set
 
     [:octicons-mark-github-16: Homepage](https://github.com/opengeos/geolibre-nasa-opera){ target=_blank } · [:octicons-package-16: Manifest](https://plugins.geolibre.app/plugins/geolibre-nasa-opera/plugin.json){ target=_blank }
 
--   :material-puzzle:{ .lg .middle } __NetCDF Loader__
+-   :material-puzzle:{ .lg .middle } [__NetCDF Loader__](catalog/geolibre-netcdf.md)
 
     ---
 
@@ -141,19 +158,19 @@ There are **16** plugins in the registry. Install them from GeoLibre: open **Set
 
     [:octicons-mark-github-16: Homepage](https://github.com/helsharif/geolibre-netcdf-loader-plugin){ target=_blank } · [:octicons-package-16: Manifest](https://plugins.geolibre.app/plugins/geolibre-netcdf/plugin.json){ target=_blank }
 
--   :material-puzzle:{ .lg .middle } __Open Climate Service__
+-   :material-puzzle:{ .lg .middle } [__Open Climate Service__](catalog/open-climate-service.md)
 
     ---
 
     Browse an Open Climate Service (OCS) STAC catalog and render its published GeoZarr datasets.
 
-    **Author:** DHIS2 for Climate & Health · **Version:** 0.2.1 · **Requires:** GeoLibre 2.4.0+
+    **Author:** DHIS2 for Climate &amp; Health · **Version:** 0.2.1 · **Requires:** GeoLibre 2.4.0+
 
     `Climate` `Raster` `Data`
 
     [:octicons-mark-github-16: Homepage](https://github.com/dhis2/open-climate-service-geolibre-plugin){ target=_blank } · [:octicons-package-16: Manifest](https://plugins.geolibre.app/plugins/open-climate-service/plugin.json){ target=_blank }
 
--   :material-puzzle:{ .lg .middle } __RNDT catalogue__
+-   :material-puzzle:{ .lg .middle } [__RNDT catalogue__](catalog/openrndt-geolibre.md)
 
     ---
 
@@ -165,7 +182,7 @@ There are **16** plugins in the registry. Install them from GeoLibre: open **Set
 
     [:octicons-mark-github-16: Homepage](https://github.com/ondata/openrndt-geolibre){ target=_blank } · [:octicons-package-16: Manifest](https://plugins.geolibre.app/plugins/openrndt-geolibre/plugin.json){ target=_blank }
 
--   :material-puzzle:{ .lg .middle } __Sample Plugin__
+-   :material-puzzle:{ .lg .middle } [__Sample Plugin__](catalog/geolibre-sample-plugin.md)
 
     ---
 
@@ -177,7 +194,7 @@ There are **16** plugins in the registry. Install them from GeoLibre: open **Set
 
     [:octicons-mark-github-16: Homepage](https://github.com/opengeos/geolibre-plugins){ target=_blank } · [:octicons-package-16: Manifest](https://plugins.geolibre.app/plugins/sample/plugin.json){ target=_blank }
 
--   :material-puzzle:{ .lg .middle } __StreamSnap__
+-   :material-puzzle:{ .lg .middle } [__StreamSnap__](catalog/streamsnap.md)
 
     ---
 
@@ -189,7 +206,7 @@ There are **16** plugins in the registry. Install them from GeoLibre: open **Set
 
     [:octicons-mark-github-16: Homepage](https://github.com/WEN-Research-Group/StreamSnap){ target=_blank } · [:octicons-package-16: Manifest](https://plugins.geolibre.app/plugins/streamsnap/plugin.json){ target=_blank }
 
--   :material-puzzle:{ .lg .middle } __US Live Flood Gauges__
+-   :material-puzzle:{ .lg .middle } [__US Live Flood Gauges__](catalog/geolibre-flood-gauges.md)
 
     ---
 

@@ -35,3 +35,54 @@
 .plugin-card-tags code {
   font-size: 0.68rem;
 }
+
+/* Catalog search box and category filters (docs/javascripts/catalog.js). */
+.plugin-filters {
+  margin: 0 0 1rem;
+}
+
+.plugin-filters .plugin-search {
+  box-sizing: border-box;
+  width: 100%;
+  max-width: 28rem;
+  padding: 0.5rem 0.75rem;
+  border: 1px solid var(--md-default-fg-color--lighter);
+  border-radius: 0.3rem;
+  background: var(--md-default-bg-color);
+  color: var(--md-default-fg-color);
+  font: inherit;
+}
+
+.plugin-filters .plugin-categories {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+  margin-top: 0.6rem;
+}
+
+.plugin-filters .plugin-categories button {
+  cursor: pointer;
+  border: 1px solid var(--md-default-fg-color--lighter);
+  border-radius: 1rem;
+  padding: 0.15rem 0.7rem;
+  background: transparent;
+  color: var(--md-default-fg-color);
+  font-size: 0.7rem;
+}
+
+.plugin-filters .plugin-categories button[aria-pressed="true"] {
+  background: var(--md-accent-fg-color);
+  border-color: var(--md-accent-fg-color);
+  color: var(--md-accent-bg-color);
+}
+
+.plugin-filters .plugin-count {
+  margin: 0.5rem 0 0;
+  font-size: 0.72rem;
+  color: var(--md-default-fg-color--light);
+}
+
+/* Cards hidden by the filter. */
+.md-typeset .grid.cards > ul > li[hidden] {
+  display: none;
+}

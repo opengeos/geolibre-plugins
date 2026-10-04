@@ -219,6 +219,19 @@ verbatim.
 > a DNS `CNAME` record for `plugins.geolibre.app` pointing at
 > `opengeos.github.io`.
 
+### Docs site
+
+The catalog page (`docs/plugins.md`) and one page per plugin
+(`docs/catalog/<id>.md`, not committed) are generated from the registry. To
+preview the site locally:
+
+```bash
+npm ci && pip install -r requirements.txt
+node scripts/build_registry.mjs        # bundle hashes for the plugin pages
+python scripts/generate_plugins_page.py
+mkdocs serve
+```
+
 ### Blocking a plugin
 
 To stop a malicious or broken plugin on every install, add an entry to
