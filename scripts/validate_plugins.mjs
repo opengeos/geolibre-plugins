@@ -21,14 +21,13 @@ import path from "node:path";
 import Ajv2020 from "ajv/dist/2020.js";
 
 import { loadRegistryEntries, root } from "./registry.mjs";
-import { createHash } from "node:crypto";
 
 import {
   hasSource,
-  SOURCE_FOLDERS,
+  listFiles,
+  readableSourceDir,
   sourceFolder,
   unpackSourceBundle,
-  zipFolder,
 } from "./source-bundles.mjs";
 
 const errors = [];
@@ -343,6 +342,37 @@ function isSelected(file, pluginDir, changedFiles) {
 }
 
 /**
+ * Check that a folder of readable source still matches the release zip.
+ *
+ * @param {object} entry The registry entry, with a `source`.
+ * @param {string} label Prefix for error messages.
+ * @param {string} sourceDir Repo-relative folder holding the source.
+ */
+async function checkReadableSource(entry, label, sourceDir) {
+  let unpacked;
+  try {
+    unpacked = await unpackSourceBundle(entry);
+  } catch (error) {
+    addError(`${label} source: ${error.message}`);
+    return;
+  }
+  const local = await listFiles(path.join(root, sourceDir));
+  const differing = [...new Set([...local, ...unpacked.files])].filter(
+    (file) =>
+      !local.includes(file) ||
+      !unpacked.files.includes(file) ||
+      !readFileSync(path.join(root, sourceDir, file)).equals(
+        readFileSync(path.join(unpacked.dir, file)),
+      ),
+  );
+  if (differing.length > 0) {
+    addError(
+      `${label}: ${sourceDir}/ no longer matches its release zip (${differing.join(", ")}). Rebuild the zip with node scripts/make_migration_zip.mjs ${sourceDir}, publish it, and bump the version.`,
+    );
+  }
+}
+
+/**
  * Check an entry hosted from a release zip.
  *
  * Its files are served from R2 at `plugins/<id>/`, so that path must not also
@@ -380,20 +410,15 @@ async function validateSourceEntry(
     );
   }
   // A release-zip plugin whose readable source is kept here (the sample in
-  // examples/sample/) must still zip to exactly the published release.
-  const sourceDir = SOURCE_FOLDERS.get(entry.id);
+  // examples/sample/) must still match its release zip, file for file.
+  // Comparing contents, not a rebuilt zip's hash, doesn't depend on the zip
+  // library's compressor output.
+  const sourceDir = readableSourceDir(entry);
   if (sourceDir) {
-    const rebuilt = createHash("sha256")
-      .update(await zipFolder(path.join(root, sourceDir)))
-      .digest("hex");
-    if (rebuilt !== entry.source.sha256) {
-      addError(
-        `${label}: ${sourceDir}/ no longer matches its release zip (${rebuilt} vs ${entry.source.sha256}). Rebuild it with node scripts/make_migration_zip.mjs ${sourceDir}, publish the zip, and bump the version.`,
-      );
-    }
+    await checkReadableSource(entry, label, sourceDir);
   }
 
-  // plugins/<id>/, or a migrated plugin's original folder (LEGACY_FOLDERS).
+  // plugins/<id>/, or a migrated plugin's original folder (sourceFolder).
   const expected = `plugins/${sourceFolder(entry)}/plugin.json`;
   if (entry.manifestUrl !== expected) {
     addError(`${label} has a source, so manifestUrl must be ${expected}.`);

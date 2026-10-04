@@ -19,12 +19,19 @@ const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 
 export const cacheDir = path.join(root, ".cache", "sources");
 
-// A release-zip plugin is served from plugins/<id>/. The one exception is a
-// plugin that was committed under another folder before it moved to a
-// release zip: it keeps that folder so existing installs keep their URL.
-// Listing them here, rather than accepting any folder, stops an entry from
-// claiming and overwriting another plugin's folder in R2.
-const LEGACY_FOLDERS = new Map([["geolibre-sample-plugin", "sample"]]);
+// Per-plugin exceptions for release-zip plugins, keyed by id:
+// - `folder`: a plugin committed under another folder before it moved to a
+//   release zip keeps that folder, so existing installs keep their URL.
+//   Listing these, rather than accepting any folder, stops an entry from
+//   claiming and overwriting another plugin's folder in R2.
+// - `sourceDir`: where its readable source is kept in this repository. CI
+//   checks that folder still matches the release zip, file for file.
+const MIGRATED = new Map([
+  [
+    "geolibre-sample-plugin",
+    { folder: "sample", sourceDir: "examples/sample" },
+  ],
+]);
 
 /**
  * The `plugins/<dir>` folder a release-zip entry must be served from.
@@ -33,7 +40,18 @@ const LEGACY_FOLDERS = new Map([["geolibre-sample-plugin", "sample"]]);
  * @returns {string} The folder name.
  */
 export function sourceFolder(entry) {
-  return LEGACY_FOLDERS.get(entry.id) ?? entry.id;
+  return MIGRATED.get(entry.id)?.folder ?? entry.id;
+}
+
+/**
+ * The folder in this repository that holds a release-zip plugin's readable
+ * source, if any.
+ *
+ * @param {{ id: string }} entry A registry entry with a `source`.
+ * @returns {string | null} A repo-relative folder, or null.
+ */
+export function readableSourceDir(entry) {
+  return MIGRATED.get(entry.id)?.sourceDir ?? null;
 }
 
 // Per-file cap, matching MAX_PLUGIN_ASSET_BYTES in GeoLibre.
@@ -290,13 +308,14 @@ export async function pruneSourceCache(entries) {
 const FIXED_DATE = new Date(1980, 0, 2);
 
 /**
- * List every file under a folder, relative to it, sorted.
+ * List every file under a folder, relative to it, sorted, leaving out OS
+ * metadata such as `.DS_Store`.
  *
  * @param {string} dir Absolute folder path.
  * @param {string} [prefix] Path prefix for recursion.
  * @returns {Promise<string[]>}
  */
-async function listFiles(dir, prefix = "") {
+export async function listFiles(dir, prefix = "") {
   const files = [];
   for (const dirent of await fs.readdir(path.join(dir, prefix), {
     withFileTypes: true,
@@ -305,7 +324,9 @@ async function listFiles(dir, prefix = "") {
     if (dirent.isDirectory()) {
       files.push(...(await listFiles(dir, relative)));
     } else if (dirent.isFile()) {
-      files.push(relative);
+      if (!isJunk(relative)) {
+        files.push(relative);
+      }
     } else {
       throw new Error(`${relative} is not a regular file`);
     }
@@ -330,10 +351,3 @@ export async function zipFolder(folder) {
   }
   return zipSync(entries);
 }
-
-// Release-zip plugins whose readable source is kept in this repository. CI
-// rebuilds the zip from that folder and requires it to match source.sha256,
-// so the template and the served plugin can't drift apart.
-export const SOURCE_FOLDERS = new Map([
-  ["geolibre-sample-plugin", "examples/sample"],
-]);
