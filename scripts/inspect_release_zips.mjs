@@ -22,22 +22,14 @@ import { cacheDir, hasSource, unpackSourceBundle } from "./source-bundles.mjs";
 const ID = /^[a-z0-9]+(?:[._-][a-z0-9]+)*$/;
 const REGISTRY_FILE = /^registry\/([a-z0-9]+(?:[._-][a-z0-9]+)*)\.json$/;
 
-// Files whose text is scanned for the patterns below.
-const TEXT_EXTENSIONS = new Set([
-  ".js",
-  ".mjs",
-  ".cjs",
-  ".ts",
-  ".json",
-  ".css",
-  ".html",
-  ".htm",
-  ".svg",
-  ".txt",
-  ".md",
-]);
-// Larger text files are listed but not scanned, to bound the job's run time.
+// Larger files are listed but not scanned, to bound the job's run time.
 const MAX_SCAN_BYTES = 20 * 1024 * 1024;
+// A NUL byte in this many leading bytes marks a file as binary. Text is
+// recognised by content, not extension, so a script can't hide its code from
+// the scan by using an unusual extension.
+const SNIFF_BYTES = 8000;
+// Registry entries inspected per pull request; each zip can be up to 100 MB.
+const MAX_ENTRIES = 20;
 // How many example snippets to keep per pattern and file.
 const MAX_SNIPPETS = 3;
 
@@ -215,16 +207,27 @@ async function inspect(file, entry) {
     url: safe(entry.source.url),
     sha256: entry.source.sha256,
   };
-  let dir;
-  let unpackedFiles;
   try {
-    ({ dir, files: unpackedFiles } = await unpackSourceBundle(entry));
+    await inspectZip(entry, record);
   } catch (error) {
     // The zip's bytes are cached only once they match the hash, so this
-    // covers download failures, hash mismatches and unsafe or oversized zips.
+    // covers download failures, hash mismatches and unsafe or oversized zips,
+    // and any read error while listing or scanning the unpacked files.
     record.error = safe(error.message);
-    return record;
   }
+  return record;
+}
+
+/**
+ * The part of inspect() that can throw: unpack the zip, copy it for the
+ * reviewer, and list and scan its files into `record`.
+ *
+ * @param {{ id: string, source: { url: string, sha256: string } }} entry
+ * @param {object} record The report record to fill in.
+ * @returns {Promise<void>}
+ */
+async function inspectZip(entry, record) {
+  const { dir, files: unpackedFiles } = await unpackSourceBundle(entry);
   record.zipBytes = (
     await fs.stat(path.join(cacheDir, `${entry.source.sha256}.zip`))
   ).size;
@@ -251,23 +254,24 @@ async function inspect(file, entry) {
     const { size } = await fs.stat(filePath);
     record.unpackedBytes += size;
     const fileRecord = { path: safe(name), bytes: size };
-    const extension = path.extname(name).toLowerCase();
-    if (TEXT_EXTENSIONS.has(extension) && size <= MAX_SCAN_BYTES) {
-      const scan = scanText(await fs.readFile(filePath, "utf8"));
-      if (Object.keys(scan.hits).length > 0) {
-        fileRecord.hits = scan.hits;
-      }
-      fileRecord.longestLine = scan.longestLine;
-      scan.hosts.forEach((host) => hosts.add(host));
-    } else if (!TEXT_EXTENSIONS.has(extension)) {
-      fileRecord.binary = true;
-    } else {
+    if (size > MAX_SCAN_BYTES) {
       fileRecord.skipped = "too large to scan";
+    } else {
+      const bytes = await fs.readFile(filePath);
+      if (bytes.subarray(0, SNIFF_BYTES).includes(0)) {
+        fileRecord.binary = true;
+      } else {
+        const scan = scanText(bytes.toString("utf8"));
+        if (Object.keys(scan.hits).length > 0) {
+          fileRecord.hits = scan.hits;
+        }
+        fileRecord.longestLine = scan.longestLine;
+        scan.hosts.forEach((host) => hosts.add(host));
+      }
     }
     record.files.push(fileRecord);
   }
   record.hosts = [...hosts].sort();
-  return record;
 }
 
 /**
@@ -286,6 +290,15 @@ function renderReport(records) {
     "",
   ];
   for (const record of records) {
+    if (record.notInspected) {
+      lines.push(
+        `## ${record.file}`,
+        "",
+        `- **Not inspected:** ${record.notInspected}`,
+        "",
+      );
+      continue;
+    }
     lines.push(`## ${record.id} ${cell(record.version)}`, "");
     lines.push(`- Registry file: \`${record.file}\``);
     lines.push(`- Release zip: ${cell(record.url)}`);
@@ -360,7 +373,11 @@ function renderSummary(records) {
     "| --- | --- | --- | --- | --- | --- |",
   ];
   for (const record of records) {
-    if (record.error) {
+    if (record.notInspected) {
+      lines.push(
+        `| ${record.file} | – | – | – | – | not inspected: ${record.notInspected} |`,
+      );
+    } else if (record.error) {
       lines.push(
         `| ${record.id} | ${cell(record.version)} | – | – | – | could not inspect: ${cell(record.error)} |`,
       );
@@ -385,9 +402,26 @@ for (const file of files) {
     continue;
   }
   const entry = await readEntry(file);
-  // The file name and the entry's id must name the same plugin; the zip's
-  // plugin.json is compared in the report.
-  if (!hasSource(entry) || entry.id !== fileId || !ID.test(entry.id)) {
+  // Entries skipped below still get a line in the report (the reasons are
+  // fixed text, never PR data), so the reviewer knows they weren't inspected.
+  // Committed plugins (no `source`) have no zip and aren't listed.
+  let notInspected;
+  if (entry === null) {
+    notInspected = "not readable as a JSON file";
+  } else if (!hasSource(entry)) {
+    continue;
+  } else if (entry.id !== fileId || !ID.test(entry.id)) {
+    // The file name and the entry's id must name the same plugin; the zip's
+    // plugin.json is compared in the report.
+    notInspected = "its id does not match the file name";
+  } else if (
+    records.filter((record) => !record.notInspected).length >= MAX_ENTRIES
+  ) {
+    notInspected = `over the limit of ${MAX_ENTRIES} release zips per pull request`;
+  }
+  if (notInspected) {
+    records.push({ file, notInspected });
+    console.error(`::warning::${file}: not inspected: ${notInspected}`);
     continue;
   }
   const record = await inspect(file, entry);
