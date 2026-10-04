@@ -58,7 +58,8 @@ async function readJson(filePath, label) {
     return JSON.parse(await fs.readFile(filePath, "utf8"));
   } catch (error) {
     addError(`${label} is not valid JSON: ${error.message}`);
-    return null;
+    // Not null: a file holding the JSON literal `null` must reach the schema.
+    return undefined;
   }
 }
 
@@ -164,7 +165,7 @@ async function validateLocalPlugin(
   importBundle,
 ) {
   const manifest = await readJson(manifestPath, `${label} manifest`);
-  if (manifest === null) {
+  if (manifest === undefined) {
     return;
   }
   // Keep going after a schema failure so the checks below report their own

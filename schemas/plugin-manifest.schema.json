@@ -50,6 +50,7 @@
   },
   "not": {
     "$comment": "must not set activeByDefault (external plugins are never active by default)",
+    "type": "object",
     "required": ["activeByDefault"]
   },
   "$defs": {
