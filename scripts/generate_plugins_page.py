@@ -208,7 +208,7 @@ def render_card(entry: dict) -> str:
 
 
 def render_filters(entries: list[dict]) -> str:
-    """Render the search box and category filters above the cards.
+    """Render the search box, sort menu and category filters above the cards.
 
     The controls start hidden and ``catalog.js`` reveals them, so the page
     reads normally without JavaScript.
@@ -231,8 +231,18 @@ def render_filters(entries: list[dict]) -> str:
     )
     return (
         '<div class="plugin-filters" hidden>\n'
-        '  <input type="search" class="plugin-search md-input" '
+        '  <div class="plugin-filter-row">\n'
+        '    <input type="search" class="plugin-search md-input" '
         'placeholder="Search plugins" aria-label="Search plugins">\n'
+        '    <label class="plugin-sort">Sort by\n'
+        '      <select class="plugin-sort-select">\n'
+        '        <option value="name">Name</option>\n'
+        # Enabled by catalog.js once plugins/stats.json has loaded.
+        '        <option value="users" disabled>Most used</option>\n'
+        '        <option value="launches" disabled>Most launches</option>\n'
+        "      </select>\n"
+        "    </label>\n"
+        "  </div>\n"
         '  <div class="plugin-categories" role="group" '
         'aria-label="Filter by category">\n'
         f"{buttons}\n"

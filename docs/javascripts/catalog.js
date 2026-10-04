@@ -18,15 +18,18 @@
     const buttons = Array.from(filters.querySelectorAll("[data-category]"));
     const count = filters.querySelector(".plugin-count");
     // Each card is a list item; its categories are the <code> tags in it.
-    const cards = Array.from(catalog.querySelectorAll(":scope > ul > li")).map(
-      (card) => ({
-        element: card,
-        text: card.textContent.toLowerCase(),
-        categories: new Set(
-          Array.from(card.querySelectorAll("code"), (tag) => tag.textContent),
-        ),
-      }),
-    );
+    const list = catalog.querySelector(":scope > ul");
+    const cards = Array.from(list.children).map((card, index) => ({
+      element: card,
+      // The generated order is alphabetical; sorting by usage keeps it for ties.
+      index,
+      folder: folderOf(card.querySelector('a[href$="/plugin.json"]')),
+      text: card.textContent.toLowerCase(),
+      categories: new Set(
+        Array.from(card.querySelectorAll("code"), (tag) => tag.textContent),
+      ),
+    }));
+    const sort = filters.querySelector(".plugin-sort-select");
     const selected = new Set();
 
     function apply() {
@@ -56,6 +59,28 @@
     for (const event of ["input", "search", "keyup"]) {
       search.addEventListener(event, apply);
     }
+    // Sort by name (the generated order) or by usage from stats.json. The
+    // usage options stay disabled until the stats have loaded.
+    let usage = {};
+    function reorder() {
+      const metric = sort.value;
+      const score = (card) => {
+        const plugin = usage[card.folder];
+        if (!plugin || metric === "name") return 0;
+        return metric === "launches" ? plugin.launches : usersOf(plugin);
+      };
+      const ordered = [...cards].sort(
+        (a, b) => score(b) - score(a) || a.index - b.index,
+      );
+      list.append(...ordered.map((card) => card.element));
+    }
+    sort.addEventListener("change", reorder);
+    loadStats().then((data) => {
+      if (!data || !data.plugins) return;
+      usage = data.plugins;
+      for (const option of sort.options) option.disabled = false;
+    });
+
     for (const button of buttons) {
       button.addEventListener("click", () => {
         const category = button.dataset.category;
@@ -84,6 +109,18 @@
     return stats;
   }
 
+  // The steadier number: the last complete week, or the week so far early on.
+  function usersOf(usage) {
+    return usage.usersLastWeek > 0 ? usage.usersLastWeek : usage.usersThisWeek;
+  }
+
+  // The plugins/<dir>/ folder of a manifest link, which stats.json is keyed by.
+  function folderOf(link) {
+    return link
+      ? /\/plugins\/([^/]+)\/plugin\.json$/.exec(link.href)?.[1]
+      : undefined;
+  }
+
   function usersText(usage) {
     // The last complete week is the steadier number; early on, fall back to
     // the week so far.
@@ -108,7 +145,7 @@
     const data = await loadStats();
     if (!data || !data.plugins) return;
     for (const link of links) {
-      const folder = /\/plugins\/([^/]+)\/plugin\.json$/.exec(link.href)?.[1];
+      const folder = folderOf(link);
       const usage = folder && data.plugins[folder];
       if (!usage) continue;
       const card = link.closest(".plugin-catalog > ul > li");

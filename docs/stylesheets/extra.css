@@ -92,3 +92,32 @@
   font-size: 0.72rem;
   color: var(--md-default-fg-color--light);
 }
+
+/* Search box and sort menu on one row, wrapping on narrow screens. */
+.plugin-filters .plugin-filter-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.75rem 1rem;
+}
+
+.plugin-filters .plugin-filter-row .plugin-search {
+  flex: 1 1 16rem;
+}
+
+.plugin-filters .plugin-sort {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.75rem;
+  color: var(--md-default-fg-color--light);
+}
+
+.plugin-filters .plugin-sort-select {
+  padding: 0.35rem 0.5rem;
+  border: 1px solid var(--md-default-fg-color--lighter);
+  border-radius: 0.3rem;
+  background: var(--md-default-bg-color);
+  color: var(--md-default-fg-color);
+  font: inherit;
+}
