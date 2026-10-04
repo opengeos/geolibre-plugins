@@ -35,11 +35,24 @@ const WRANGLER = "wrangler@4.147.0";
 const MARKER = ".source-sha256";
 const dryRun = process.argv.includes("--dry-run");
 
+// Stored with each object; the Worker serves it back.
 const CONTENT_TYPES = {
   css: "text/css; charset=utf-8",
+  geojson: "application/geo+json",
+  gif: "image/gif",
+  jpeg: "image/jpeg",
+  jpg: "image/jpeg",
   js: "text/javascript; charset=utf-8",
   json: "application/json; charset=utf-8",
+  map: "application/json; charset=utf-8",
   mjs: "text/javascript; charset=utf-8",
+  png: "image/png",
+  svg: "image/svg+xml",
+  txt: "text/plain; charset=utf-8",
+  wasm: "application/wasm",
+  webp: "image/webp",
+  woff: "font/woff",
+  woff2: "font/woff2",
 };
 
 /**
@@ -72,8 +85,11 @@ function getObject(key) {
       "--remote",
     ]);
   } catch (error) {
-    const message = `${error.stderr ?? ""}${error.message}`;
-    if (/not found|does not exist|NoSuchKey|404/i.test(message)) {
+    // Wrangler prints "The specified key does not exist." for a missing key.
+    // Match stderr only: error.message repeats the command, whose key could
+    // contain any text, and the "written once" check depends on telling a
+    // missing marker apart from a failed request.
+    if (/specified key does not exist/i.test(String(error.stderr ?? ""))) {
       return null;
     }
     throw error;

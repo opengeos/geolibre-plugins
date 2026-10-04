@@ -226,7 +226,11 @@ reads it.
 Before the registry is deployed, `scripts/publish_sources.mjs` uploads each
 release to `plugins/<id>/<version>/` and then switches the stable
 `plugins/<id>/plugin.json` to it, so the live registry never lists a hash the
-mirror can't serve.
+mirror can't serve. The reverse can briefly happen: between that switch and the
+Pages deploy finishing (a minute or two, plus the manifest's 60-second cache),
+the old registry's hash doesn't match the new code. An install in that window
+is held back; installing again or using **Update** once the new registry is
+live fixes it.
 
 > One-time setup: deploy the Worker with
 > `npx wrangler deploy --config worker/wrangler.toml`, and add the repository

@@ -22,6 +22,8 @@ export const cacheDir = path.join(root, ".cache", "sources");
 // Per-file cap, matching MAX_PLUGIN_ASSET_BYTES in GeoLibre.
 const MAX_FILE_BYTES = 50 * 1024 * 1024;
 const MAX_ZIP_BYTES = 100 * 1024 * 1024;
+const MAX_UNPACKED_BYTES = 200 * 1024 * 1024;
+const MAX_FILES = 2000;
 const DOWNLOAD_TIMEOUT_MS = 120_000;
 
 /**
@@ -37,6 +39,31 @@ export function hasSource(entry) {
     typeof entry.source?.url === "string" &&
     typeof entry.source?.sha256 === "string"
   );
+}
+
+/**
+ * Read a response body, failing as soon as it passes `limit` bytes.
+ *
+ * @param {Response} response The download.
+ * @param {number} limit Maximum body size.
+ * @param {string} url For the error message.
+ * @returns {Promise<Uint8Array>}
+ */
+async function readCapped(response, limit, url) {
+  const tooLarge = () => new Error(`${url} is larger than ${limit} bytes`);
+  if (Number(response.headers.get("content-length")) > limit) {
+    throw tooLarge();
+  }
+  const chunks = [];
+  let size = 0;
+  for await (const chunk of response.body) {
+    size += chunk.byteLength;
+    if (size > limit) {
+      throw tooLarge();
+    }
+    chunks.push(chunk);
+  }
+  return new Uint8Array(Buffer.concat(chunks));
 }
 
 /**
@@ -57,10 +84,7 @@ async function fetchVerifiedZip(source) {
     if (!response.ok) {
       throw new Error(`${source.url} returned HTTP ${response.status}`);
     }
-    bytes = new Uint8Array(await response.arrayBuffer());
-    if (bytes.byteLength > MAX_ZIP_BYTES) {
-      throw new Error(`${source.url} is larger than ${MAX_ZIP_BYTES} bytes`);
-    }
+    bytes = await readCapped(response, MAX_ZIP_BYTES, source.url);
   }
   const actual = createHash("sha256").update(bytes).digest("hex");
   if (actual !== source.sha256) {
@@ -97,6 +121,22 @@ function findManifestPath(names) {
 }
 
 /**
+ * Whether a zip entry is OS metadata rather than part of the plugin: macOS's
+ * `__MACOSX/` folder and `.DS_Store` files. These are never unpacked, so they
+ * are never published either.
+ *
+ * @param {string} name A zip entry name.
+ * @returns {boolean}
+ */
+function isJunk(name) {
+  return (
+    name.startsWith("__MACOSX/") ||
+    name === ".DS_Store" ||
+    name.endsWith("/.DS_Store")
+  );
+}
+
+/**
  * Whether a path inside the zip is a plain relative path.
  *
  * @param {string} name A zip entry name, relative to the manifest folder.
@@ -125,10 +165,23 @@ function isSafeRelativePath(name) {
 export async function unpackSourceBundle(entry) {
   const dir = path.join(cacheDir, entry.source.sha256);
   const zip = await fetchVerifiedZip(entry.source);
+  // Check sizes from the zip directory before inflating anything.
+  let unpackedBytes = 0;
+  let fileCount = 0;
   const archive = unzipSync(zip, {
     filter: (file) => {
+      if (isJunk(file.name)) {
+        return false;
+      }
       if (file.originalSize > MAX_FILE_BYTES) {
         throw new Error(`${file.name} is larger than ${MAX_FILE_BYTES} bytes`);
+      }
+      unpackedBytes += file.originalSize;
+      fileCount += 1;
+      if (unpackedBytes > MAX_UNPACKED_BYTES || fileCount > MAX_FILES) {
+        throw new Error(
+          `${entry.source.url} unpacks to more than ${MAX_UNPACKED_BYTES} bytes or ${MAX_FILES} files`,
+        );
       }
       return true;
     },

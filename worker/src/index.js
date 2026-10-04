@@ -68,6 +68,12 @@ export default {
     }
 
     const headers = baseHeaders(key);
+    // The upload stored a Content-Type; prefer it over the extension table.
+    const stored = new Headers();
+    object.writeHttpMetadata(stored);
+    if (stored.has("Content-Type")) {
+      headers.set("Content-Type", stored.get("Content-Type"));
+    }
     headers.set("ETag", object.httpEtag);
     // `get` with `onlyIf` returns the metadata without a body when the
     // client's copy is current.
