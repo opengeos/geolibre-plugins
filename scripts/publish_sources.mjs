@@ -212,12 +212,12 @@ for (const entry of sources) {
   const manifest = JSON.parse(
     await fs.readFile(path.join(dir, "plugin.json"), "utf8"),
   );
-  // validate_plugins.mjs has already checked that the zip's plugin.json
-  // version equals entry.version, so the folder name matches its contents.
-  // The schema already limits id and version to these forms; checking again
-  // here keeps a bad value from ever becoming an R2 key.
-  // plugins/<id>/, or a migrated plugin's original folder. Validation has
-  // checked that manifestUrl names exactly this folder.
+  // The R2 prefix is plugins/<folder>/<version>/, where folder is the id or
+  // a migrated plugin's original folder (sourceFolder). Validation has
+  // already checked the schema's id and version formats, that manifestUrl
+  // names this folder, and that the zip's plugin.json has this version.
+  // Checking the parts again here keeps a bad value from ever becoming an
+  // R2 key.
   const folder = sourceFolder(entry);
   if (
     !/^[a-z0-9]+(?:[._-][a-z0-9]+)*$/.test(folder) ||
