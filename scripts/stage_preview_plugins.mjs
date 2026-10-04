@@ -28,7 +28,7 @@ if (!prRoot || !dest) {
 }
 
 const staged = [];
-let failed = 0;
+let failed = 0; // reported, but never fails the step (see the end)
 for (const file of files) {
   // Only plain registry/<id>.json names, so a crafted path can't escape.
   const fileId = REGISTRY_FILE.exec(file)?.[1];
@@ -82,8 +82,8 @@ for (const file of files) {
   console.error(`staged ${entry.id} ${entry.version} from ${entry.source.url}`);
 }
 console.log(staged.join("\n"));
-// Fail the step only when nothing could be staged, so a preview of the
-// plugins that did stage still gets built.
-if (failed > 0 && staged.length === 0) {
-  process.exit(1);
+// Failures are reported as ::error:: annotations but don't fail the step:
+// a committed plugin folder in the same PR should still get its preview.
+if (failed > 0) {
+  console.error(`${failed} release zip(s) could not be staged.`);
 }

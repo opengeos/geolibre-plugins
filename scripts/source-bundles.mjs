@@ -135,7 +135,8 @@ async function fetchHttpsOnly(url) {
           : `${url} redirected to a non-HTTPS URL`,
       );
     }
-    const host = parsed.hostname;
+    // A trailing dot ("localhost.") names the same host, so drop it first.
+    const host = parsed.hostname.replace(/\.$/, "");
     if (
       host === "localhost" ||
       host.endsWith(".localhost") ||
