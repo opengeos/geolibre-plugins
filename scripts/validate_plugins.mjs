@@ -78,15 +78,25 @@ function checkSchema(validate, data, label) {
   if (validate(data)) {
     return true;
   }
+  // A `oneOf` with a hint already explains what is allowed, so drop the
+  // per-branch failures reported at the same path.
+  const hintedOneOfPaths = new Set(
+    validate.errors
+      .filter((e) => e.keyword === "oneOf" && e.parentSchema?.$comment)
+      .map((e) => e.instancePath),
+  );
   for (const error of validate.errors) {
+    if (error.keyword !== "oneOf" && hintedOneOfPaths.has(error.instancePath)) {
+      continue;
+    }
     const where = error.instancePath ? ` ${error.instancePath}` : "";
-    // `$comment` describes a `pattern` or `not` rule, so only use it for those.
-    // A `not` rule keeps its hint on its own subschema; a `pattern` keeps it
-    // on the schema that holds the pattern.
+    // `$comment` describes a `pattern`, `oneOf` or `not` rule, so only use it
+    // for those. A `not` rule keeps its hint on its own subschema; the others
+    // keep it on the schema that holds the rule.
     const hint =
       error.keyword === "not"
         ? error.schema?.$comment
-        : error.keyword === "pattern"
+        : error.keyword === "pattern" || error.keyword === "oneOf"
           ? error.parentSchema?.$comment
           : undefined;
     let message = error.message;

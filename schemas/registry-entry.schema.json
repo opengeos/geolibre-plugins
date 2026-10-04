@@ -59,6 +59,26 @@
     "minGeoLibreVersion": {
       "description": "Lowest GeoLibre version the plugin supports.",
       "$ref": "#/$defs/semver"
+    },
+    "publishableSettings": {
+      "description": "Project-state keys that survive \"Strip credentials\" and shared exports: true keeps the plugin's whole state, an array keeps only those keys.",
+      "$comment": "must be true or a non-empty array of up to 64 unique key names",
+      "oneOf": [
+        {
+          "const": true
+        },
+        {
+          "type": "array",
+          "minItems": 1,
+          "maxItems": 64,
+          "uniqueItems": true,
+          "items": {
+            "type": "string",
+            "$ref": "#/$defs/trimmedString",
+            "maxLength": 128
+          }
+        }
+      ]
     }
   },
   "$defs": {
