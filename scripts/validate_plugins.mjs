@@ -164,7 +164,17 @@ async function validateLocalPlugin(
   importBundle,
 ) {
   const manifest = await readJson(manifestPath, `${label} manifest`);
-  if (!checkSchema(validateManifestSchema, manifest, `${label} manifest`)) {
+  if (manifest === null) {
+    return;
+  }
+  // Keep going after a schema failure so the checks below report their own
+  // problems in the same run; only importing needs a valid manifest.
+  const manifestValid = checkSchema(
+    validateManifestSchema,
+    manifest,
+    `${label} manifest`,
+  );
+  if (!isPlainObject(manifest)) {
     return;
   }
 
@@ -180,6 +190,10 @@ async function validateLocalPlugin(
     }
   }
 
+  // The schema has already reported a missing or non-string entry or style.
+  if (typeof manifest.entry !== "string") {
+    return;
+  }
   const pluginDir = path.dirname(manifestPath);
   const entryPath = resolveContainedPath(
     pluginDir,
@@ -190,7 +204,7 @@ async function validateLocalPlugin(
     return;
   }
 
-  if (manifest.style !== undefined) {
+  if (typeof manifest.style === "string") {
     const stylePath = resolveContainedPath(
       pluginDir,
       manifest.style,
@@ -201,7 +215,7 @@ async function validateLocalPlugin(
     }
   }
 
-  if (!importBundle) {
+  if (!importBundle || !manifestValid) {
     return;
   }
 
