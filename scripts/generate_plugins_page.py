@@ -106,6 +106,20 @@ def safe_url(value: object) -> str | None:
     return quote(url, safe=":/?#@!$&'*+,;=%~[]")
 
 
+def is_tag(category: object) -> bool:
+    """Whether a category is a plain word that renders as a tag.
+
+    Args:
+        category: A category from a registry entry.
+
+    Returns:
+        True for plain words (the schema's fixed list).
+    """
+    return isinstance(category, str) and bool(
+        re.fullmatch(r"[A-Za-z][A-Za-z ]*", category)
+    )
+
+
 def tags(categories: list[object]) -> str:
     """Render categories as code-span tags.
 
@@ -118,9 +132,7 @@ def tags(categories: list[object]) -> str:
     Returns:
         The tags, separated by spaces.
     """
-    return " ".join(
-        f"`{c}`" for c in categories if re.fullmatch(r"[A-Za-z][A-Za-z ]*", str(c))
-    )
+    return " ".join(f"`{c}`" for c in categories if is_tag(c))
 
 
 def link(label: str, url: object, attrs: str = "") -> str | None:
@@ -150,7 +162,8 @@ def render_card(entry: dict) -> str:
     """
     name = text(entry.get("name", entry.get("id", "Unnamed plugin")))
     version = entry.get("version", "")
-    description = text(entry.get("description", "").strip())
+    # One line: the card is an indented list item, so a newline would end it.
+    description = text(" ".join(str(entry.get("description", "")).split()))
 
     meta_bits = []
     if entry.get("author"):
@@ -204,7 +217,10 @@ def render_filters(entries: list[dict]) -> str:
     Returns:
         The HTML for the filter controls.
     """
-    categories = sorted({c for e in entries for c in e.get("categories") or []})
+    # The same categories the cards show, so every button matches some card.
+    categories = sorted(
+        {c for e in entries for c in e.get("categories") or [] if is_tag(c)}
+    )
     # A raw HTML block: Markdown isn't processed here, so escape for HTML only.
     buttons = "\n".join(
         f'    <button type="button" class="md-tag" data-category="{html.escape(c)}" '
