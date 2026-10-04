@@ -71,7 +71,15 @@ export default {
         conditional.set(name, value);
       }
     }
-    const object = await env.PLUGINS.get(key, { onlyIf: conditional });
+    let object;
+    try {
+      object = await env.PLUGINS.get(key, { onlyIf: conditional });
+    } catch (error) {
+      // An R2 problem must not take down plugins that only live on Pages:
+      // fall through to the origin, which serves those and 404s the rest.
+      console.error(`R2 lookup failed for ${key}`, error);
+      return fetch(request);
+    }
     if (object === null) {
       return fetch(request);
     }
