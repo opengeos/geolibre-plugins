@@ -174,9 +174,24 @@ jobs:
           fi
           GH_TOKEN= npm ci --ignore-scripts
           # shellcheck disable=SC2086 # one registry path per word
-          ids=$(GH_TOKEN= node scripts/stage_preview_plugins.mjs plugins-pr staged $files | tr '\n' ' ')
-          echo "Release-zip plugins: ${ids:-none}"
-          echo "ids=$ids" >> "$GITHUB_OUTPUT"
+          status=0
+          GH_TOKEN= node scripts/stage_preview_plugins.mjs plugins-pr staged $files \
+            > stage-ids.txt 2> stage.log || status=$?
+          cat stage.log >&2
+          ids=$(tr '\n' ' ' < stage-ids.txt)
+          # A zip that failed to stage (a transient 404, say), or a crash of
+          # the script itself, isn't the same as "no plugin changes", so the
+          # stale-preview check below must not remove a good preview for it.
+          failed=$(grep -c '^::error::' stage.log || true)
+          if [ "$status" -ne 0 ]; then
+            echo "::error::Staging release-zip plugins failed (exit $status)."
+            failed=$((failed + 1))
+          fi
+          echo "Release-zip plugins: ${ids:-none}; failed: $failed"
+          {
+            echo "ids=$ids"
+            echo "failed=$failed"
+          } >> "$GITHUB_OUTPUT"
 
       - name: Plan the preview
         if: github.event.action != 'closed'
@@ -305,7 +320,10 @@ jobs:
       # below (its marocchino/sticky-pull-request-comment step writes the
       # marker); re-check this when bumping that pin.
       - name: Check for an earlier preview
-        if: github.event.action != 'closed' && steps.plan.outputs.found != 'true'
+        if: >-
+          github.event.action != 'closed' &&
+          steps.plan.outputs.found != 'true' &&
+          (steps.sources.outputs.failed == '' || steps.sources.outputs.failed == '0')
         id: stale
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}

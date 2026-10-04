@@ -49,9 +49,15 @@ for (const file of files) {
   }
   let entry;
   try {
-    // Read only plain files from the pull request, never through a symlink.
+    // Read only plain files inside the pull-request checkout: no symlinked
+    // file, and no symlinked folder on the way that leads outside it.
     const filePath = path.join(prRoot, file);
-    if (!(await fs.lstat(filePath)).isFile()) {
+    const realRoot = await fs.realpath(prRoot);
+    const realFile = await fs.realpath(filePath);
+    if (
+      !(await fs.lstat(filePath)).isFile() ||
+      !realFile.startsWith(`${realRoot}${path.sep}`)
+    ) {
       continue;
     }
     entry = JSON.parse(await fs.readFile(filePath, "utf8"));
