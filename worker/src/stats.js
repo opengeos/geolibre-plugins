@@ -68,12 +68,19 @@ export function countedFolder(request, url, key) {
  */
 export function visitorAddress(ip) {
   if (!ip.includes(":")) return ip;
+  // An IPv4 address carried in IPv6 form (::ffff:1.2.3.4) is that IPv4.
+  const embedded = /(?:^|:)(\d{1,3}(?:\.\d{1,3}){3})$/.exec(ip);
+  if (embedded) return embedded[1];
+  // Anything that isn't a well-formed IPv6 address is used as it is.
+  if (!/^[0-9a-f:]+$/i.test(ip) || (ip.match(/::/g) ?? []).length > 1)
+    return ip;
   const [head, tail = ""] = ip.toLowerCase().split("::");
   const left = head ? head.split(":") : [];
   const right = tail ? tail.split(":") : [];
   const groups = ip.includes("::")
     ? [...left, ...Array(8 - left.length - right.length).fill("0"), ...right]
     : left;
+  if (groups.length !== 8) return ip;
   return groups
     .slice(0, 4)
     .map((group) => group.replace(/^0+(?=.)/, ""))
