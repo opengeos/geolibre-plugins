@@ -91,6 +91,9 @@ jobs:
           artifact_name: github-pages-${{ github.run_attempt }}
 
       # GeoLibre refuses a bundle whose hash differs from the registry's
-      # bundleSha256, so confirm the live site serves exactly what was built.
+      # bundleSha256, so confirm the deployed site serves exactly what was
+      # built. The site is already live by now, so a failure is an alert.
       - name: Check published bundles against the registry
-        run: node scripts/check_deployed.mjs
+        env:
+          PAGE_URL: ${{ steps.deployment.outputs.page_url }}
+        run: node scripts/check_deployed.mjs "$PAGE_URL"
