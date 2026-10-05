@@ -42,7 +42,7 @@ name: Plugin preview
 # the preview to go live"), after the sticky comment is posted, so the comment
 # can appear a minute or two before the URL resolves. Without Pages write the
 # rebuild request only logs a warning, and an errored build then fails the job
-# after 10 minutes.
+# after 25 minutes.
 # The token never needs access to this repository -- the sticky comment is
 # posted with this workflow's own GITHUB_TOKEN.
 
@@ -378,9 +378,10 @@ jobs:
       # successful Pages build of pages-preview is the commit the preview was
       # pushed as, or a later one that contains it. Asked of the GitHub API,
       # not the site: opengeos.org is behind Cloudflare, which answers 403 to
-      # requests from GitHub Actions runners. If no build has published it
-      # after a few minutes (an errored build that no later push replaced),
-      # ask Pages to rebuild once.
+      # requests from GitHub Actions runners. A Pages build of the shared repo
+      # takes 7 to 9 minutes, so allow 25. If no build is running or queued
+      # and none has published the preview (an errored build that no later
+      # push replaced), ask Pages to rebuild once.
       - name: Wait for the preview to go live
         if: github.event.action != 'closed' && steps.plan.outputs.found == 'true'
         env:
@@ -396,26 +397,30 @@ jobs:
           fi
           live() {
             local built status
-            built=$(gh api "repos/$repo/pages/builds?per_page=20" \
-                      --jq '[.[] | select(.status == "built")][0].commit // ""') || return 1
+            builds=$(gh api "repos/$repo/pages/builds?per_page=20") || return 1
+            built=$(jq -r '[.[] | select(.status == "built")][0].commit // ""' <<< "$builds")
             [ -n "$built" ] || return 1
             # "identical" or "ahead": that build includes the preview's commit.
             status=$(gh api "repos/$repo/compare/$DEPLOYED...$built" --jq .status) || return 1
             [ "$status" = identical ] || [ "$status" = ahead ]
           }
+          builds="[]"
           rebuilt=false
-          for attempt in $(seq 1 40); do
+          for attempt in $(seq 1 100); do
             if live; then
               echo "Preview is live: $PREVIEW_URL"
               exit 0
             fi
-            if [ "$attempt" = 12 ] && [ "$rebuilt" = false ]; then
-              echo "Not published after 3 minutes; requesting a Pages rebuild of $repo."
+            # Nothing running or queued, after a first minute for Pages to
+            # pick up the push: no build is coming that would publish it.
+            pending=$(jq '[.[] | select(.status == "building" or .status == "queued")] | length' <<< "$builds")
+            if [ "$attempt" -ge 4 ] && [ "$pending" = 0 ] && [ "$rebuilt" = false ]; then
+              echo "No Pages build is running and none published the preview; requesting a rebuild of $repo."
               gh api -X POST "repos/$repo/pages/builds" --silent \
-                || echo "::warning::Could not request a Pages rebuild (token without Pages write?)."
+                || echo "::warning::Could not request a Pages rebuild (PREVIEW_DEPLOY_TOKEN needs Pages: Read and write)."
               rebuilt=true
             fi
             sleep 15
           done
-          echo "::error::No GitHub Pages build of $repo published $DEPLOYED within 10 minutes."
+          echo "::error::No GitHub Pages build of $repo published $DEPLOYED within 25 minutes."
           exit 1
