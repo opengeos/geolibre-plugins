@@ -35,12 +35,14 @@ name: Plugin preview
 # Secret PREVIEW_DEPLOY_TOKEN: a fine-grained PAT scoped to
 # opengeos/pages-preview ONLY, with two permissions:
 #   Contents: Read and write   -- push the preview to gh-pages
-#   Pages:    Read and write   -- request a rebuild when a Pages build
+#   Pages:    Read and write   -- read: see which commit Pages last built;
+#                                 write: request a rebuild when a build
 #                                 errored and no later push replaced it
-# The job waits for the preview itself (see "Wait for the preview to go
-# live"), not for a Pages build, so the sticky comment can appear a minute or
-# two before the URL resolves. Without Pages write the rebuild request only
-# logs a warning, and an errored build then fails the job after 10 minutes.
+# The job waits until a Pages build has published the preview (see "Wait for
+# the preview to go live"), after the sticky comment is posted, so the comment
+# can appear a minute or two before the URL resolves. Without Pages write the
+# rebuild request only logs a warning, and an errored build then fails the job
+# after 10 minutes.
 # The token never needs access to this repository -- the sticky comment is
 # posted with this workflow's own GITHUB_TOKEN.
 
@@ -372,51 +374,48 @@ jobs:
           # too. The step below waits for the preview itself instead.
           wait-for-pages-deployment: false
 
-      # Wait until the live preview serves this build: every changed plugin's
-      # plugin.json matches dist/. This is what matters, whichever Pages build
-      # publishes it. If none has after a few minutes (an errored build that
-      # no later push replaced), ask Pages to rebuild once.
+      # Wait until GitHub Pages has published this preview: the newest
+      # successful Pages build of pages-preview is the commit the preview was
+      # pushed as, or a later one that contains it. Asked of the GitHub API,
+      # not the site: opengeos.org is behind Cloudflare, which answers 403 to
+      # requests from GitHub Actions runners. If no build has published it
+      # after a few minutes (an errored build that no later push replaced),
+      # ask Pages to rebuild once.
       - name: Wait for the preview to go live
         if: github.event.action != 'closed' && steps.plan.outputs.found == 'true'
         env:
-          IDS: ${{ steps.plan.outputs.ids }}
-          PR: ${{ steps.pr.outputs.number }}
+          DEPLOYED: ${{ steps.publish.outputs.deployed-commit-sha }}
+          PREVIEW_URL: ${{ steps.publish.outputs.preview-url }}
           GH_TOKEN: ${{ secrets.PREVIEW_DEPLOY_TOKEN }}
         run: |
           set -euo pipefail
-          dist=geolibre/apps/geolibre-desktop/dist
-          base="https://opengeos.org/pages-preview/geolibre-plugins/pr-$PR"
-          # Compare plugin.json and the entry and style it names: a re-push can
-          # change a plugin's code without its manifest, and the previous
-          # preview would then match on plugin.json alone.
-          files_of() {
-            jq -r '"plugin.json", (.entry, .style | strings)' "$dist/plugins/$1/plugin.json" \
-              | sed 's#^\./##' | grep -E '^[A-Za-z0-9._@+-]+(/[A-Za-z0-9._@+-]+)*$' | grep -vE '(^|/)\.\.?(/|$)'
-          }
+          repo=opengeos/pages-preview
+          if ! [[ "$DEPLOYED" =~ ^[0-9a-f]{40}$ ]]; then
+            echo "::error::The preview action reported no deployed commit ('$DEPLOYED')."
+            exit 1
+          fi
           live() {
-            for id in $IDS; do
-              for file in $(files_of "$id"); do
-                # A unique query skips the Pages CDN cache (10 minutes). curl -f
-                # fails on a 404, and pipefail carries that to `|| return 1`.
-                remote=$(curl -fsSL --max-time 30 "$base/plugins/$id/$file?ci=$RANDOM$RANDOM" | sha256sum | cut -d' ' -f1) || return 1
-                want=$(sha256sum < "$dist/plugins/$id/$file" | cut -d' ' -f1)
-                [ "$remote" = "$want" ] || return 1
-              done
-            done
+            local built status
+            built=$(gh api "repos/$repo/pages/builds?per_page=20" \
+                      --jq '[.[] | select(.status == "built")][0].commit // ""') || return 1
+            [ -n "$built" ] || return 1
+            # "identical" or "ahead": that build includes the preview's commit.
+            status=$(gh api "repos/$repo/compare/$DEPLOYED...$built" --jq .status) || return 1
+            [ "$status" = identical ] || [ "$status" = ahead ]
           }
           rebuilt=false
           for attempt in $(seq 1 40); do
             if live; then
-              echo "Preview is live: $base/"
+              echo "Preview is live: $PREVIEW_URL"
               exit 0
             fi
             if [ "$attempt" = 12 ] && [ "$rebuilt" = false ]; then
-              echo "Not live after 3 minutes; requesting a Pages rebuild of opengeos/pages-preview."
-              gh api -X POST repos/opengeos/pages-preview/pages/builds --silent \
-                || echo "::warning::Could not request a Pages rebuild (token without Pages access?)."
+              echo "Not published after 3 minutes; requesting a Pages rebuild of $repo."
+              gh api -X POST "repos/$repo/pages/builds" --silent \
+                || echo "::warning::Could not request a Pages rebuild (token without Pages write?)."
               rebuilt=true
             fi
             sleep 15
           done
-          echo "::error::The preview at $base/ didn't serve this build within 10 minutes; GitHub Pages may be failing for opengeos/pages-preview."
+          echo "::error::No GitHub Pages build of $repo published $DEPLOYED within 10 minutes."
           exit 1
