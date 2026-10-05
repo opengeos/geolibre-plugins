@@ -341,6 +341,7 @@ jobs:
       # Removes the preview instead of deploying when the PR is closed, or when
       # an open PR no longer changes any plugin but had a preview before.
       - name: Publish preview
+        id: publish
         if: >-
           github.event.action == 'closed' ||
           steps.plan.outputs.found == 'true' ||
@@ -363,6 +364,48 @@ jobs:
           umbrella-dir: geolibre-plugins
           pr-number: ${{ steps.pr.outputs.number }}
           action: ${{ (github.event.action == 'closed' || steps.plan.outputs.found != 'true') && 'remove' || 'deploy' }}
-          # Without this the sticky comment is posted as soon as the commit is
-          # pushed to gh-pages, so the link 404s until Pages finishes building.
-          wait-for-pages-deployment: true
+          # The action's own wait fails the job whenever Pages reports *its*
+          # commit's build as errored. pages-preview is shared, and its legacy
+          # branch builds error when the next push (from any repository)
+          # supersedes them, although that next build publishes this preview
+          # too. The step below waits for the preview itself instead.
+          wait-for-pages-deployment: false
+
+      # Wait until the live preview serves this build: every changed plugin's
+      # plugin.json matches dist/. This is what matters, whichever Pages build
+      # publishes it. If none has after a few minutes (an errored build that
+      # no later push replaced), ask Pages to rebuild once.
+      - name: Wait for the preview to go live
+        if: github.event.action != 'closed' && steps.plan.outputs.found == 'true'
+        env:
+          IDS: ${{ steps.plan.outputs.ids }}
+          PR: ${{ steps.pr.outputs.number }}
+          GH_TOKEN: ${{ secrets.PREVIEW_DEPLOY_TOKEN }}
+        run: |
+          set -euo pipefail
+          dist=geolibre/apps/geolibre-desktop/dist
+          base="https://opengeos.org/pages-preview/geolibre-plugins/pr-$PR"
+          live() {
+            for id in $IDS; do
+              # A unique query skips the Pages CDN cache (10 minutes).
+              remote=$(curl -fsSL --max-time 30 "$base/plugins/$id/plugin.json?ci=$RANDOM$RANDOM" | sha256sum | cut -d' ' -f1) || return 1
+              want=$(sha256sum < "$dist/plugins/$id/plugin.json" | cut -d' ' -f1)
+              [ "$remote" = "$want" ] || return 1
+            done
+          }
+          rebuilt=false
+          for attempt in $(seq 1 40); do
+            if live; then
+              echo "Preview is live: $base/"
+              exit 0
+            fi
+            if [ "$attempt" = 12 ] && [ "$rebuilt" = false ]; then
+              echo "Not live after 3 minutes; requesting a Pages rebuild of opengeos/pages-preview."
+              gh api -X POST repos/opengeos/pages-preview/pages/builds --silent \
+                || echo "::warning::Could not request a Pages rebuild (token without Pages access?)."
+              rebuilt=true
+            fi
+            sleep 15
+          done
+          echo "::error::The preview at $base/ didn't serve this build within 10 minutes; GitHub Pages may be failing for opengeos/pages-preview."
+          exit 1
