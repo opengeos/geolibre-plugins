@@ -1,14 +1,14 @@
 {
   "id": "zarr-timeseries-viewer",
   "name": "Zarr Time Series Viewer",
-  "version": "0.7.0",
+  "version": "0.7.2",
   "description": "Discover variables in local folders or remote Zarr time-series cubes, then explore them with playback, custom color palettes, and click-to-chart pixel histories.",
   "author": "Joao Pereira",
   "homepage": "https://github.com/opengeos/geolibre-plugins",
   "manifestUrl": "plugins/zarr-timeseries-viewer/plugin.json",
   "source": {
-    "url": "https://github.com/JPPereira93/geolibre-plugins/releases/download/zarr-timeseries-viewer-v0.7.0/zarr-timeseries-viewer-0.7.0.zip",
-    "sha256": "8e15ffc0dfcfc02b16186a05813a5ecc1585a476d5ee971fe3fccf26dd933fde"
+    "url": "https://github.com/JPPereira93/geolibre-plugins/releases/download/zarr-timeseries-viewer-v0.7.2/zarr-timeseries-viewer-0.7.2.zip",
+    "sha256": "9984f7963c035cbb18fc12d5d8cad238d3baa45f8345c3ec59394a6f71b4d51d"
   },
   "categories": ["Raster", "Visualization", "Data"],
   "minGeoLibreVersion": "3.3.0",
