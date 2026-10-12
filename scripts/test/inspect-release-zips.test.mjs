@@ -156,12 +156,15 @@ describe("inspect_release_zips.mjs", () => {
       await fs.readFile(path.join(checkout, "registry", "badhash.json")),
     );
     // The zip is cached under the wrong hash, so verification fails offline.
+    // The hash differs from the one source-bundles.test.mjs seeds, since the
+    // two files run in parallel and share the cache.
+    const wrongHash = "e".repeat(64);
     await fs.copyFile(
       path.join(cacheDir, `${entry.source.sha256}.zip`),
-      path.join(cacheDir, `${"0".repeat(64)}.zip`),
+      path.join(cacheDir, `${wrongHash}.zip`),
     );
-    seeded.push("0".repeat(64));
-    entry.source.sha256 = "0".repeat(64);
+    seeded.push(wrongHash);
+    entry.source.sha256 = wrongHash;
     await fs.writeFile(
       path.join(checkout, "registry", "badhash.json"),
       JSON.stringify(entry),
@@ -195,7 +198,7 @@ describe("inspect_release_zips.mjs", () => {
     );
     assert.match(
       report[2].error,
-      /has SHA-256 [0-9a-f]{64}, but the registry entry lists 0{64}/,
+      /has SHA-256 [0-9a-f]{64}, but the registry entry lists e{64}/,
     );
   });
 
