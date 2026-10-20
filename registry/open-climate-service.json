@@ -1,15 +1,15 @@
 {
   "id": "open-climate-service",
   "name": "Open Climate Service",
-  "version": "0.2.1",
-  "description": "Browse an Open Climate Service (OCS) STAC catalog and render its published GeoZarr datasets.",
+  "version": "0.3.7",
+  "description": "Browse an Open Climate Service (OCS) STAC catalog and render its published GeoZarr datasets and boundary layers.",
   "author": "DHIS2 for Climate & Health",
   "homepage": "https://github.com/dhis2/open-climate-service-geolibre-plugin",
   "manifestUrl": "plugins/open-climate-service/plugin.json",
   "source": {
-    "url": "https://github.com/opengeos/geolibre-plugins/releases/download/bundles-2026-10/open-climate-service-0.2.1.zip",
-    "sha256": "f3e03d412392a8f832f2120390e7f241adfd1455cc6fff9c32c5671edab483b7"
+    "url": "https://github.com/dhis2/open-climate-service-geolibre-plugin/releases/download/v0.3.7/open-climate-service-0.3.7.zip",
+    "sha256": "6957fe2b31619757aea20273c6549c187d4dd7e5a51cef7eeb24200dc76a4b42"
   },
-  "categories": ["Climate", "Raster", "Data"],
+  "categories": ["Climate", "Raster", "Vector", "Data"],
   "minGeoLibreVersion": "2.4.0"
 }
