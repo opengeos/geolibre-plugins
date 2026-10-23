@@ -1,0 +1,32 @@
+{
+  "id": "ingv-geolibre",
+  "name": "INGV Earthquakes",
+  "version": "0.1.0",
+  "description": "Search the INGV earthquake catalogue (Italy) and show the events on the map.",
+  "author": "onData",
+  "homepage": "https://github.com/ondata/ingv-geolibre",
+  "repository": "https://github.com/ondata/ingv-geolibre",
+  "issues": "https://github.com/ondata/ingv-geolibre/issues",
+  "license": "MIT",
+  "manifestUrl": "plugins/ingv-geolibre/plugin.json",
+  "source": {
+    "url": "https://github.com/ondata/ingv-geolibre/releases/download/v0.1.0/ingv-geolibre-0.1.0.zip",
+    "sha256": "d22048f2f1cc044e21fd710a6fcea4f8026b45b56f33489806fb70fa5562e46e"
+  },
+  "categories": ["Data"],
+  "minGeoLibreVersion": "3.4.0",
+  "screenshots": [
+    {
+      "path": "screenshots/1-search.webp",
+      "caption": "The earthquakes of the last 24 hours north of Sicily, magnitude 2 and above, coloured by depth and sized by magnitude."
+    },
+    {
+      "path": "screenshots/2-table.webp",
+      "caption": "The results table, sorted by magnitude: the event under the pointer is ringed on the map."
+    },
+    {
+      "path": "screenshots/3-detail.webp",
+      "caption": "An event's detail: summary, felt reports, how location and magnitude changed after the first estimate, seismicity around."
+    }
+  ]
+}
