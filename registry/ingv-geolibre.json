@@ -1,7 +1,7 @@
 {
   "id": "ingv-geolibre",
   "name": "INGV Earthquakes",
-  "version": "0.3.0",
+  "version": "0.3.1",
   "description": "Search the INGV earthquake catalogue (Italy) and show the events on the map.",
   "author": "onData",
   "homepage": "https://github.com/ondata/ingv-geolibre",
@@ -10,8 +10,8 @@
   "license": "MIT",
   "manifestUrl": "plugins/ingv-geolibre/plugin.json",
   "source": {
-    "url": "https://github.com/ondata/ingv-geolibre/releases/download/v0.3.0/ingv-geolibre-0.3.0.zip",
-    "sha256": "50963d9797a73c455513311fa74e30df717124cc0acf69da3b7478164f754e8f"
+    "url": "https://github.com/ondata/ingv-geolibre/releases/download/v0.3.1/ingv-geolibre-0.3.1.zip",
+    "sha256": "8290138ad2190246328bd4f23f047b82564ed57d90bc6a48f8db5e27ca66e202"
   },
   "categories": ["Data"],
   "minGeoLibreVersion": "3.4.0",
