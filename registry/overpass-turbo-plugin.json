@@ -1,0 +1,17 @@
+{
+  "id": "overpass-turbo-plugin",
+  "name": "Overpass Turbo Plugin",
+  "version": "0.1.4",
+  "description": "Download OpenStreetMap data for the current map view from the Overpass API.",
+  "author": "Bartłomiej Staroń",
+  "homepage": "https://github.com/tlomiej/geolibre_overpass_plugin",
+  "repository": "https://github.com/tlomiej/geolibre_overpass_plugin",
+  "license": "MIT",
+  "manifestUrl": "plugins/overpass-turbo-plugin/plugin.json",
+  "source": {
+    "url": "https://github.com/tlomiej/geolibre_overpass_plugin/releases/download/v0.1.4/overpass-turbo-plugin-0.1.4.zip",
+    "sha256": "720a7c4af2a8cdea185a264944ccc734ed4a37e0152dc2d73c050684958d91cc"
+    
+  },
+  "categories": ["Data"]
+}
