@@ -9,7 +9,7 @@
   "license": "MIT",
   "manifestUrl": "plugins/overpass-turbo-plugin/plugin.json",
   "source": {
-    "url": "https://github.com/tlomiej/geolibre_overpass_plugin/releases/download/v0.1.5/overpass-turbo-plugin-0.1.4.zip",
+    "url": "https://github.com/tlomiej/geolibre_overpass_plugin/releases/download/v0.1.5/overpass-turbo-plugin-0.1.5.zip",
     "sha256": "ce2e39f52dd9d6d78238b11be5b959529d16405289d70ac1191c44ef30fb7774"
   },
   "categories": ["Data"],
