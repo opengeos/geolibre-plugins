@@ -11,7 +11,6 @@
   "source": {
     "url": "https://github.com/tlomiej/geolibre_overpass_plugin/releases/download/v0.1.4/overpass-turbo-plugin-0.1.4.zip",
     "sha256": "720a7c4af2a8cdea185a264944ccc734ed4a37e0152dc2d73c050684958d91cc"
-    
   },
   "categories": ["Data"]
 }
