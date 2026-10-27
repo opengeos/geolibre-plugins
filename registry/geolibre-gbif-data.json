@@ -1,0 +1,18 @@
+{
+  "id": "geolibre-gbif-data",
+  "name": "GBIF Data",
+  "version": "1.1.0",
+  "description": "Fetch georeferenced GBIF occurrence records by map view, layer extent, country or worldwide, with taxon search, major groups, record type, year, photo, IUCN, uncertainty and licence filters, a live counter, density tiles, a record popup and citation tools for a derived-dataset DOI. Independent plugin, not affiliated with GBIF.",
+  "author": "Defani Arman Alfitriansyah",
+  "homepage": "https://github.com/Defani/GBIF-Data",
+  "repository": "https://github.com/Defani/GBIF-Data",
+  "issues": "https://github.com/Defani/GBIF-Data/issues",
+  "license": "MIT",
+  "manifestUrl": "plugins/geolibre-gbif-data/plugin.json",
+  "source": {
+    "url": "https://github.com/Defani/GBIF-Data/releases/download/v1.1.0/geolibre-gbif-data-1.1.0.zip",
+    "sha256": "84a25e6f4a19c91c54f65ddeb727e5ca054c7f89abb9606ea8620384bb9b0aa0"
+  },
+  "categories": ["Data", "Ecology"],
+  "minGeoLibreVersion": "3.0.0"
+}
