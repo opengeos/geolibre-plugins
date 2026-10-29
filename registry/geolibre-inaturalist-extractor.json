@@ -1,15 +1,32 @@
 {
   "id": "geolibre-inaturalist-extractor",
   "name": "iNaturalist Extractor",
-  "version": "1.5.0",
+  "version": "1.5.1",
   "description": "Fetch georeferenced iNaturalist observations by map view or layer extent, with species, date, observer, quality-grade and advanced (taxon ID, place ID, photo license, project, annotation) filters, and a photo popup.",
   "author": "Defani Arman (Alfitriansyah)",
   "homepage": "https://github.com/Defani/Geolibre-Inaturalist-Extraction-Plugins",
+  "repository": "https://github.com/Defani/Geolibre-Inaturalist-Extraction-Plugins",
+  "issues": "https://github.com/Defani/Geolibre-Inaturalist-Extraction-Plugins/issues",
+  "license": "GPL-2.0-or-later",
   "manifestUrl": "plugins/geolibre-inaturalist-extractor/plugin.json",
   "source": {
-    "url": "https://github.com/opengeos/geolibre-plugins/releases/download/bundles-2026-10/geolibre-inaturalist-extractor-1.5.0.zip",
-    "sha256": "51392f57ec5897100ca2dfd5de7700beb5de5d69034fe40362d15fc91728dcb5"
+    "url": "https://github.com/Defani/Geolibre-Inaturalist-Extraction-Plugins/releases/download/v1.5.1/geolibre-inaturalist-extractor-1.5.1.zip",
+    "sha256": "fc50a9f95c5dd69df1bc51b0e0a31cf486f4a2514ec9b9ae1b0eb7490f9f536b"
   },
-  "categories": ["Data"],
+  "screenshots": [
+    {
+      "path": "screenshots/points.jpg",
+      "caption": "1,000 iNaturalist bird observations around Bandung, West Java, added as a point layer from the current map view"
+    },
+    {
+      "path": "screenshots/popup.jpg",
+      "caption": "Observation popup with photo and its licence (© Rahman Rasyidi, CC BY-NC), observer, date and quality grade"
+    },
+    {
+      "path": "screenshots/filters.jpg",
+      "caption": "Filter panel: area, species search, iconic-taxon groups, quality grade, date, observer and advanced filters"
+    }
+  ],
+  "categories": ["Data", "Ecology"],
   "minGeoLibreVersion": "3.0.0"
 }
