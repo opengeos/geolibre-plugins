@@ -1,8 +1,8 @@
 {
   "id": "layout-composer",
   "name": "Layout Composer",
-  "version": "1.8.2",
-  "description": "Cartographic print layout designer: map frames with locked scale, custom shapes and per-frame layers, DMS/DD/UTM grids, legends for vector, raster and tile layers, attribute tables and charts, matplotlib-style color bars, LaTeX, Google Fonts and Material Symbols, QGIS .qpt import/export, and PNG/PDF/vector PDF/GeoPDF/SVG export.",
+  "version": "1.11.0",
+  "description": "Cartographic print layout designer: map frames with locked scale, custom shapes and per-frame layers, DMS/DD/UTM grids, a Word-style ribbon (Insert / Format / Table / Map Frame / Grid tabs), legends for vector, raster and tile layers, attribute tables, Plotly charts (21 kinds), Mermaid diagrams, HTML blocks, a Symbol dialog, matplotlib-style color bars, LaTeX, Google Fonts and Material Symbols, QGIS .qpt import/export, and PNG/PDF/vector PDF/GeoPDF/SVG export.",
   "author": "Defani Arman Alfitriansyah",
   "homepage": "https://github.com/Defani/Layout-Composer",
   "repository": "https://github.com/Defani/Layout-Composer",
@@ -10,17 +10,17 @@
   "license": "MIT",
   "manifestUrl": "plugins/layout-composer/plugin.json",
   "source": {
-    "url": "https://github.com/Defani/Layout-Composer/releases/download/v1.8.2/layout-composer-1.8.2.zip",
-    "sha256": "67a3b403aa956aeb9a58f9272463a1708bcb2e32f9482757bab575cc77f37a54"
+    "url": "https://github.com/Defani/Layout-Composer/releases/download/v1.11.0/layout-composer-1.11.0.zip",
+    "sha256": "17658bef8db92daaf60b2286ecf676f72076d3625a9fbf5b9fd600f6c825c2e1"
   },
   "screenshots": [
     {
-      "path": "screenshots/overview.png",
-      "caption": "The Layout Composer editor with a forest-area map of Aceh"
+      "path": "screenshots/overview.jpg",
+      "caption": "The Layout Composer 1.11 workspace: Insert ribbon, a map frame with a coordinate grid, legend, scale bar and north arrow"
     },
     {
-      "path": "screenshots/klhk-map.png",
-      "caption": "Exported forest-area map of Aceh"
+      "path": "screenshots/example-map.jpg",
+      "caption": "Slope map of Kuningan Regency, West Java, exported from Layout Composer"
     },
     {
       "path": "screenshots/data.png",
