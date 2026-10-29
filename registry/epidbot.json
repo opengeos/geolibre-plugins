@@ -1,0 +1,18 @@
+{
+  "id": "epidbot",
+  "name": "EpidBot",
+  "version": "0.2.2",
+  "description": "Chat with EpidBot, the AI assistant for public health and epidemiological data (DATASUS, WHO, PAHO, ECDC, Malaria Atlas, and more), over the map you are looking at. Answers come back as text, charts and map layers; layers can be attached to prompts and EpidBot-proposed attribute edits are applied after review.",
+  "homepage": "https://github.com/Deeplearn-PeD/epidbot-geolibre-plugin",
+  "repository": "https://github.com/Deeplearn-PeD/epidbot-geolibre-plugin",
+  "issues": "https://github.com/Deeplearn-PeD/epidbot-geolibre-plugin/issues",
+  "license": "MIT",
+  "categories": ["Data", "Visualization", "Analysis"],
+  "minGeoLibreVersion": "3.5.0",
+  "publishableSettings": ["settings", "sessionId", "resultLayers"],
+  "manifestUrl": "plugins/epidbot/plugin.json",
+  "source": {
+    "url": "https://github.com/Deeplearn-PeD/epidbot-geolibre-plugin/releases/download/v0.2.2/epidbot-0.2.2.zip",
+    "sha256": "c5207354a523fca8056efe6a0c107bf1f89e913173471b955ffbf14c3eb9e156"
+  }
+}
