@@ -1,7 +1,7 @@
 {
   "id": "geolibre-gbif-data",
   "name": "GBIF Data",
-  "version": "1.1.0",
+  "version": "1.1.1",
   "description": "Fetch georeferenced GBIF occurrence records by map view, layer extent, country or worldwide, with taxon search, major groups, record type, year, photo, IUCN, uncertainty and licence filters, a live counter, density tiles, a record popup and citation tools for a derived-dataset DOI. Independent plugin, not affiliated with GBIF.",
   "author": "Defani Arman Alfitriansyah",
   "homepage": "https://github.com/Defani/GBIF-Data",
@@ -10,9 +10,27 @@
   "license": "MIT",
   "manifestUrl": "plugins/geolibre-gbif-data/plugin.json",
   "source": {
-    "url": "https://github.com/Defani/GBIF-Data/releases/download/v1.1.0/geolibre-gbif-data-1.1.0.zip",
-    "sha256": "84a25e6f4a19c91c54f65ddeb727e5ca054c7f89abb9606ea8620384bb9b0aa0"
+    "url": "https://github.com/Defani/GBIF-Data/releases/download/v1.1.1/geolibre-gbif-data-1.1.1.zip",
+    "sha256": "f59419ee692fd808ee4e7977b536aceb71aedda72d924427a410b070f68b752a"
   },
   "categories": ["Data", "Ecology"],
-  "minGeoLibreVersion": "3.0.0"
+  "minGeoLibreVersion": "3.0.0",
+  "screenshots": [
+    {
+      "path": "screenshots/points.jpg",
+      "caption": "1,500 bird (Aves) records around Bandung, West Java, as a point layer with the GBIF Data panel and results card"
+    },
+    {
+      "path": "screenshots/threatened.jpg",
+      "caption": "Threatened species (IUCN CR, EN, VU) across Java; the popup of a Critically Endangered record with photo credit and licence"
+    },
+    {
+      "path": "screenshots/density.jpg",
+      "caption": "GBIF hexagon density tiles of every matching bird record, under the fetched points"
+    },
+    {
+      "path": "screenshots/citation.jpg",
+      "caption": "Record popup with photo, and the Cite this data card: licence mix, citation text and dataset list for a DOI"
+    }
+  ]
 }
