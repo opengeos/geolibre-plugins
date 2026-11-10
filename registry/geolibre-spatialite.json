@@ -1,0 +1,18 @@
+{
+  "id": "geolibre-spatialite",
+  "name": "SpatiaLite Spatial SQL Engine",
+  "version": "0.1.2",
+  "description": "Open and map SpatiaLite databases with offline SQLite and a documented subset of spatial SQL functions.",
+  "author": "Outer Loop Consulting",
+  "homepage": "https://github.com/outerl/geolibre_spatialite",
+  "repository": "https://github.com/outerl/geolibre_spatialite",
+  "issues": "https://github.com/outerl/geolibre_spatialite/issues",
+  "license": "LGPL-2.1-or-later",
+  "manifestUrl": "plugins/geolibre-spatialite/plugin.json",
+  "categories": ["Analysis", "Data", "Vector", "Utilities"],
+  "minGeoLibreVersion": "0.2.0",
+  "source": {
+    "url": "https://github.com/outerl/geolibre_spatialite/releases/download/v0.1.2/geolibre-spatialite-0.1.2.zip",
+    "sha256": "9f9d75886f2618add0222f5d8f407c9e8a50a6bd5fe6e471889bd54d88b0242f"
+  }
+}
