@@ -1,0 +1,18 @@
+{
+  "id": "plot-sampling",
+  "name": "Plot Sampling",
+  "version": "0.3.2",
+  "description": "Create an indexed sample plot grid from an AOI polygon: coded plots in UTM metres with paths between plots, nested sub-plots, sample-size options and fill or hatch styling.",
+  "author": "Defani Arman Alfitriansyah",
+  "homepage": "https://github.com/Defani/geolibre-plot-sampling",
+  "repository": "https://github.com/Defani/geolibre-plot-sampling",
+  "issues": "https://github.com/Defani/geolibre-plot-sampling/issues",
+  "license": "MIT",
+  "manifestUrl": "plugins/plot-sampling/plugin.json",
+  "source": {
+    "url": "https://github.com/Defani/geolibre-plot-sampling/releases/download/v0.3.2/plot-sampling-0.3.2.zip",
+    "sha256": "d2989cfa49537a73e0fd558322bd0f01cce74e8f18cdf8e90ffd367c547ebec4"
+  },
+  "categories": ["Analysis", "Ecology", "Vector"],
+  "minGeoLibreVersion": "3.4.0"
+}
