@@ -1,15 +1,15 @@
 {
   "id": "zarr-timeseries-viewer",
   "name": "Zarr Time Series Viewer",
-  "version": "0.7.8",
-  "description": "Discover variables in local or remote Zarr time-series cubes, keep multiple variables as GeoLibre layers, and explore or export pixel histories.",
+  "version": "0.7.9",
+  "description": "Discover variables and labelled dimensions in local or remote Zarr time-series cubes, keep selections as GeoLibre layers, and explore or export pixel histories.",
   "author": "Joao Pereira",
   "homepage": "https://github.com/JPPereira93/geolibre-zarr-timeseries-viewer",
   "repository": "https://github.com/JPPereira93/geolibre-zarr-timeseries-viewer",
   "manifestUrl": "plugins/zarr-timeseries-viewer/plugin.json",
   "source": {
-    "url": "https://github.com/JPPereira93/geolibre-zarr-timeseries-viewer/releases/download/v0.7.8/zarr-timeseries-viewer-0.7.8.zip",
-    "sha256": "d1d2128cad4390deccb9f1eaf4914b94c2f08672197fbcc0dbbecac420708e8b"
+    "url": "https://github.com/JPPereira93/geolibre-zarr-timeseries-viewer/releases/download/v0.7.9/zarr-timeseries-viewer-0.7.9.zip",
+    "sha256": "2bf81f5ad8a4f75c4a894fd744a13d701439ce603caa578824d0deb2192c70ac"
   },
   "categories": ["Raster", "Visualization", "Data"],
   "minGeoLibreVersion": "3.3.0",
