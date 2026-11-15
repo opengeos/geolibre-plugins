@@ -1,8 +1,8 @@
 {
   "id": "plot-sampling",
   "name": "Plot Sampling",
-  "version": "0.3.0",
-  "description": "Turn an AOI polygon (a layer or a drawn sketch) into a grid of coded field plots in UTM metres: rectangular or circular plots, paths, nested sub-plots, standard designs (SNI 7724, Winrock, ICRAF, IHMB, CIFOR) and sample sizes from sampling intensity, Slovin, Cochran or the CDM A/R tool, with stratification and hatch styling.",
+  "version": "0.3.1",
+  "description": "Create an indexed sample plot grid from an AOI polygon: coded plots in UTM metres with paths between plots, nested sub-plots, sample-size options and fill or hatch styling.",
   "author": "Defani Arman Alfitriansyah",
   "homepage": "https://github.com/Defani/geolibre-plot-sampling",
   "repository": "https://github.com/Defani/geolibre-plot-sampling",
@@ -10,8 +10,8 @@
   "license": "MIT",
   "manifestUrl": "plugins/plot-sampling/plugin.json",
   "source": {
-    "url": "https://github.com/Defani/geolibre-plot-sampling/releases/download/v0.3.0/plot-sampling-0.3.0.zip",
-    "sha256": "67af838321760d5dc48b0b66f99e9e4d8fd92877a3f4673d81aca0a3db490b7b"
+    "url": "https://github.com/Defani/geolibre-plot-sampling/releases/download/v0.3.1/plot-sampling-0.3.1.zip",
+    "sha256": "a006084ec912ac042b6cfa9fabdf188c0e46b670e5705116a77f4b4401237a81"
   },
   "categories": ["Analysis", "Ecology", "Vector"],
   "minGeoLibreVersion": "3.4.0"
