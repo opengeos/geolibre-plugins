@@ -1,0 +1,15 @@
+{
+  "id": "open-geo-service",
+  "name": "Open Geo Service",
+  "version": "0.3.9",
+  "description": "Browse an Open Geo Service STAC catalog and render its published GeoZarr datasets and boundary layers.",
+  "author": "DHIS2 for Climate & Health",
+  "homepage": "https://github.com/dhis2/geolibre-geoservice-plugin",
+  "manifestUrl": "plugins/open-geo-service/plugin.json",
+  "source": {
+    "url": "https://github.com/dhis2/geolibre-geoservice-plugin/releases/download/v0.3.9/open-geo-service-0.3.9.zip",
+    "sha256": "ea6f3ed8c33186f9a48a3edbda7212b8a13381254ada5934db94bbb9f5404280"
+  },
+  "categories": ["Climate", "Raster", "Vector", "Data"],
+  "minGeoLibreVersion": "2.4.0"
+}
